@@ -95,7 +95,7 @@ class NNT: # Nearest Neighbor Tensor
 
 '''Testing and Examples'''
 
-
+'''
 ## Example Usage (5, 2) matrix 
 ex_matrix = torch.tensor([[2, 1], [5, 2], [1, 0], [4, 6], [3, 8]], dtype=torch.float32)
 ex_kernel_shape = (6, 2) # Error
@@ -111,5 +111,5 @@ example = NNT(ex_matrix, ex_kernel_shape)
 
 print(example.convolution_matrix)
 print(example.convolution_matrix.shape)
-
+'''
 
