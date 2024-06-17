@@ -1,1 +1,1 @@
-print(nn.prime)
+_dist_matrix_vectorized

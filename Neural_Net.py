@@ -25,7 +25,7 @@ model = nn.Sequential(
 
 # Model Summary 
 from torchsummary import summary
-summary(model, (1, 40))
+# summary(model, (1, 40)) # need cpu to get summary -> Why?
 
 
 ## MNIST 1D Dataset

@@ -86,25 +86,41 @@ class NNT: # Nearest Neighbor
         
         
     def prime(self): 
-        stack_list = [] 
+        # stack_list = [] 
         
-        for i in range(self._matrix.shape[0]): 
+        # for i in range(self._matrix.shape[0]): 
             
-            concat_list = [] 
-            for j in range(self._matrix.shape[2]): 
-                # Get the indices of the nearest neighbors
-                indices = torch.topk(self.dist_matrix_vectorized[i, j, :], self.num_nearest_neighbors, largest=False).indices
+        #     concat_list = [] 
+        #     for j in range(self._matrix.shape[2]): 
+        #         # Get the indices of the nearest neighbors
+        #         indices = torch.topk(self.dist_matrix_vectorized[i, j, :], self.num_nearest_neighbors, largest=False).indices
                 
-                # Get the nearest neighbors
-                nearest_neighbors = self._matrix[i, :, indices]
+        #         # Get the nearest neighbors
+        #         nearest_neighbors = self._matrix[i, :, indices]
                 
-                # Concatenate the nearest neighbors
-                concat_list.append(nearest_neighbors)
+        #         # Concatenate the nearest neighbors
+        #         concat_list.append(nearest_neighbors)
             
-            # Concatenate the tensor list to create the convolution matrix 
-            concat = torch.cat(concat_list, dim=1)
-            stack_list.append(concat)
-        prime = torch.stack(stack_list, dim= 0)
+        #     # Concatenate the tensor list to create the convolution matrix 
+        #     concat = torch.cat(concat_list, dim=1)
+        #     stack_list.append(concat)
+        # prime = torch.stack(stack_list, dim= 0)
+        
+        
+        ### Vectorization 
+        stacked_list = []
+        for i in range(self.matrix.shape[0]): 
+            
+            dist = self.dist_matrix_vectorized[i, : , :]
+            
+            ind = torch.topk(dist, self.num_nearest_neighbors, largest=False).indices
+            
+            matrix = self.matrix[i, :, :]
+            neig = matrix[:, ind]
+            reshape = torch.flatten(neig, start_dim=1)
+            stacked_list.append(reshape)
+        prime = torch.stack(stacked_list, dim=0)
+        
         return prime
         
         
@@ -112,11 +128,11 @@ class NNT: # Nearest Neighbor
 '''EXAMPLE USAGE'''
 
 # Example 
-ex = torch.rand(20, 1, 40) # 3 samples, 2 channels, 10 tokens
+ex = torch.rand(32, 3, 40) # 3 samples, 2 channels, 10 tokens
                           # 3 batches, 2 sentences, 10 words
 closest_neighbors = 3 # 3 closest neighbors
 nnt = NNT(ex, closest_neighbors) 
-# print(nnt.prime.shape) # (3, 2, 10) -> (3, 2, 30) 
+print(nnt.prime.shape) # (3, 2, 10) -> (3, 2, 30) 
 # print(nn.prime)
 
 # Vectorized Distance Matrix
