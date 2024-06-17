@@ -8,9 +8,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim 
 
-from mnist1d.utils import ObjectView
 
-
+class ObjectView(object):
+    def __init__(self, d): self.__dict__ = d
+    
 def set_seed(seed): 
     # random.seed(seed)
     np.random.seed(seed) 
