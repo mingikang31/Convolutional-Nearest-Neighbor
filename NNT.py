@@ -57,8 +57,6 @@ class NNT: # Nearest Neighbor
             raise ValueError("Number of nearest neighbors must be an integer")
         self._num_nearest_neighbors = value
         
-    
-        
     @dist_matrix_vectorized.setter
     def dist_matrix_vectorized(self, matrix):
         # Calculate the distance matrix using vectorization 
@@ -114,17 +112,3 @@ closest_neighbors = 3 # 3 closest neighbors
 nnt = NNT(ex, closest_neighbors) 
 print(nnt.prime_vmap_2d.shape)
 print("-"*50)
-
-
-# Vectorized Distance Matrix
-torch.set_printoptions(sci_mode=True)
-
-# print("-"*50)
-# print("Distance Matrix - forloop: ", nn.dist_matrix.shape) # (3, 10, 10)
-# print(nn.dist_matrix)
-# print("-"*50)
-# print("Distance Matrix - vectorized: ", nn.dist_matrix_vectorized.shape) # (3, 2, 2)
-# print(nn.dist_matrix_vectorized)
-# print('-'*50)
-# print(nn.dist_matrix == nn.dist_matrix_vectorized)
-
