@@ -6,14 +6,21 @@ import torch.nn.functional as F
 from NNT import NNT
 
 class Conv1d_NN(nn.Module):
-    def __init__(self, in_channels, out_channels,  K = 3): 
+    def __init__(self, in_channels, out_channels,  K = 3, stride=3, padding=0): 
         super().__init__()
-        self.K = K
         self.in_channels = in_channels
         self.out_channels = out_channels
+        self.K = K
+        self.stride = stride
+        self.padding = padding
+    
+        
         self.conv1d_layer = nn.Conv1d(in_channels=self.in_channels, 
                                       out_channels=self.out_channels, 
-                                      kernel_size=K, stride=K)
+                                      kernel_size=self.K, 
+                                      stride=self.stride, 
+                                      padding=self.padding)
+                                      
 
     def forward(self, x):
         # Create a NNT object
