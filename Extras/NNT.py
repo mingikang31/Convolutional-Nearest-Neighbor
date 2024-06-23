@@ -40,7 +40,7 @@ class NNT: # Nearest Neighbor
     # @property
     # def prime_vmap_3d(self): 
     #     '''Returns the convolution matrix of the NNT object'''
-    #     return self._prime_vmap_3d
+    #     return self._prime_vmap_3d    
     
     '''Setters for the NNT object'''
     @matrix.setter
@@ -59,22 +59,10 @@ class NNT: # Nearest Neighbor
         
     @dist_matrix_vectorized.setter
     def dist_matrix_vectorized(self, matrix):
-        # Calculate the distance matrix using vectorization 
-        
-        # Calculate the squared norms of each vector
-        norm_squared = torch.sum(matrix ** 2, dim=1, keepdim=True)
-
-        # Calculate the dot product of the vectors
-        dot_product = torch.bmm(matrix.transpose(2, 1), matrix)
-
-        # Calculate the distance matrix using the formula for squared Euclidean distance
-        dist_matrix = norm_squared + norm_squared.transpose(2, 1) - 2 * dot_product
-
-        # Take the square root to get the Euclidean distance
-        self._dist_matrix_vectorized  = torch.sqrt(dist_matrix)
+        '''Set the distance matrix of the NNT object'''
+        self._dist_matrix_vectorized = self.calculate_distance_matrix(matrix)
 
         
-            
     def prime_vmap_2d(self): 
         # Vectorization / Vmap Implementation
         batched_process = torch.vmap(self.process_batch, in_dims=(0, 0, None), out_dims=0)
@@ -88,7 +76,9 @@ class NNT: # Nearest Neighbor
         
     #     prime = batched_process(self.matrix, self.dist_matrix_vectorized, self.num_nearest_neighbors, flatten=False)
     #     return prime
-            
+
+    
+    '''Utility Functions for the NNT object'''
     @staticmethod
     def process_batch(matrix, dist_matrix, num_nearest_neighbors, flatten=True): 
         '''Process the batch of matrices'''
@@ -100,15 +90,28 @@ class NNT: # Nearest Neighbor
         else: 
             return neigh
     
+    @staticmethod
+    def calculate_dot_product(matrix): 
+        '''Calculate the dot product of the matrix'''
+        return torch.bmm(matrix.transpose(2, 1), matrix)
+    
+
+    def calculate_distance_matrix(self, matrix): 
+        norm_squared = torch.sum(matrix ** 2, dim=1, keepdim=True)
+        dot_product = self.calculate_dot_product(matrix)   
+        dist_matrix = norm_squared + norm_squared.transpose(2, 1) - 2 * dot_product
+        return torch.sqrt(dist_matrix)
+        
+    
         
         
         
 '''EXAMPLE USAGE'''
-
-# Example 
-ex = torch.rand(32, 3, 40) # 3 samples, 2 channels, 10 tokens
-                          # 3 batches, 2 sentences, 10 words
-closest_neighbors = 3 # 3 closest neighbors
-nnt = NNT(ex, closest_neighbors) 
-print(nnt.prime_vmap_2d.shape)
-print("-"*50)
+# ex = torch.rand(32, 3, 40) # 3 samples, 2 channels, 10 tokens
+#                           # 3 batches, 2 sentences, 10 words
+# closest_neighbors = 3 # 3 closest neighbors
+# nnt = NNT(ex, closest_neighbors) 
+# print(nnt.dist_matrix_vectorized.shape)
+# print("-"*50)
+# print(nnt.prime_vmap_2d.shape)
+# print("-"*50)

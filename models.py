@@ -69,6 +69,50 @@ class ConvBase_NN(nn.Module):
         h3 = self.flatten(h3)
         return self.linear(h3)
     
+# Branching Network with Local + Global Layer
+class BranchingNetwork(nn.Module):
+    def __init__(self, in_ch, out_ch1, out_ch2, kernel_size):
+        super().__init__()
+        # Define the first branch
+        self.branch1 = nn.Sequential(
+            nn.Conv1d(in_ch, out_ch1, kernel_size),
+            nn.ReLU()
+        )
+        # Define the second branch
+        self.branch2 = nn.Sequential(
+            Conv1d_NN(in_ch, out_ch2, kernel_size),
+            nn.ReLU()
+        )
+        
+        self.reduce_channels = nn.Conv1d(out_ch1 + out_ch2, (out_ch1 + out_ch2) // 2, 1)
+
+
+    def forward(self, x):
+        # Apply the first branch
+        x1 = F.pad(self.branch1(x), (1, 1), 'constant', 0)
+        # print(x1.shape)
+        
+        
+        # Apply the second branch
+        x2 = self.branch2(x)
+        # print(x2.shape)
+        
+        
+        # Concatenate the outputs along the channel dimension
+        concat = torch.cat([x1, x2], dim=1)
+        # print(concat.shape)
+        
+        # Reduce the number of channels
+        reduce = self.reduce_channels(concat)
+        # print(reduce.shape)
+        return reduce
+    
+    
+
+    
+    
+    
+    
 '''*** MUST EDIT'''
 # Same num parameter as ConvBase Nearest Neighbor Neural Network 
 class ConvBase_NN_v2(nn.Module): 
