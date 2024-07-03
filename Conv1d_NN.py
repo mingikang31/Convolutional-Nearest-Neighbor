@@ -75,15 +75,14 @@ class Conv1d_NN(nn.Module):
 '''EXAMPLE USAGE'''
 
 
-# layer = Conv1d_NN(1, 32, K =3) # 1 in_channel, 32 out_channel, 40 kernel size, 3 nearest neighbors
-# ex = torch.rand(32, 1, 40) # 32 samples, 1 channels, 40 tokens
+layer = Conv1d_NN(12, 32, K =3) # 1 in_channel, 32 out_channel, 40 kernel size, 3 nearest neighbors
+ex = torch.rand(32, 12, 40) # 32 samples, 1 channels, 40 tokens
 
-# print(ex.shape)
+print(ex.shape)
 
-# output = layer.forward(ex)
-# output = Conv1d_NN(1, 32, K=3).forward(ex)
+output = layer.forward(ex)
+output = Conv1d_NN(12, 32, K=3).forward(ex)
 
-# print(output.shape)
-# print("-"*50)
-# print(output)
+print(output.shape)
+print("-"*50)
 
