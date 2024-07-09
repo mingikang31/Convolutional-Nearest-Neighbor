@@ -52,22 +52,22 @@ class PixelUnshuffle1D(nn.Module):
 
 
 
-'''Test the PixelShuffle1D and PixelUnshuffle1D'''
-device = 'mps'
+'''EXAMPLE USAGE'''
+# device = 'mps'
 
-x_test = torch.rand(32, 12, 40).to(device)
-print("Input: ", x_test.shape)
+# x_test = torch.rand(32, 12, 40).to(device)
+# print("Input: ", x_test.shape)
 
-scale_factor = 4
+# scale_factor = 4
 
-pixel_upsample = PixelShuffle1D(scale_factor)
-pixel_downsample = PixelUnshuffle1D(scale_factor)
+# pixel_upsample = PixelShuffle1D(scale_factor)
+# pixel_downsample = PixelUnshuffle1D(scale_factor)
 
-x_up = pixel_upsample(x_test)
-print("Upsampled: ", x_up.shape)
+# x_up = pixel_upsample(x_test)
+# print("Upsampled: ", x_up.shape)
 
-x_up_down = pixel_downsample(x_up)
-print("Downsampled: ", x_up_down.shape)
+# x_up_down = pixel_downsample(x_up)
+# print("Downsampled: ", x_up_down.shape)
 
-if torch.all(torch.eq(x_test, x_up_down)):
-    print('Inverse module works.')
+# if torch.all(torch.eq(x_test, x_up_down)):
+#     print('Inverse module works.')

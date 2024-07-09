@@ -81,8 +81,12 @@ class BranchingNetwork(nn.Module):
             nn.ReLU()
         )
         self.branch2 = nn.Sequential(
-            Conv1d_NN(in_ch, out_ch2, K = kernel_size, stride = kernel_size),
+            ### Implement Conv1d_NN
+            # Unshuffle
+            # Conv1d_NN(in_ch, out_ch2, K = kernel_size, stride = , sh_pat="BA", sh_scal),
+            Conv1d_NN(in_ch, out_ch2, K = kernel_size, stride = kernel_size), 
             nn.ReLU()
+            # Shuffle 
         )
         self.reduce_channels = nn.Conv1d(out_ch1 + out_ch2, (out_ch1 + out_ch2) // 2, 1)
 
@@ -116,6 +120,58 @@ class BranchingNetwork(nn.Module):
         # print(reduce.shape)
         return reduce
     
+
+class UNet(nn.Module):
+    def __init__(self):
+        super(UNet, self).__init__()
+        # Encoder
+        self.enc1 = nn.Sequential(Conv1d_NN(in_channels=1, out_channels=16, K=5, stride=5), nn.ReLU())
+        self.down1 = PixelUnshuffle1D(2)
+        self.enc2 = nn.Sequential(Conv1d_NN(in_channels=32, out_channels=64, K=5, stride=5), nn.ReLU())
+        self.down2 = PixelUnshuffle1D(2)
+        self.enc3 = nn.Sequential(Conv1d_NN(in_channels=128, out_channels=256, K=5, stride=5), nn.ReLU())
+        self.down3 = PixelUnshuffle1D(2)
+        
+        # Bottleneck
+        self.bottleneck = nn.Sequential(Conv1d_NN(in_channels=512, out_channels=512, K=5, stride=5), nn.ReLU())
+        
+        # Decoder
+        self.up1 = PixelShuffle1D(2)
+        self.dec1 = nn.Sequential(Conv1d_NN(in_channels=256, out_channels=128, K=5, stride=5), nn.ReLU())
+        self.up2 = PixelShuffle1D(2)
+        self.dec2 = nn.Sequential(Conv1d_NN(in_channels=64, out_channels=32, K=5, stride=5), nn.ReLU())
+        self.up3 = PixelShuffle1D(2)
+        self.dec3 = nn.Sequential(Conv1d_NN(in_channels=16, out_channels=5, K=5, stride=5), nn.ReLU())
+
+        
+        # Final layer
+        self.final = nn.Sequential(nn.Conv1d(in_channels=5, out_channels=1, kernel_size=1), nn.Flatten(), nn.Linear(40, 10), nn.ReLU())
+
+    def forward(self, x):
+        # Encoder
+        enc1 = self.enc1(x)        
+        down1 = self.down1(enc1)
+        enc2 = self.enc2(down1)
+        down2 = self.down2(enc2)
+        enc3 = self.enc3(down2)
+        down3 = self.down3(enc3)
+        
+        # Bottleneck
+        bottleneck = self.bottleneck(down3)
+        
+        # Decoder
+        up1 = self.up1(bottleneck)
+        dec1 = self.dec1(up1)
+        up2 = self.up2(dec1)
+        dec2 = self.dec2(up2)
+        up3 = self.up3(dec2)
+        dec3 = self.dec3(up3)
+        # Final layer
+        out = self.final(dec3)
+        return out
+    
+'''Pixel Shuffle Models + U-Net'''
+''' MUST FIX LATER
 # Branching Network with Local (Conv1d) + Global Layer (Conv1d_NN) + Pixel Shuffle 
 class BranchingNetwork_pixelshuffle(nn.Module):
     def __init__(self, in_ch, out_ch1, out_ch2, kernel_size, upscale_factor):        
@@ -167,33 +223,10 @@ class BranchingNetwork_pixelshuffle(nn.Module):
         # print(reduce.shape)
         return reduce
     
-# U-Net Architecture 
-class UNet_pixelshuffle(nn.Module): 
-    def __init__(self, in_ch, out_ch, kernel_size, upscale_factor): 
-        super(UNet_pixelshuffle, self).__init__()
-        self.kernel_size = kernel_size
-        self.upscale_factor = upscale_factor
-        
-        
-        
-        
-        
-        
-        
-        self.down1 = BranchingNetwork_pixelshuffle(in_ch, 16, 16, kernel_size)
-        self.down2 = BranchingNetwork_pixelshuffle(8, 32, 32, kernel_size)
-        self.down3 = BranchingNetwork_pixelshuffle(16, 64, 64, kernel_size)
-        self.down4 = BranchingNetwork_pixelshuffle(32, 128, 128, kernel_size)
-        
-        self.up1 = BranchingNetwork_pixelshuffle(192, 64, 64, kernel_size)
-        self.up2 = BranchingNetwork_pixelshuffle(96, 32, 32, kernel_size)
-        self.up3 = BranchingNetwork_pixelshuffle(48, 16, 16, kernel_size)
-        self.up4 = BranchingNetwork_pixelshuffle(24, 8, 8, kernel_size)
-        
-        self.conv = nn.Conv1d(8, out_ch, 1)
-    
+'''
 
 '''Denoising Models'''
+# Conv1d Denoiser
 class ConvDenoiser(nn.Module):
     def __init__(self, channels=32):
         super(ConvDenoiser, self).__init__()
@@ -212,23 +245,62 @@ class ConvDenoiser(nn.Module):
         return h3
     
     
-class Conv1d_NN_Denoiser(nn.Module):
-    def __init__(self, kernel_size=3 ): 
-        super(Conv1d_NN_Denoiser, self).__init__()
-        self.kernel_size = kernel_size
-        self.branch1 = BranchingNetwork(in_ch = 1, out_ch1 = 16, out_ch2=16, kernel_size = self.kernel_size)
-        self.branch2 = BranchingNetwork(in_ch = 16, out_ch1 = 8, out_ch2=8, kernel_size = self.kernel_size)
-        self.branch3 = BranchingNetwork(in_ch = 8, out_ch1 = 4, out_ch2=4, kernel_size = self.kernel_size)
-        self.branch4 = BranchingNetwork(in_ch = 4, out_ch1 = 2, out_ch2=2, kernel_size = self.kernel_size)
-        self.branch5 = BranchingNetwork(in_ch = 2, out_ch1 = 1, out_ch2=1, kernel_size = self.kernel_size)
+Branching_Denoiser = nn.Sequential(
+   BranchingNetwork(in_ch = 1, out_ch1 = 16, out_ch2=16, kernel_size = 3), 
+   BranchingNetwork(in_ch = 16, out_ch1 = 8, out_ch2=8, kernel_size = 3),
+   BranchingNetwork(in_ch = 8, out_ch1 = 4, out_ch2=4, kernel_size =3), 
+   BranchingNetwork(in_ch = 4, out_ch1 = 2, out_ch2=2, kernel_size =3), 
+   BranchingNetwork(in_ch = 2, out_ch1 = 1, out_ch2=1, kernel_size =3) 
+)
+
+
+class UNet_Denoiser(nn.Module):
+    def __init__(self):
+        super(UNet_Denoiser, self).__init__()
+        # Encoder
+        self.enc1 = nn.Sequential(Conv1d_NN(in_channels=1, out_channels=16, K=5, stride=5), nn.ReLU())
+        self.down1 = PixelUnshuffle1D(2)
+        self.enc2 = nn.Sequential(Conv1d_NN(in_channels=32, out_channels=64, K=5, stride=5), nn.ReLU())
+        self.down2 = PixelUnshuffle1D(2)
+        self.enc3 = nn.Sequential(Conv1d_NN(in_channels=128, out_channels=256, K=5, stride=5), nn.ReLU())
+        self.down3 = PixelUnshuffle1D(2)
         
-    def count_params(self): 
-        return sum([p.view(-1).shape[0] for p in self.parameters()])
-    
+        # Bottleneck
+        self.bottleneck = nn.Sequential(Conv1d_NN(in_channels=512, out_channels=512, K=5, stride=5), nn.ReLU())
+        
+        # Decoder
+        self.up1 = PixelShuffle1D(2)
+        self.dec1 = nn.Sequential(Conv1d_NN(in_channels=256, out_channels=128, K=5, stride=5), nn.ReLU())
+        self.up2 = PixelShuffle1D(2)
+        self.dec2 = nn.Sequential(Conv1d_NN(in_channels=64, out_channels=32, K=5, stride=5), nn.ReLU())
+        self.up3 = PixelShuffle1D(2)
+        self.dec3 = nn.Sequential(Conv1d_NN(in_channels=16, out_channels=5, K=5, stride=5), nn.ReLU())
+
+        
+        # Final layer
+        self.final = nn.Sequential(nn.Conv1d(in_channels=5, out_channels=1, kernel_size=1))
+
     def forward(self, x):
-        x = self.branch1(x)
-        x = self.branch2(x)
-        x = self.branch3(x)
-        x = self.branch4(x)
-        x = self.branch5(x)
-        return x
+        # Encoder
+        enc1 = self.enc1(x)        
+        down1 = self.down1(enc1)
+        enc2 = self.enc2(down1)
+        down2 = self.down2(enc2)
+        enc3 = self.enc3(down2)
+        down3 = self.down3(enc3)
+        
+        # Bottleneck
+        bottleneck = self.bottleneck(down3)
+        
+        # Decoder
+        up1 = self.up1(bottleneck)
+        dec1 = self.dec1(up1)
+        up2 = self.up2(dec1)
+        dec2 = self.dec2(up2)
+        up3 = self.up3(dec2)
+        dec3 = self.dec3(up3)
+        # Final layer
+        out = self.final(dec3)
+        return out
+
+    
