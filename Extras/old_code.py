@@ -173,15 +173,12 @@ class NNT: # Nearest Neighbor
 '''EXAMPLE USAGE'''
 
 # Example 
-# ex = torch.rand(32, 3, 40) # 3 samples, 2 channels, 10 tokens
-#                           # 3 batches, 2 sentences, 10 words
-# closest_neighbors = 3 # 3 closest neighbors
-# nnt = NNT(ex, closest_neighbors) 
-# print(nnt.prime.shape) # (3, 2, 10) -> (3, 2, 30) 
-# print(nnt.prime_vmap_2d.shape)
-# print(nnt.prime - nnt.prime_vmap_2d)
-# print("-"*50)
-# print(nnt.prime_vmap_3d.shape)
+ex = torch.rand(32, 1, 40) # 3 samples, 2 channels, 10 tokens
+                          # 3 batches, 2 sentences, 10 words
+closest_neighbors = 3 # 3 closest neighbors
+nnt = NNT(ex, closest_neighbors) 
+print(nnt.prime.shape) # (3, 2, 10) -> (3, 2, 30) 
+print(nnt.prime_vmap_2d.shape) # (3, 60)
 
 
 # Vectorized Distance Matrix

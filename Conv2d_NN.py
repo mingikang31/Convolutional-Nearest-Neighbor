@@ -32,16 +32,15 @@ class Conv2d_NN(nn.Module):
                                  stride=self.stride,
                                  padding=self.padding,
                                  shuffle_pattern=self.shuffle_pattern,
-                                 shuffle_scale=self.shuffle_scale)
+                                 shuffle_scale=self.shuffle_scale, 
+                                 neighbors=self.neighbors)
       
-      # self.unshuffle = nn.functional.pixel_unshuffle(self.shuffle_scale)
-      # self.shuffle = nn.functional.pixel_shuffle(self.shuffle_scale)
       
       self.flatten = nn.Flatten(start_dim=2)
       
       
    def forward(self, x): 
-      # (32, 1, 28, 28) 
+      # Ex. Original Size (32, 1, 28, 28) 
       
       # Unshuffle Layer 
       # Ex. (32, 16, 7, 7) if upscale_factor = 4
@@ -76,7 +75,7 @@ class Conv2d_NN(nn.Module):
 # ex = torch.rand(32, 1, 28, 28) 
 # print("Input: ", ex.shape)
 
-# conv2d_nn = Conv2d_NN(in_channels=1, out_channels=3, K=3, stride=3, padding=0, shuffle_pattern="N/A", shuffle_scale=2, neighbors="all")
+# conv2d_nn = Conv2d_NN(in_channels=1, out_channels=3, K=3, stride=3, padding=0, shuffle_pattern="N/A", shuffle_scale=2, neighbors=5)
 # output = conv2d_nn(ex)
 # print("Output: ", output.shape)
       
