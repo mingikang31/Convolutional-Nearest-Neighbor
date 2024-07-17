@@ -1,15 +1,15 @@
-'''Convolution 2D Nearest Neighbor Layer'''
+'''Convolution 2D Spatial Nearest Neighbor Layer'''
 
 import torch 
-import torch.nn as nn 
+import torch.nn as nn
 import torch.nn.functional as F
-from Conv1d_NN import Conv1d_NN
+from Conv1d_NN_spatial import Conv1d_NN_spatial
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 
 
 
-class Conv2d_NN(nn.Module): 
-   def __init__(self, in_channels, out_channels, K=3, stride=3, padding=0, shuffle_pattern="N/A", shuffle_scale=2, samples="all", magnitude_type="distance"): 
+class Conv2d_NN_spatial(nn.Module): 
+   def __init__(self, in_channels, out_channels, K=3, stride=3, padding=0, shuffle_pattern="N/A", shuffle_scale=2, samples=3, magnitude_type="distance"): 
       super().__init__()
       ### in_channels + out_channels must be shuffle_scale**2
       self.in_channels = in_channels
@@ -19,14 +19,14 @@ class Conv2d_NN(nn.Module):
       self.padding = padding
       self.shuffle_pattern = shuffle_pattern
       self.shuffle_scale = shuffle_scale
-      self.samples = samples
+      self.samples = int(samples)
       self.magnitude_type = magnitude_type
       
       self.upscale = PixelShuffle1D(upscale_factor=self.shuffle_scale)
       
       self.downscale = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
       
-      self.Conv1d_NN = Conv1d_NN(in_channels=self.in_channels * shuffle_scale **2,
+      self.Conv1d_NN_spatial = Conv1d_NN_spatial(in_channels=self.in_channels * shuffle_scale **2,
                                  out_channels=self.out_channels * shuffle_scale **2,
                                  K=self.K,
                                  stride=self.stride,
@@ -42,7 +42,7 @@ class Conv2d_NN(nn.Module):
       self.flatten = nn.Flatten(start_dim=2)
       
       
-   def forward(self, x): 
+   def forward(self, x, ): 
       # Ex. Original Size (32, 1, 28, 28) 
       
       # Unshuffle Layer 
@@ -58,7 +58,7 @@ class Conv2d_NN(nn.Module):
       
       # Conv1d_NN Layer
       # Ex. (32, 16, 49) 
-      x3 = self.Conv1d_NN(x2)
+      x3 = self.Conv1d_NN_spatial(x2)
       # print("Conv1d_NN: ", x3.shape)
       
       # Unflatten Layer 
@@ -72,17 +72,11 @@ class Conv2d_NN(nn.Module):
       x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
       # print("Shuffle: ", x5.shape)
       return x5
-
-'''EXAMPLE USAGE'''
-
+   
+   
 ex = torch.rand(32, 1, 28, 28) 
 print("Input: ", ex.shape)
 
-conv2d_nn = Conv2d_NN(in_channels=1, out_channels=3, K=3, stride=3, padding=0, shuffle_pattern="N/A", shuffle_scale=2, samples=5)
-output = conv2d_nn(ex)
+conv2d_nn_spatial = Conv2d_NN_spatial(in_channels=1, out_channels=3, K=3, stride=3, padding=0, shuffle_pattern="N/A", shuffle_scale=2, samples=5)
+output = conv2d_nn_spatial(ex)
 print("Output: ", output.shape)
-      
-      
-   
-
-      

@@ -4,27 +4,14 @@ import torch
 import torch.nn as nn 
 import torch.nn.functional as F
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
+import random 
+import time
 import faiss
 import numpy as np
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Conv1d_NN(nn.Module):
-    def __init__(self, in_channels, out_channels,  K = 3, stride=3, padding=0, shuffle_pattern="N/A", shuffle_scale=2, samples="all", magnitude_type='distance'): 
+class Conv1d_NN_spatial(nn.Module): 
+   
+       def __init__(self, in_channels, out_channels,  K = 3, stride=3, padding=0, shuffle_pattern="N/A", shuffle_scale=2, magnitude_type='distance'): 
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -123,7 +110,7 @@ class Conv1d_NN(nn.Module):
             elif self.magnitude_type == 'similarity':
                 matrix_magnitude = self.calculate_similarity_matrix_N(x1, x1_prime)
                 
-            prime1 = self.prime_brute_N(x1, matrix_magnitude, self.K, rand_idx, self.maximum)
+            # prime1 = self.prime_brute_N(x1, matrix_magnitude, self.K, rand_idx, self.max)
 
             if self.magnitude_type == 'distance':
                 matrix_magnitude[:, rand_idx, :] = np.inf
@@ -131,12 +118,12 @@ class Conv1d_NN(nn.Module):
                 matrix_magnitude[:, rand_idx, :] = -np.inf
 
             # Reshape prime to (B, C, N*K)
-            prime = self.prime_vmap_2d_N(x1, x1_prime, matrix_magnitude, self.K, rand_idx, self.maximum)
+            prime = self.prime_vmap_2d_N(x1, matrix_magnitude, self.K, rand_idx, self.maximum)
             prime = prime.reshape(x1.shape[0], x1.shape[1], -1)
             
-            print(torch.equal(prime, prime1))
-            print(prime[0, 0:3, :5])
-            print(prime1[0, 0:3, :5])
+            # print(torch.equal(prime, prime1))
+            # print(prime[0, 0:3, :10])
+            # print(prime1[0, 0:3, :10])
             
             # tensor([0.8318, 0.8587, 0.3035, 0.8587, 0.8587, 0.8318, 0.3035, 0.8318, 0.3035, 0.7635])
             # tensor([0.8318, 0.7822, 0.3992, 0.8587, 0.7822, 0.4922, 0.3035, 0.4922, 0.3992, 0.7635])
@@ -161,16 +148,16 @@ class Conv1d_NN(nn.Module):
     def calculate_distance_matrix(matrix): 
         '''Calculating the distance matrix of the input matrix'''
         norm_squared = torch.sum(matrix ** 2, dim=1, keepdim=True)
-        dot_product = torch.bmm(matrix.transpose(2, 1), matrix)
+        dot_product = Conv1d_NN.calculate_dot_product(matrix)
         dist_matrix = norm_squared + norm_squared.transpose(2, 1) - 2 * dot_product
-        return torch.sqrt(dist_matrix) # May need to remove torch.sqrt - do not need that computation
+        return dist_matrix # May need to remove torch.sqrt - do not need that computation
 
     '''Similarity Matrix Calculations for All Sample'''
     @staticmethod 
     def calculate_similarity_matrix(matrix): 
         '''Calculate the similarity matrix of the input matrix'''
         normalized_matrix = F.normalize(matrix, p=2, dim=1) # p=2 (L2 Norm - Euclidean Distance), dim=1 (across the channels)
-        dot_product = torch.bmm(matrix.transpose(2, 1), matrix)
+        dot_product = Conv1d_NN.calculate_dot_product(normalized_matrix)
         similarity_matrix = dot_product 
         return similarity_matrix
     
@@ -187,12 +174,12 @@ class Conv1d_NN(nn.Module):
         prime = batched_process(matrix, magnitude_matrix, num_nearest_neighbors, flatten=True, largest=largest)
         return prime 
     
-    @staticmethod 
-    def prime_vmap_3d(matrix, magnitude_matrix , num_nearest_neighbors): 
-        # Vectorization / Vmap Implementation for Nearest Neighbor Tensor 3D
-        batched_process = torch.vmap(Conv1d_NN.process_batch, in_dims=(0, 0, None), out_dims=0)
-        prime = batched_process(matrix, magnitude_matrix, num_nearest_neighbors, flatten=False)
-        return prime
+    # @staticmethod 
+    # def prime_vmap_3d(matrix, magnitude_matrix , num_nearest_neighbors): 
+    #     # Vectorization / Vmap Implementation for Nearest Neighbor Tensor 3D
+    #     batched_process = torch.vmap(Conv1d_NN.process_batch, in_dims=(0, 0, None), out_dims=0)
+    #     prime = batched_process(matrix, magnitude_matrix, num_nearest_neighbors, flatten=False)
+    #     return prime
     
     @staticmethod 
     def process_batch(matrix, magnitude_matrix, num_nearest_neighbors, flatten=True, largest=False):
@@ -214,13 +201,13 @@ class Conv1d_NN(nn.Module):
         # to make it simple -> normalize the rows, normalize across c (channels), 
         norm_squared_1 = torch.sum(m1 ** 2, dim=1, keepdim=True)
         norm_squared_2 = torch.sum(m2 ** 2, dim=1, keepdim=True).transpose(2, 1)
-        dot_product = torch.bmm(m1.transpose(2, 1), m2)
+        dot_product = Conv1d_NN.calculate_dot_product_N(m1, m2)
 
         norm_squared_1 = norm_squared_1.permute(0, 2, 1)  
         norm_squared_2 = norm_squared_2.permute(0, 2, 1)  
 
         dist_matrix = norm_squared_1 + norm_squared_2 - 2 * dot_product
-        return torch.sqrt(dist_matrix)
+        return dist_matrix
     
     '''Similarity Matrix Calculations for N Sample'''
     @staticmethod 
@@ -228,7 +215,7 @@ class Conv1d_NN(nn.Module):
         normalized_matrix_1 = F.normalize(m1, p=2, dim=1) # p=2 (L2 Norm - Euclidean Distance), dim=1 (across the channels)
         normalized_matrix_2 = F.normalize(m2, p=2, dim=1)
         
-        dot_product = torch.bmm(normalized_matrix_1.transpose(2, 1), normalized_matrix_2)
+        dot_product = Conv1d_NN.calculate_dot_product_N(normalized_matrix_1, normalized_matrix_2)
                 
         similarity_matrix = dot_product 
         return similarity_matrix
@@ -266,25 +253,23 @@ class Conv1d_NN(nn.Module):
         return prime
     
     @staticmethod 
-    def prime_vmap_2d_N(matrix, matrix_prime, magnitude_matrix, num_nearest_neighbors, rand_idx, flatten=True, largest=False): 
+    def prime_vmap_2d_N(matrix, magnitude_matrix, num_nearest_neighbors, rand_idx, flatten=True, largest=False): 
         '''Vectorization / Vmap Implementation for Nearest Neighbor Tensor 2D'''
-        batched_process = torch.vmap(Conv1d_NN.process_batch_N, in_dims=(0, 0, 0, None), out_dims=0)
-        prime = batched_process(matrix, matrix_prime, magnitude_matrix, num_nearest_neighbors, rand_idx=rand_idx, flatten=flatten, largest=largest)
+        batched_process = torch.vmap(Conv1d_NN.process_batch_N, in_dims=(0, 0, None), out_dims=0)
+        prime = batched_process(matrix, magnitude_matrix, num_nearest_neighbors, rand_idx=rand_idx, flatten=flatten, largest=largest)
         return prime
 
     
-    ## ***** IMPORTANT create another function for similarity + distance matrix calculation 
-    #### --- similarity = -np.inf, distance = np.inf
     @staticmethod
-    def process_batch_N(matrix, matrix_prime, magnitude_matrix, num_nearest_neighbors, rand_idx, flatten=True, largest=False):
+    def process_batch_N(matrix, magnitude_matrix, num_nearest_neighbors, rand_idx, flatten=True, largest=False):
         '''Process the batch of matrices'''
         
-        # magnitude_matrix[rand_idx, np.arange(len(rand_idx))]  =  np.inf  
+        magnitude_matrix[rand_idx, np.arange(len(rand_idx))]  =  np.inf  
 
 
         # Only get num_nearest_neighbors-1 neighbors (we'll add the selves later as the first nearest neighbor)
         _, indxs = torch.topk(magnitude_matrix, num_nearest_neighbors - 1, largest=largest)
-        neig = matrix_prime[:, indxs]
+        neig = matrix[:, indxs]
 
         # Add the selves as the first nearest neighbor
         neig = torch.concat([matrix.unsqueeze(2), neig], dim=2)
@@ -312,41 +297,8 @@ class Conv1d_NN(nn.Module):
     
     
 '''EXAMPLE USAGE'''
-ex = torch.randn(32, 12, 40)
-a = Conv1d_NN(12, 1, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples="all", magnitude_type='similarity').forward(ex)
+
+ex = torch.rand(32, 1, 40) # 32 samples, 1 channels, 40 tokens
+
+a = Conv1d_NN(1, 32, K=5, stride=5, padding=0, shuffle_pattern="N/A", shuffle_scale=2, samples="5", magnitude_type="distance").forward(ex)
 print(a.shape)
-
-# # Before
-# B = Conv1d_NN(1, 32, K=3, stride=3, padding=0, shuffle_pattern="B", shuffle_scale=2).forward(ex)
-# print("Before", B.shape)
-
-# # After
-# A = Conv1d_NN(1, 32, K=3, stride=3, padding=0, shuffle_pattern="A", shuffle_scale=2).forward(ex)
-# print("After", A.shape)
-
-# # Before + After 
-# BA = Conv1d_NN(1, 32, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2).forward(ex)
-# print("Before + After", BA.shape)
-
-# # No Shuffle
-# N = Conv1d_NN(1, 32, K=3, stride=3, padding=0, shuffle_pattern="N/A", shuffle_scale=2).forward(ex)
-# print("No Shuffle", N.shape)
-
-
-# print()
-# ### N Neighbors
-# # Before
-# NB = Conv1d_NN(1, 32, K=3, stride=3, padding=0, shuffle_pattern="B", shuffle_scale=2, neighbors=5).forward(ex)
-# print("N Neighbors Before", NB.shape)
-
-# # After
-# NA = Conv1d_NN(1, 32, K=3, stride=3, padding=0, shuffle_pattern="A", shuffle_scale=2, neighbors=5).forward(ex)
-# print("N Neighbors After", NA.shape)
-
-# # Before + After 
-# NBA = Conv1d_NN(1, 32, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, neighbors=5).forward(ex)
-# print("N Neighbors Before + After", NBA.shape)
-
-# # No Shuffle
-# NN = Conv1d_NN(1, 32, K=3, stride=3, padding=0, shuffle_pattern="N/A", shuffle_scale=2, neighbors = 5).forward(ex)
-# print("N Neighbors No Shuffle", NN.shape)
