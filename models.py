@@ -81,12 +81,8 @@ class BranchingNetwork(nn.Module):
             nn.ReLU()
         )
         self.branch2 = nn.Sequential(
-            ### Implement Conv1d_NN
-            # Unshuffle
-            # Conv1d_NN(in_ch, out_ch2, K = kernel_size, stride = , sh_pat="BA", sh_scal),
             Conv1d_NN(in_ch, out_ch2, K = kernel_size, stride = kernel_size), 
             nn.ReLU()
-            # Shuffle 
         )
         self.reduce_channels = nn.Conv1d(out_ch1 + out_ch2, (out_ch1 + out_ch2) // 2, 1)
 
@@ -245,13 +241,13 @@ class ConvDenoiser(nn.Module):
         return h3
     
     
-Branching_Denoiser = nn.Sequential(
-   BranchingNetwork(in_ch = 1, out_ch1 = 16, out_ch2=16, kernel_size = 3), 
-   BranchingNetwork(in_ch = 16, out_ch1 = 8, out_ch2=8, kernel_size = 3),
-   BranchingNetwork(in_ch = 8, out_ch1 = 4, out_ch2=4, kernel_size =3), 
-   BranchingNetwork(in_ch = 4, out_ch1 = 2, out_ch2=2, kernel_size =3), 
-   BranchingNetwork(in_ch = 2, out_ch1 = 1, out_ch2=1, kernel_size =3) 
-)
+# Branching_Denoiser = nn.Sequential(
+#    BranchingNetwork(in_ch = 1, out_ch1 = 16, out_ch2=16, kernel_size = 3), 
+#    BranchingNetwork(in_ch = 16, out_ch1 = 8, out_ch2=8, kernel_size = 3),
+#    BranchingNetwork(in_ch = 8, out_ch1 = 4, out_ch2=4, kernel_size =3), 
+#    BranchingNetwork(in_ch = 4, out_ch1 = 2, out_ch2=2, kernel_size =3), 
+#    BranchingNetwork(in_ch = 2, out_ch1 = 1, out_ch2=1, kernel_size =3) 
+# )
 
 
 class UNet_Denoiser(nn.Module):

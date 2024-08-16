@@ -1,0 +1,5 @@
+.vscode
+__pycache__
+data
+notebooks/data
+"2D Modules/test/data"

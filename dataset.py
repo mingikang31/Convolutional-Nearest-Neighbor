@@ -221,23 +221,23 @@ class MNIST1D_Plot():
       plt.tight_layout() ; plt.show()
       
       
-   # For mnist 2d data 
-   def plot_ten_random(self, images, targets, noise: str = 'Noise free') -> None : 
-      """Show ten random labeled images from the dataset"""
-      sns.set_style("dark")
-      idx = np.random.choice(len(images), 10)
-      num_row = 2
-      num_col = 5
-      fig, axes = plt.subplots(num_row, num_col, figsize=(1.5 * num_col, 2 * num_row))
-      for i in range(num_row * num_col):
-         ax = axes[i // num_col, i % num_col]
-         ax.imshow(images[idx[i]].reshape((28, 28)), cmap="gray")
-         ax.set_title("Target: {}".format(targets[idx[i]]), fontsize=16)
-         ax.xaxis.set_visible(False)
-         ax.yaxis.set_visible(False)
-      fig.suptitle(noise, fontsize=24, y=1.1)
-      plt.tight_layout()
-      plt.show()
+   # # For mnist 2d data 
+   # def plot_ten_random(self, images, targets, noise: str = 'Noise free') -> None : 
+   #    """Show ten random labeled images from the dataset"""
+   #    sns.set_style("dark")
+   #    idx = np.random.choice(len(images), 10)
+   #    num_row = 2
+   #    num_col = 5
+   #    fig, axes = plt.subplots(num_row, num_col, figsize=(1.5 * num_col, 2 * num_row))
+   #    for i in range(num_row * num_col):
+   #       ax = axes[i // num_col, i % num_col]
+   #       ax.imshow(images[idx[i]].reshape((28, 28)), cmap="gray")
+   #       ax.set_title("Target: {}".format(targets[idx[i]]), fontsize=16)
+   #       ax.xaxis.set_visible(False)
+   #       ax.yaxis.set_visible(False)
+   #    fig.suptitle(noise, fontsize=24, y=1.1)
+   #    plt.tight_layout()
+   #    plt.show()
 
    
    
