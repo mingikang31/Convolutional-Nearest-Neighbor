@@ -1,19 +1,235 @@
-'''Dataset File for MNIST1D and other for CNN'''
+# Copyright (c) Mingi Kang | mkang817415. and its affiliates. All Rights Reserved
 
 import torch
-import numpy as np
-from mnist1d.data import make_dataset
+import torch.nn as nn
+import torch.optim as optim 
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
 
 import numpy as np
-import torch
 import random
 import matplotlib.pyplot as plt
+
+import scipy
 from scipy.ndimage import gaussian_filter
 from scipy.interpolate import interp1d
 
+from mnist1d.data import make_dataset
 
 
-class MNIST1D_Dataset():
+#############2D Datasets###############
+
+'''
+   Data for training 2D CNN Models
+   - MNIST data 
+   - Fashion MNIST data
+   - CIFAR10 data
+'''
+import torch 
+import torch.nn as nn
+import torch.optim as optim 
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+import numpy as np
+import matplotlib.pyplot as plt 
+
+
+### Classification Data - MNIST, FashionMNIST, CIFAR10 ###
+class MNIST: 
+   def __init__(self, batch_size=64): 
+      self.batch_size = batch_size
+      
+      self.train_data = datasets.MNIST(root='./data', train=True, download=True, transform=transforms.ToTensor())
+      self.test_data = datasets.MNIST(root='./data', train=False, download=True, transform=transforms.ToTensor())
+      self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.batch_size, shuffle=True)
+      self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.batch_size, shuffle=False)      
+
+   def shape(self): 
+      return self.train_data[0][0].shape
+   
+   def visual(self): 
+      plt.figure(figsize=(6, 3)) 
+      plt.imshow(self.train_data[0][0].squeeze(), cmap='gray')
+      plt.show()
+      
+
+class FashionMNIST:
+    def __init__(self, batch_size=64):
+        self.batch_size = batch_size
+        
+        self.train_data = datasets.FashionMNIST(root='./data', train=True, download=True, transform=transforms.ToTensor())
+        self.test_data = datasets.FashionMNIST(root='./data', train=False, download=True, transform=transforms.ToTensor())
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.batch_size, shuffle=False)
+
+    def shape(self):
+        return self.train_data[0][0].shape
+
+    def visual(self):
+        plt.figure(figsize=(6, 3)) 
+        plt.imshow(self.train_data[0][0].squeeze(), cmap='gray')
+        plt.show()
+        
+
+class CIFAR10: 
+   def __init__(self, batch_size=64):
+      self.batch_size = batch_size
+      
+      transform = transforms.Compose([
+          transforms.ToTensor(),
+          transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+      ])
+      
+      self.train_data = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
+      self.test_data = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+      self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.batch_size, shuffle=True)
+      self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.batch_size, shuffle=False)
+      
+   def shape(self): 
+      return self.train_data[0][0].shape
+   
+   def visual(self): 
+      img = self.test_data[0][0].permute(1, 2, 0)  # Change the order of dimensions for displaying
+      img = img * torch.tensor([0.2023, 0.1994, 0.2010]) + torch.tensor([0.4914, 0.4822, 0.4465])  # Unnormalize
+      plt.figure(figsize=(6, 3)) 
+      plt.imshow(img)
+      plt.show()
+   
+   
+### Denoising Data - MNIST, FashionMNIST, CIFAR10### 
+
+class NoisyMNIST(datasets.MNIST):
+    def __init__(self, root, train=True, transform=None, target_transform=None, download=False, noise_std=0.3):
+        super(NoisyMNIST, self).__init__(root, train=train, transform=transform, target_transform=target_transform, download=download)
+        self.noise_std = noise_std
+
+    def __getitem__(self, index):
+        img, target = super(NoisyMNIST, self).__getitem__(index)
+        noisy_img = img + self.noise_std * torch.randn_like(img)
+        return noisy_img, img, target
+
+class MNIST_denoise:
+    def __init__(self, batch_size=64, noise_std=0.3):
+        self.batch_size = batch_size
+        
+        transform = transforms.Compose([
+            transforms.ToTensor()
+        ])
+        
+        self.train_data = NoisyMNIST(root='./data', train=True, download=True, transform=transform, noise_std=noise_std)
+        self.test_data = NoisyMNIST(root='./data', train=False, download=True, transform=transform, noise_std=noise_std)
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.batch_size, shuffle=False)
+      
+    def shape(self):
+        return self.train_data[0][0].shape
+   
+    def visual(self):
+        noisy_img, img, _ = self.test_data[0]
+        plt.subplot(1, 2, 1)
+        plt.title("Original Image")
+        plt.imshow(img.squeeze(), cmap='gray')
+        
+        plt.subplot(1, 2, 2)
+        plt.title("Noisy Image")
+        plt.imshow(noisy_img.squeeze(), cmap='gray')
+        plt.show()
+
+class NoisyFashionMNIST(datasets.FashionMNIST):
+    def __init__(self, root, train=True, transform=None, target_transform=None, download=False, noise_std=0.1):
+        super(NoisyFashionMNIST, self).__init__(root, train=train, transform=transform, target_transform=target_transform, download=download)
+        self.noise_std = noise_std
+
+    def __getitem__(self, index):
+        img, target = super(NoisyFashionMNIST, self).__getitem__(index)
+        noisy_img = img + self.noise_std * torch.randn_like(img)
+        return noisy_img, img, target
+
+class FashionMNIST_denoise:
+    def __init__(self, batch_size=64, noise_std=0.3):
+        self.batch_size = batch_size
+        
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,))
+        ])
+        
+        self.train_data = NoisyFashionMNIST(root='./data', train=True, download=True, transform=transform, noise_std=noise_std)
+        self.test_data = NoisyFashionMNIST(root='./data', train=False, download=True, transform=transform, noise_std=noise_std)
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.batch_size, shuffle=False)
+        
+    def shape(self):
+        return self.train_data[0][0].shape
+    
+    def visual(self):
+        noisy_img, img, _ = self.test_data[0]
+        img = img.squeeze()
+        noisy_img = noisy_img.squeeze()
+        
+        plt.subplot(1, 2, 1)
+        plt.title('Original Image')
+        plt.imshow(img, cmap='gray')
+        
+        plt.subplot(1, 2, 2)
+        plt.title('Noisy Image')
+        plt.imshow(noisy_img, cmap='gray')
+        
+        plt.show()
+
+class NoisyCIFAR10(datasets.CIFAR10):
+   def __init__(self, root, train=True, transform=None, target_transform=None, download=False, noise_std=0.1):
+      super(NoisyCIFAR10, self).__init__(root, train=train, transform=transform, target_transform=target_transform, download=download)
+      self.noise_std = noise_std
+
+   def __getitem__(self, index):
+      img, target = super(NoisyCIFAR10, self).__getitem__(index)
+      noisy_img = img + self.noise_std * torch.randn_like(img)
+      return noisy_img, img, target
+
+class CIFAR10_denoise:
+    def __init__(self, batch_size=64, noise_std=0.3):
+      self.batch_size = batch_size
+      
+      transform = transforms.Compose([
+         transforms.ToTensor(),
+         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+      ])
+      
+      self.train_data = NoisyCIFAR10(root='./data', train=True, download=True, transform=transform, noise_std=noise_std)
+      self.test_data = NoisyCIFAR10(root='./data', train=False, download=True, transform=transform, noise_std=noise_std)
+      self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.batch_size, shuffle=True)
+      self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.batch_size, shuffle=False)
+      
+    def shape(self):
+      return self.train_data[0][0].shape
+   
+    def visual(self):
+      noisy_img, img, _ = self.test_data[0]
+      img = img.permute(1, 2, 0)
+      img = img * torch.tensor([0.2023, 0.1994, 0.2010]) + torch.tensor([0.4914, 0.4822, 0.4465])
+      
+      plt.subplot(1, 2, 1)
+      plt.title('Original Image')
+      plt.imshow(img)
+
+      
+      noisy_img = noisy_img.permute(1, 2, 0)
+      noisy_img = noisy_img * torch.tensor([0.2023, 0.1994, 0.2010]) + torch.tensor([0.4914, 0.4822, 0.4465])
+      plt.subplot(1, 2, 2)
+      plt.title('Noisy Image')
+      plt.imshow(noisy_img)
+      
+      plt.show()
+      
+   
+#############1D Datasets###############
+'''
+   Data for training 1D CNN Models
+   - MNIST1D data 
+   - https://github.com/greydanus/mnist1d
+'''
+class MNIST1D():
    
    def __init__(self, seed = None): 
 
@@ -30,16 +246,6 @@ class MNIST1D_Dataset():
          self.set_seed(self.data_args.seed)
       else: 
          self.set_seed(seed)
-         
-      # print("The Arguments for Data are: ")
-      # print("num_samples: 5000 \n train_split: 0.8 \n template_len: 12 \n padding: [36,60] \n scale_coeff: .4 \n max_translation: 48 \n corr_noise_scale: 0.25 \n iid_noise_scale: 2e-2 \n shear_scale: 0.75 \n shuffle_seq: False \n final_seq_length: 40 \n seed: 42")
-      
-      # print("\n")
-      
-      # print("The Arguments for Model are: ")
-      # print("input_size: 40 \n output_size: 10 \n hidden_size: 256 \n learning_rate: 1e-2 \n weight_decay: 0 \n batch_size: 100 \n total_steps: 6000 \n print_every: 1000 \n eval_every: 250 \n checkpoint_every: 1000 \n device: mps \n seed: 42")
-
-
    
    def make_dataset(self): 
       data = make_dataset(self.data_args)
@@ -220,44 +426,3 @@ class MNIST1D_Plot():
       plt.subplots_adjust(wspace=0, hspace=0)
       plt.tight_layout() ; plt.show()
       
-      
-   # # For mnist 2d data 
-   # def plot_ten_random(self, images, targets, noise: str = 'Noise free') -> None : 
-   #    """Show ten random labeled images from the dataset"""
-   #    sns.set_style("dark")
-   #    idx = np.random.choice(len(images), 10)
-   #    num_row = 2
-   #    num_col = 5
-   #    fig, axes = plt.subplots(num_row, num_col, figsize=(1.5 * num_col, 2 * num_row))
-   #    for i in range(num_row * num_col):
-   #       ax = axes[i // num_col, i % num_col]
-   #       ax.imshow(images[idx[i]].reshape((28, 28)), cmap="gray")
-   #       ax.set_title("Target: {}".format(targets[idx[i]]), fontsize=16)
-   #       ax.xaxis.set_visible(False)
-   #       ax.yaxis.set_visible(False)
-   #    fig.suptitle(noise, fontsize=24, y=1.1)
-   #    plt.tight_layout()
-   #    plt.show()
-
-   
-   
-'''Example Usage'''
-'''
-# Noisy Data
-noisy_dataset = MNIST1D_Dataset()
-# print(noisy_dataset.data_args.iid_noise_scale, noisy_dataset.data_args.corr_noise_scale)
-noisy_data = noisy_dataset.make_dataset()
-
-
-# Clean Data 
-clean_dataset = MNIST1D_Dataset()
-clean_dataset.data_args.iid_noise_scale = 0.0
-clean_dataset.data_args.corr_noise_scale = 0.0
-# print(clean_dataset.data_args.iid_noise_scale, clean_dataset.data_args.corr_noise_scale)
-
-clean_data = clean_dataset.make_dataset()
-
-Plot = MNIST1D_Plot()
-
-Plot.plot_signals(noisy_data['x'][:10], noisy_data['t'], labels=noisy_data['y'][:10], zoom = 5, title='Noise free')
-'''

@@ -197,7 +197,7 @@ We have tested various models for each dataset to compare their performance.
   </tbody>
 </table>
 
-MNIST, Fashion MNIST, CIFAR10 training/testing Classification file can be found in this [Notebook](https://gist.github.com/szagoruyko/9c9ebb8455610958f7deaa27845d7918).
+MNIST, Fashion MNIST, CIFAR10 training/testing Classification file can be found in this [Notebook](https://github.com/mkang817415/Convolutional-Nearest-Neighbor/Notesbooks/2D/classification.ipynb).
 
 
 # Denoising Testing
@@ -357,7 +357,7 @@ We have tested various models for each dataset to compare their performance.
   </tbody>
 </table>
 
-MNIST, Fashion MNIST, CIFAR10 training/testing Denosing results can be found in this [Noteboook](https://gist.github.com/szagoruyko/9c9ebb8455610958f7deaa27845d7918).
+MNIST, Fashion MNIST, CIFAR10 training/testing Denosing results can be found in this [Noteboook](https://github.com/mkang817415/Convolutional-Nearest-Neighbor/Notesbooks/2D/denoising.ipynb).
 
 
 # K Testing
@@ -501,7 +501,7 @@ We are testing and evaluating the impact of the number of neighbors in **Convolu
   </tbody>
 </table>
 
-MNIST, Fashion MNIST, CIFAR10 Classification K Test training/testing/models can be found in this [Noteboook](https://gist.github.com/szagoruyko/9c9ebb8455610958f7deaa27845d7918).
+MNIST, Fashion MNIST, CIFAR10 Classification K Test training/testing/models can be found in this [Noteboook](https://github.com/mkang817415/Convolutional-Nearest-Neighbor/Notesbooks/2D/K.ipynb).
 
 # Notebooks
 
