@@ -1,0 +1,15 @@
+Type	Model	KNN	Data_Noise	Train_Loss	Test_Loss	 Train_Acc 	 Test_Acc 	 Time_Seconds 	Notes	Info
+Denoising	Conv1d	N/A	N/A	6.40E-01	6.04E-01	 2.40 	 2.20 	 2.25 	MSE + PSNR (accuracy might not be out of 100% scale)	*Every stats from step 6000
+Denoising	Branching	3	N/A	1.66E-01	1.68E-01	 7.90 	 7.70 	 39.27 	MSE + PSNR (accuracy might not be out of 100% scale)	"*Regular Noise: corr_noise_scale=0.25, iid_noise_scale=0.02"
+Classification	Conv1d_NN		Reg	5.80E-01	2.17E+00	 71.40 	 43.70 	 19.01 		"*Less Noise: corr_noise_scale=0.1, iid_noise_scale=0.01"
+Classification	Local-Global		Reg	1.45E-01	6.47E-01	 88.70 	 84.30 	 17.68 		*Random Seed: 42
+Classification	Global-Local		Reg	1.44E-01	5.24E-01	 91.70 	 86.50 	 20.44 		
+Classification	Branching		Reg	3.28E-02	5.40E-01	 96.50 	 91.10 	 23.87 		
+Classification	Conv1d_NN		Less	2.92E-01	1.79E+00	 85.00 	 61.00 	 15.29 		
+Classification	Local-Global		Less	9.66E-02	1.52E-01	 95.70 	 95.20 	 17.84 		
+Classification	Global-Local		Less	3.34E-02	2.57E-01	 96.00 	 93.10 	 18.29 		
+Classification	Branching		Less	1.55E-01	1.21E-01	 98.50 	 96.20 	 23.51 		
+Classification	Conv1d_NN 32 Channel		Less	1.80E-01	1.19E+00	 94.20 	 75.20 	 16.43 		
+Classification	Conv1d_NN 16 Channel		Less	3.22E-01	8.75E-01	 87.00 	 75.90 	 16.32 		
+Classification	Conv1d_NN 8 Channel		Less	4.38E-01	5.78E-01	 88.50 	 76.50 	 16.23 		
+Classification	Conv1d_NN 4 Channel		Less	5.474e-011.01	5.95E-01	 85.70 	 77.40 	 15.28 		
