@@ -1,0 +1,8 @@
+torch
+torchvision
+torchsummary
+faiss-cpu
+numpy
+matplotlib
+scipy
+mnist1d
