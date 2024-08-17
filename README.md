@@ -523,7 +523,7 @@ Our ongoing research focuses on:
 4. Testing on larger images and implementing Faiss for faster top-k operations in PyTorch. 
 
 # License
-DETR is released under the Apache 2.0 license. Please see the [LICENSE](LICENSE) file for more information.
+Convolutional-Nearest-Neighbor is released under the MIT License. Please see the [LICENSE](LICENSE) file for more information.
 
 # Contributing
 We Welcome feedback and collaboration. Please reach out to: 
