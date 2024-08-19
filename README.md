@@ -505,7 +505,7 @@ MNIST, Fashion MNIST, CIFAR10 Classification K Test training/testing/models can 
 
 # Notebooks
 
-* [ConvNN 2D & ConvNN 1D](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/detr_attention.ipynb): 
+* [ConvNN 2D & ConvNN 1D & Pixelshuffle/unshuffle 1D](https://colab.research.google.com/drive/1SsJgSMoOBpagm4cJ551-EU7-BVlfKNzT?usp=sharing): 
 In this notebook, we demonstrate the functionality and parameters for **Convolution Nearest Neighbor** in 2D and 1D. 
 
 * [Classification ConvNN](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/detr_demo.ipynb): In this notebook, we demonstrate how to implement a simple neural network using **Convolution Nearest Neighbor** in 2D and 1D with training/testing of simple data for classification (ie. MNIST, FashionMNIST, etc)
