@@ -5,6 +5,7 @@
 
 
 ![DETR](https://cdn.prod.website-files.com/614c82ed388d53640613982e/646371e3bdc5ca90dee5331b_convolutional-neural-network%20(1).webp)
+
 *Picture is from SuperAnnotate: Convolutional Neural Networks: 1998-2023 Overview
 
 
@@ -524,6 +525,6 @@ Our ongoing research focuses on:
 Convolutional-Nearest-Neighbor is released under the MIT License. Please see the [LICENSE](LICENSE) file for more information.
 
 # Contributing
-We Welcome feedback and collaboration. Please reach out to: 
+We welcome feedback and collaboration! Please reach out to: 
 - Mingi Kang : mkang2@bowdoin.edu 
 - Jeova Farias : j.farias@bowdoin.edu
