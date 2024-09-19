@@ -22,7 +22,7 @@ ConvNN layers are implemented using the `torch.nn.Module` class:
 - **Spatial Variants**: Includes spatial considerations for both 1D and 2D layers.
 - **Pixel Shuffle Layers**: Custom layers for pixel shuffling and unshuffling in 1D.
 
-A [Colab Notebook](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/detr_demo.ipynb) is available for hands-on experimentation.
+A [Colab Notebook]() is available for hands-on experimentation.
 
 
 ### Usage Example
@@ -511,8 +511,6 @@ In this notebook, we demonstrate the functionality and parameters for **Convolut
 * [Classification ConvNN](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/detr_demo.ipynb): In this notebook, we demonstrate how to implement a simple neural network using **Convolution Nearest Neighbor** in 2D and 1D with training/testing of simple data for classification (ie. MNIST, FashionMNIST, etc)
 
 * [Denoising ConvNN](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/DETR_panoptic.ipynb): In this notebook, we demonstrate how to implement a simple neural network using **Convolution Nearest Neighbor** in 2D and 1D with training/testing of simple data for Denoising (ie. MNIST, FashionMNIST, etc)
-
-* [Panoptic Colab Notebook](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/DETR_panoptic.ipynb): Demonstrates how to use DETR for panoptic segmentation and plot the predictions.
 
 
 # Future Work
