@@ -1,5 +1,4 @@
 .vscode
 __pycache__
-data
-notebooks/data
-"2D Modules/test/data"
+Layers/__pycache__
+Testing/data

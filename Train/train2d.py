@@ -13,7 +13,7 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
         start = time.time()
         running_loss = 0.0
         for images, labels in train_loader:
-            images, labels = images.to('cpu'), labels.to('cpu') ## TODO edit later
+            images, labels = images.to('mps'), labels.to('mps') ## TODO edit later
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs, labels)
@@ -33,7 +33,7 @@ def evaluate_accuracy(model, test_loader):
     total = 0
     with torch.no_grad():
         for images, labels in test_loader:
-            images, labels = images.to('cpu'), labels.to('cpu') ## TODO edit later
+            images, labels = images.to('mps'), labels.to('mps') ## TODO edit later
             outputs = model(images)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
