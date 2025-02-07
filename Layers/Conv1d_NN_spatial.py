@@ -41,7 +41,6 @@ class Conv1d_NN_spatial(nn.Module):
                  padding=0, 
                  shuffle_pattern='N/A', 
                  shuffle_scale=2, 
-                 samples='all', 
                  magnitude_type='distance'
                  ): 
         
@@ -56,7 +55,6 @@ class Conv1d_NN_spatial(nn.Module):
             padding (int): Padding size.
             shuffle_pattern (str): Shuffle pattern: "B", "A", "BA".
             shuffle_scale (int): Shuffle scale factor.
-            samples (int): Number of samples to consider. samples are squared for N^2 samples.
             magnitude_type (str): Distance or Similarity.
         """
         
@@ -69,12 +67,7 @@ class Conv1d_NN_spatial(nn.Module):
         self.shuffle_pattern = shuffle_pattern 
         self.shuffle_scale = shuffle_scale
         
-        # Check Samples
-        self.samples = int(samples)
-        
-        
-        
-        
+
         self.magnitude_type = magnitude_type 
         self.maximum = True if self.magnitude_type == 'similarity' else False 
         
@@ -97,7 +90,7 @@ class Conv1d_NN_spatial(nn.Module):
 
         self.relu = nn.ReLU()
 
-    def forward(self, x, y): 
+    def forward(self, x, y, indices): 
 
         # Unshuffle Layer 
         if self.shuffle_pattern in ["B", "BA"]:
@@ -110,22 +103,20 @@ class Conv1d_NN_spatial(nn.Module):
         elif self.magnitude_type == 'similarity':
             matrix_magnitude = self.calculate_similarity_matrix_N(x1, y)        
         
-        prime = self.prime_vmap_2d_N(x1, matrix_magnitude, self.K, self.maximum)
+        prime = self.prime_vmap_2d_N(x1, matrix_magnitude, self.K, indices, self.maximum)
         
         # Conv1d Layer
         x2 = self.conv1d_layer(prime)
-        
-        # ReLU Activation
-        x3 = self.relu(x2)
-        
+                
         # Shuffle Layer
         if self.shuffle_pattern in ["A", "BA"]:
-            x4 = self.shuffle_layer(x3)
+            x3 = self.shuffle_layer(x2)
         else:
-            x4 = x3
+            x3 = x2
         
-        return x4
-        
+        return x3
+    
+    
     ### N Samples ### 
     '''Distance Matrix Calculations for N Sample'''
     @staticmethod 
@@ -147,26 +138,36 @@ class Conv1d_NN_spatial(nn.Module):
 
     '''N Sample Methods'''
     @staticmethod
-    def prime_vmap_2d_N(matrix, magnitude_matrix, num_nearest_neighbors, maximum): 
-        '''Vectorization / Vmap Implementation for Nearest Neighbor Tensor 2D'''
-        batched_process = torch.vmap(Conv1d_NN_spatial.process_batch_N, in_dims=(0, 0, None), out_dims=0)
-        prime = batched_process(matrix, magnitude_matrix, num_nearest_neighbors, flatten=True, maximum=maximum)
+    def prime_vmap_2d_N(matrix, magnitude_matrix, num_nearest_neighbors, spatial_idx, maximum): 
+        """Vectorization / Vmap Implementation for Nearest Neighbor Tensor 2D"""
+        batched_process = torch.vmap(Conv1d_NN_spatial.process_batch_N, in_dims=(0, 0, None, None), out_dims=0)
+        prime = batched_process(matrix, magnitude_matrix, num_nearest_neighbors, spatial_idx, flatten=True, maximum=maximum)
         return prime 
     
     @staticmethod
-    def prime_vmap_3d_N(matrix, magnitude_matrix, num_nearest_neighbors, maximum): 
-        '''Vectorization / Vmap Implementation for Nearest Neighbor Tensor 3D'''
-        batched_process = torch.vmap(Conv1d_NN_spatial.process_batch_N, in_dims=(0, 0, None), out_dims=0)
-        prime = batched_process(matrix, magnitude_matrix, num_nearest_neighbors, flatten=False, maximum=maximum)
+    def prime_vmap_3d_N(matrix, magnitude_matrix, num_nearest_neighbors, spatial_idx, maximum): 
+        """Vectorization / Vmap Implementation for Nearest Neighbor Tensor 3D"""
+        batched_process = torch.vmap(Conv1d_NN_spatial.process_batch_N, in_dims=(0, 0, None, None), out_dims=0)
+        prime = batched_process(matrix, magnitude_matrix, num_nearest_neighbors, spatial_idx, flatten=False, maximum=maximum)
         return prime
     
-    @staticmethod 
-    def process_batch_N(matrix, magnitude_matrix, num_nearest_neighbors, flatten, maximum): 
-        # Process the batch of matrices
-        ind = torch.topk(magnitude_matrix, num_nearest_neighbors, largest=maximum).indices 
-        neigh = matrix[:, ind]
+    @staticmethod
+    def process_batch_N(matrix, magnitude_matrix, num_nearest_neighbors, spatial_idx, flatten, maximum): 
+        """Process the batch of matrices by finding the K nearest neighbors with reshaping."""
+        topk_ind = torch.topk(magnitude_matrix, num_nearest_neighbors - 1, largest=maximum).indices
+        device = topk_ind.device
+        spatial_idx = spatial_idx.to(device) # same device as topk_ind
+        mapped_tensor = spatial_idx[topk_ind] 
+        index_tensor = torch.arange(0, matrix.shape[1], device=device).unsqueeze(1) # shape [40, 1]
+        final_tensor = torch.cat([index_tensor, mapped_tensor], dim=1)
+        neigh = matrix[:, final_tensor] 
         if flatten: 
             reshape = torch.flatten(neigh, start_dim=1)
             return reshape
         return neigh
+    
+    
+    
+    ### Notes
+    # - the indexes do not represent the correct index of the pixels. Because the pixels are spatially sampled before flattening, it does not correlate with the same indices as the iamge.
     

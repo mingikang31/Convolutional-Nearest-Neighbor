@@ -12,8 +12,9 @@ import torch
 import torch.nn as nn 
 import torch.nn.functional as F
 from Conv1d_NN import Conv1d_NN
-
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
+
+
 import faiss 
 import numpy as np
 
@@ -42,7 +43,7 @@ class Conv2d_NN(nn.Module):
                 K=3, 
                 stride=3, 
                 padding=0, 
-                shuffle_pattern="N/A", 
+                shuffle_pattern="BA", 
                 shuffle_scale=2, 
                 samples="all", 
                 magnitude_type="distance"
@@ -77,8 +78,8 @@ class Conv2d_NN(nn.Module):
 
 
         if (self.shuffle_pattern in ["B", "BA"]):
-            self.in_channels_1d = self.in_channels * self.shuffle_scale **2
-            self.out_channels_1d = self.out_channels * self.shuffle_scale **2
+            self.in_channels_1d = self.in_channels * (self.shuffle_scale **2)
+            self.out_channels_1d = self.out_channels * (self.shuffle_scale **2)
         else: 
             self.in_channels_1d = self.in_channels
             self.out_channels_1d = self.out_channels
@@ -101,6 +102,7 @@ class Conv2d_NN(nn.Module):
             x1 = nn.functional.pixel_unshuffle(x, self.shuffle_scale)
         else: 
             x1 = x
+            
 
         x2 = self.flatten(x1)
 
@@ -119,7 +121,7 @@ class Conv2d_NN(nn.Module):
 '''EXAMPLE USAGE'''
 def example_usage():
     """Example Usage of Conv2d_NN Layer"""
-    ex = torch.rand(32, 1, 28, 28) 
+    ex = torch.rand(32, 3, 28, 28) 
     print("Input: ", ex.shape)
 
     conv2d_nn = Conv2d_NN(in_channels=1, out_channels=3, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples=5)
