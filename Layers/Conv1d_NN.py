@@ -146,9 +146,6 @@ class Conv1d_NN(nn.Module):
             elif self.magnitude_type == 'similarity':
                 matrix_magnitude[:, rand_idx, np.arange(len(rand_idx))] = -np.inf
                 
-            print("x1.shape: ", x1.shape)
-            print("matrix_magnitude.shape: ", matrix_magnitude.shape)
-            print("rand_idx.shape: ", rand_idx.shape)
             
             prime = self.prime_vmap_2d_N(x1, matrix_magnitude, self.K, rand_idx, self.maximum)
             
@@ -264,15 +261,3 @@ def example_usage():
     output = nn(x_test)
     print(output.shape)
         
-example_usage()
-
-# x1.shape:  torch.Size([32, 24, 20])
-# matrix_magnitude.shape:  torch.Size([32, 20, 8])
-# rand_idx.shape:  torch.Size([8])
-# torch.Size([32, 32, 40])
-
-
-### Spatial 
-# x1.shape:  torch.Size([32, 12, 196])
-# matrix_magnitude.shape:  torch.Size([32, 196, 25])
-# indices.shape:  torch.Size([25])
