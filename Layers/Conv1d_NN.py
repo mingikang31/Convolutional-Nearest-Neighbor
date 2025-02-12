@@ -47,7 +47,7 @@ class Conv1d_NN(nn.Module):
                  shuffle_pattern='N/A', 
                  shuffle_scale=2, 
                  samples='all', 
-                 magnitude_type='distance'
+                 magnitude_type='similarity'
                  ): 
         
         """

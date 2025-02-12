@@ -41,7 +41,7 @@ class Conv1d_NN_spatial(nn.Module):
                  padding=0, 
                  shuffle_pattern='N/A', 
                  shuffle_scale=2, 
-                 magnitude_type='distance'
+                 magnitude_type='similarity'
                  ): 
         
         """

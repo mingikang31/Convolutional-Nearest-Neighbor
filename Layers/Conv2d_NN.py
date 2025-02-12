@@ -46,7 +46,8 @@ class Conv2d_NN(nn.Module):
                 shuffle_pattern="BA", 
                 shuffle_scale=2, 
                 samples="all", 
-                magnitude_type="distance"
+                magnitude_type="similarity",
+                location_channels=False
                 ): 
         
         """
@@ -74,15 +75,19 @@ class Conv2d_NN(nn.Module):
         self.shuffle_scale = shuffle_scale
         self.samples = int(samples) if samples != "all" else samples
         self.magnitude_type = magnitude_type
-
-
+        self.location_channels = location_channels
 
         if (self.shuffle_pattern in ["B", "BA"]):
-            self.in_channels_1d = self.in_channels * (self.shuffle_scale **2)
+            self.in_channels_1d = self.in_channels * (self.shuffle_scale**2)
             self.out_channels_1d = self.out_channels * (self.shuffle_scale **2)
         else: 
             self.in_channels_1d = self.in_channels
             self.out_channels_1d = self.out_channels
+            
+        if self.location_channels:
+            self.in_channels_1d += 2
+            self.out_channels_1d += 2
+
 
         self.Conv1d_NN = Conv1d_NN(in_channels=self.in_channels_1d,
                                     out_channels=self.out_channels_1d,
@@ -90,7 +95,7 @@ class Conv2d_NN(nn.Module):
                                     stride=self.stride,
                                     padding=self.padding,
                                     samples=self.samples, 
-                                    shuffle_pattern="N/A",
+                                    shuffle_pattern="NA",
                                     shuffle_scale=1, 
                                     magnitude_type=self.magnitude_type
                                     )
@@ -99,11 +104,21 @@ class Conv2d_NN(nn.Module):
         
     def forward(self, x): 
         if self.shuffle_pattern in ["B", "BA"]:
-            x1 = nn.functional.pixel_unshuffle(x, self.shuffle_scale)
-        else: 
-            x1 = x
+            if self.location_channels: 
+                x1 = nn.functional.pixel_unshuffle(x, self.shuffle_scale)
+                x1_coordinates = self.coordinate_channels(x1.shape, device=x.device)
+                x1 = torch.cat((x1, x1_coordinates), dim=1)
+            else: 
+                x1 = nn.functional.pixel_unshuffle(x, self.shuffle_scale)
             
-
+        else: 
+            if self.location_channels:
+                x1_coordinates = self.coordinate_channels(x.shape, device=x.device)
+                x1 = torch.cat((x, x1_coordinates), dim=1)
+            else: 
+                x1 = x
+                
+            
         x2 = self.flatten(x1)
 
         x3 = self.Conv1d_NN(x2)  
@@ -112,11 +127,32 @@ class Conv2d_NN(nn.Module):
         x4 = unflatten(x3)
 
         if self.shuffle_pattern in ["A", "BA"]:
-            x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
+            if self.location_channels:
+                x4 = x4[:, :-2, :, :]
+                x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
+            else:
+                x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
         else: 
-            x5 = x4
+            if self.location_channels:
+                x4 = x4[:, :-2, :, :]
+                x5 = x4
+            else: 
+                x5 = x4
 
         return x5
+    
+    def coordinate_channels(self, tensor_shape, device):
+        x_ind = torch.arange(0, tensor_shape[2])
+        y_ind = torch.arange(0, tensor_shape[3])
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_grid = x_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        y_grid = y_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        
+        xy_grid = torch.cat((x_grid, y_grid), dim=1)
+        xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
+        return xy_grid_normalized.to(device)
 
 '''EXAMPLE USAGE'''
 def example_usage():
@@ -124,11 +160,11 @@ def example_usage():
     ex = torch.rand(32, 3, 28, 28) 
     print("Input: ", ex.shape)
 
-    conv2d_nn = Conv2d_NN(in_channels=1, out_channels=3, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples=5)
+    conv2d_nn = Conv2d_NN(in_channels=3, out_channels=3, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples=5,magnitude_type="similarity", location_channels=True)
     output = conv2d_nn(ex)
     print("Output: ", output.shape)
+    
+    a = conv2d_nn.coordinate_channels(ex.shape)
+    print("location_channels: ", a.shape)
 
-        
-
-
-        
+# example_usage()
