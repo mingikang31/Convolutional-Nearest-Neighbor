@@ -89,7 +89,58 @@ class CIFAR10_denoise:
         plt.imshow(noisy_img)
         
         plt.show()
-   
+
+
+def test_denoise_visual(model, test_loader):
+ 
+    for test_data in test_loader:
+        noisy_img, img = test_data[0], test_data[1]
+        
+        # Select the first image in the batch
+        noisy_img = noisy_img[0]
+        img = img[0]
+
+        # Move tensors to MPS device
+        noisy_img = noisy_img.to('mps')
+        img = img.to('mps')
+
+        # Get the model output
+        output_img = model(noisy_img.unsqueeze(0))
+
+        # Move tensors back to CPU and detach
+        noisy_img = noisy_img.cpu().detach()
+        output_img = output_img.squeeze(0).cpu().detach()
+        img = img.cpu().detach()
+
+        # Permute dimensions to (height, width, channels) for matplotlib
+        noisy_img = noisy_img.permute(1, 2, 0)
+        output_img = output_img.permute(1, 2, 0)
+        img = img.permute(1, 2, 0)
+
+        # Denormalize the images (assuming CIFAR-10 normalization)
+        mean = torch.tensor([0.4914, 0.4822, 0.4465])
+        std = torch.tensor([0.2023, 0.1994, 0.2010])
+        noisy_img = noisy_img * std + mean
+        output_img = output_img * std + mean
+        img = img * std + mean
+
+        plt.figure(figsize=(15, 5))  # Adjust the figure size if needed
+
+        plt.subplot(1, 3, 1)
+        plt.title('Noisy image')
+        plt.imshow(noisy_img.numpy())
+
+        plt.subplot(1, 3, 2)
+        plt.title('Denoised image')
+        plt.imshow(output_img.numpy())
+        
+        plt.subplot(1, 3, 3)
+        plt.title('Original image')
+        plt.imshow(img.numpy())
+
+        plt.show()
+        break  # Remove this break to visualize more images
+    
 ### EXAMPLE USAGE ### 
 #cifar10 = CIFAR10()
 

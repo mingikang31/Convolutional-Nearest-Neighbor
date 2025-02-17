@@ -64,6 +64,32 @@ class MNIST_denoise:
         plt.title("Noisy Image")
         plt.imshow(noisy_img.squeeze(), cmap='gray')
         plt.show()
+        
+
+def test_denoise_visual(model, test_loader):
+    for test_data in test_loader:
+        noisy_img, img = test_data[0], test_data[1]
+        
+        # Select the first image in the batch
+        noisy_img = noisy_img[0]
+        img = img[0]
+
+        output_img = model(noisy_img.unsqueeze(0).to('mps'))  # Add batch dimension back for the model
+
+        plt.subplot(1, 3, 1)
+        plt.title('Noisy image')
+        plt.imshow(noisy_img.squeeze().cpu().numpy(), cmap='gray')
+
+        plt.subplot(1, 3, 2)
+        plt.title('Denoised image')
+        plt.imshow(output_img.squeeze().detach().cpu().numpy(), cmap='gray')
+        
+        plt.subplot(1, 3, 3)
+        plt.title('Original image')
+        plt.imshow(img.squeeze().cpu().numpy(), cmap='gray')
+
+        plt.show()
+        break  # Remove this break to visualize more images
 
 ### EXAMPLE USAGE ### 
 # mnist = MNIST()
