@@ -1,0 +1,16 @@
+{
+  "os": "macOS-15.3-arm64-arm-64bit",
+  "python": "CPython 3.12.0",
+  "startedAt": "2025-02-17T15:50:33.142627Z",
+  "program": "/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/Playground/wandb_pg.py",
+  "codePath": "Playground/wandb_pg.py",
+  "git": {
+    "remote": "https://github.com/mkang817415/Convolutional-Nearest-Neighbor.git",
+    "commit": "60f01c5c98666c159a6b915c458e248bbe8b7525"
+  },
+  "email": "mkang2@bowdoin.edu",
+  "root": "/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/Playground",
+  "host": "dhcp-220-125.student-wlan.bowdoin.edu",
+  "executable": "/Users/mingikang/miniforge3/envs/ML/bin/python",
+  "codePathLocal": "wandb_pg.py"
+}

@@ -31,7 +31,8 @@ class CIFAR10:
       img = img * torch.tensor([0.2023, 0.1994, 0.2010]) + torch.tensor([0.4914, 0.4822, 0.4465])  # Unnormalize
       plt.figure(figsize=(6, 3)) 
       plt.imshow(img)
-      plt.show()
+      plt.show()      
+        
 
 ### Denoising Data - NoisyCIFAR10###
 class NoisyCIFAR10(datasets.CIFAR10):

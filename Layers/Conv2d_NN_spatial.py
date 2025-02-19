@@ -27,7 +27,6 @@ class Conv2d_NN_spatial(nn.Module):
       
       
       super().__init__()
-      ### in_channels + out_channels must be shuffle_scale**2
       self.in_channels = in_channels
       self.out_channels = out_channels
       self.K = K
@@ -41,15 +40,19 @@ class Conv2d_NN_spatial(nn.Module):
       self.location_channels = location_channels
       
       if (self.shuffle_pattern in ["B", "BA"]):
-         self.in_channels_1d = self.in_channels * (self.shuffle_scale**2)
-         self.out_channels_1d = self.out_channels * (self.shuffle_scale**2)
-      else:
-         self.in_channels_1d = self.in_channels
-         self.out_channels_1d = self.out_channels
-      
-      if self.location_channels: 
-         self.in_channels_1d += 2
-         self.out_channels_1d += 2
+         if self.location_channels: 
+            self.in_channels_1d = (self.in_channels + 2) * (self.shuffle_scale**2)
+            self.out_channels_1d = (self.out_channels + 2) * (self.shuffle_scale **2)
+         else:
+            self.in_channels_1d = self.in_channels * (self.shuffle_scale**2)
+            self.out_channels_1d = self.out_channels * (self.shuffle_scale **2)
+      else: 
+         if self.location_channels: 
+            self.in_channels_1d = self.in_channels + 2
+            self.out_channels_1d = self.out_channels + 2
+         else:
+            self.in_channels_1d = self.in_channels
+            self.out_channels_1d = self.out_channels
       
       
       self.Conv1d_NN_spatial = Conv1d_NN_spatial(in_channels=self.in_channels_1d,
@@ -71,20 +74,16 @@ class Conv2d_NN_spatial(nn.Module):
       
       if self.shuffle_pattern in ["B", "BA"]:
          if self.location_channels:
-
+            x_coordinates = self.coordinate_channels(x.shape, device=x.device)
+            x = torch.cat((x, x_coordinates), dim=1)
             x1 = nn.functional.pixel_unshuffle(x, self.shuffle_scale)
-            
-            x1_coordinates = self.coordinate_channels(x1.shape, device=x.device)
-            
-            x1 = torch.cat((x1, x1_coordinates), dim=1)
-            
          else: 
             x1 = nn.functional.pixel_unshuffle(x, self.shuffle_scale)
          
       else: 
          if self.location_channels:
-            x1_coordinates = self.coordinate_channels(x.shape, device=x.device)
-            x1 = torch.cat((x, x1_coordinates), dim=1)
+            x_coordinates = self.coordinate_channels(x.shape, device=x.device)
+            x1 = torch.cat((x, x_coordinates), dim=1)
          else: 
             x1 = x
          
@@ -115,14 +114,14 @@ class Conv2d_NN_spatial(nn.Module):
       
       if self.shuffle_pattern in ["A", "BA"]:
          if self.location_channels:
-            x4 = x4[:, :-2, :, :]
-            x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
+            x4 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
+            x5 = x4[:, :-2, :, :]
+
          else:
             x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
       else: 
          if self.location_channels:
-            x4 = x4[:, :-2, :, :]
-            x5 = x4
+            x5 = x4[:, :-2, :, :]
          else:
             x5 = x4
 
@@ -153,7 +152,7 @@ def example_usage():
    output = conv2d_nn_spatial(ex)
    print("Output: ", output.shape) # [32, 3, 784]
    
-   a = conv2d_nn_spatial.coordinate_channels(ex.shape)
+   a = conv2d_nn_spatial.coordinate_channels(ex.shape, device=ex.device)
    print("location_channels: ", a.shape)
 
 # example_usage()

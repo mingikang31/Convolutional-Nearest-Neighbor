@@ -1,0 +1,40 @@
+Epoch 1, Time: 52.8712899684906, Loss: 1.5980343800371566
+Epoch 1, Accuracy: 50.04%
+Epoch 2, Time: 53.53550386428833, Loss: 1.2546444289062335
+Epoch 2, Accuracy: 53.34%
+Epoch 3, Time: 52.0006628036499, Loss: 1.0766059216635917
+Epoch 3, Accuracy: 55.47%
+Epoch 4, Time: 53.89792609214783, Loss: 0.9003571708641394
+Epoch 4, Accuracy: 55.7%
+Epoch 5, Time: 53.94120979309082, Loss: 0.7149537585275557
+Epoch 5, Accuracy: 55.58%
+Epoch 6, Time: 51.733986139297485, Loss: 0.5307522726142803
+Epoch 6, Accuracy: 54.85%
+Epoch 7, Time: 51.12290906906128, Loss: 0.3997753550920188
+Epoch 7, Accuracy: 54.86%
+Epoch 8, Time: 51.4443199634552, Loss: 0.3128750996135385
+Epoch 8, Accuracy: 53.92%
+Epoch 9, Time: 52.23435091972351, Loss: 0.2506546017944889
+Epoch 9, Accuracy: 54.2%
+Epoch 10, Time: 51.77579975128174, Loss: 0.21289769564624256
+Epoch 10, Accuracy: 53.72%
+
+ Average epoch time: 52.45579583644867
+Traceback (most recent call last):
+  File "/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/Playground/wandb_pg.py", line 87, in <module>
+    wandb.log_artifact(model)
+  File "/Users/mingikang/miniforge3/envs/ML/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 393, in wrapper_fn
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mingikang/miniforge3/envs/ML/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 383, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mingikang/miniforge3/envs/ML/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 3111, in log_artifact
+    return self._log_artifact(
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/mingikang/miniforge3/envs/ML/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 3254, in _log_artifact
+    artifact, aliases = self._prepare_artifact(
+                        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/mingikang/miniforge3/envs/ML/lib/python3.12/site-packages/wandb/sdk/wandb_run.py", line 3360, in _prepare_artifact
+    raise ValueError(
+ValueError: You must pass an instance of wandb.Artifact or a valid file path to log_artifact

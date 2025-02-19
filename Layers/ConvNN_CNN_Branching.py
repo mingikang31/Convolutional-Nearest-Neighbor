@@ -18,16 +18,20 @@ from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 
 
 class ConvNN_CNN_Random_BranchingLayer(nn.Module):
-    def __init__(self, in_ch, out_ch, kernel_size=3, K=9, samples = "all", location_channels = False):
+    def __init__(self, in_ch, out_ch, channel_ratio=(16, 16), kernel_size=3, K=9, samples = "all", location_channels = False):
+        # Channel_ratio must add up to 2*out_ch
+        assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
+        assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
+        
         super(ConvNN_CNN_Random_BranchingLayer, self).__init__()
-        self.kernel_size = kernel_size
         
         self.branch1 = nn.Sequential(
-            nn.Conv2d(in_ch, out_ch, kernel_size, stride=1, padding=1),
+            nn.Conv2d(in_ch, channel_ratio[0], kernel_size, stride=1, padding=1),
             nn.ReLU()
         )
+        
         self.branch2 = nn.Sequential(
-            Conv2d_NN(in_ch, out_ch, K = K, stride = K, samples = samples, location_channels = location_channels), 
+            Conv2d_NN(in_ch, channel_ratio[1], K = K, stride = K, samples = samples, location_channels = location_channels), 
             nn.ReLU()
         )
         self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
@@ -45,16 +49,20 @@ class ConvNN_CNN_Random_BranchingLayer(nn.Module):
         return reduce
 
 class ConvNN_CNN_Spatial_BranchingLayer(nn.Module):
-    def __init__(self, in_ch, out_ch, kernel_size=3, K=9, samples = 8, location_channels = False):
+    def __init__(self, in_ch, out_ch, channel_ratio=(16, 16), kernel_size=3, K=9, samples = 8, location_channels = False):
+        # Channel_ratio must add up to 2*out_ch
+        assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
+        assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
+        
         super(ConvNN_CNN_Spatial_BranchingLayer, self).__init__()
         self.kernel_size = kernel_size
         
         self.branch1 = nn.Sequential(
-            nn.Conv2d(in_ch, out_ch, kernel_size, stride=1, padding=1),
+            nn.Conv2d(in_ch, channel_ratio[0], kernel_size, stride=1, padding=1),
             nn.ReLU()
         )
         self.branch2 = nn.Sequential(
-            Conv2d_NN_spatial(in_ch, out_ch, K = K, stride = K, samples = samples, location_channels = location_channels), 
+            Conv2d_NN_spatial(in_ch, channel_ratio[1], K = K, stride = K, samples = samples, location_channels = location_channels), 
             nn.ReLU()
         )
         self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
@@ -69,4 +77,22 @@ class ConvNN_CNN_Spatial_BranchingLayer(nn.Module):
         
         reduce = self.reduce_channels(concat)
         return reduce
-
+    
+'''EXAMPLE USAGE'''
+def example_usage():
+    '''Example Usage of ConvNN_CNN_Random_BranchingLayer and ConvNN_CNN_Spatial_BranchingLayer'''
+    ex = torch.rand(32, 3, 28, 28)
+    print("Input: ", ex.shape)
+    
+    convnn_cnn_random = ConvNN_CNN_Random_BranchingLayer(in_ch=3, out_ch=16, channel_ratio=(28, 4), kernel_size=3, K=3, samples=5, location_channels=True)
+    
+    output_random = convnn_cnn_random(ex)
+    print("Output Random Branching: ", output_random.shape) 
+    
+    convnn_cnn_spatial = ConvNN_CNN_Spatial_BranchingLayer(in_ch=3, out_ch=16, channel_ratio=(28, 4), kernel_size=3, K=3, samples=5, location_channels=True)
+    
+    output_spatial = convnn_cnn_spatial(ex)
+    print("Output Spatial Branching: ", output_spatial.shape)
+    
+# example_usage()
+    
