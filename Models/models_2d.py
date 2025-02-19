@@ -323,10 +323,10 @@ class Global_Local_ConvNN_2D(nn.Module):
         self.to("mps")
         
 class Branching_ConvNN_2D_K_All(nn.Module):
-    def __init__(self, in_ch=3, num_classes=10, kernel_size=3, K=9, location_channels = False):
+    def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, location_channels = False):
         super(Branching_ConvNN_2D_K_All, self).__init__()
-        self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch, 16, kernel_size=kernel_size, K=K, location_channels=location_channels)
-        self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, kernel_size=kernel_size, K=K, location_channels=location_channels)    
+        self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, location_channels=location_channels)
+        self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), kernel_size=kernel_size, K=K, location_channels=location_channels)    
         
         self.flatten = nn.Flatten()
 
@@ -354,10 +354,10 @@ class Branching_ConvNN_2D_K_All(nn.Module):
         
         
 class Branching_ConvNN_2D_K_N(nn.Module):
-    def __init__(self, in_ch=3, num_classes=10, kernel_size=3, K=9, N = 64, location_channels = False):
+    def __init__(self, in_ch=3,channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, N = 64, location_channels = False):
         super(Branching_ConvNN_2D_K_N, self).__init__()
-        self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch, 16, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
-        self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
 
         self.flatten = nn.Flatten()
         
@@ -384,13 +384,12 @@ class Branching_ConvNN_2D_K_N(nn.Module):
         self.to("mps")
         
 class Branching_ConvNN_2D_Spatial_K_N(nn.Module):
-    def __init__(self, in_ch=3, num_classes=10, kernel_size=3, K=9, N = 8, location_channels = False):
+    def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, N = 8, location_channels = False):
         
         super(Branching_ConvNN_2D_Spatial_K_N, self).__init__()
-        self.conv1 = ConvNN_CNN_Spatial_BranchingLayer(in_ch, 16, kernel_size=kernel_size, K=K, samples=N, 
-                                                       location_channels=location_channels)
-        self.conv2 = ConvNN_CNN_Spatial_BranchingLayer(16, 32, kernel_size=kernel_size, K=K, samples=N, 
-                                                       location_channels=location_channels)
+        self.conv1 = ConvNN_CNN_Spatial_BranchingLayer(in_ch, 16, 
+            channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv2 = ConvNN_CNN_Spatial_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
         
         self.flatten = nn.Flatten()
 
@@ -684,11 +683,11 @@ class DenoisingGlobal_Local_ConvNN_2D(nn.Module):
         self.to("mps")
         
 class DenoisingBranching_ConvNN_2D_K_All(nn.Module):
-    def __init__(self, in_ch=3, kernel_size=3, K=9, location_channels=False):
+    def __init__(self, in_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, location_channels=False):
         super(DenoisingBranching_ConvNN_2D_K_All, self).__init__()
-        self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch, 16, kernel_size=kernel_size, K=K, location_channels=location_channels)
-        self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, kernel_size=kernel_size, K=K, location_channels=location_channels)
-        self.conv3 = ConvNN_CNN_Random_BranchingLayer(32, 3, kernel_size=kernel_size, K=K, location_channels=location_channels)
+        self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, location_channels=location_channels)
+        self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, location_channels=location_channels)
+        self.conv3 = ConvNN_CNN_Random_BranchingLayer(32, 3, channel_ratio=(3, 3), kernel_size=kernel_size, K=K, location_channels=location_channels)
 
         self.sigmoid = nn.Sigmoid()
         self.to("mps")
@@ -708,11 +707,11 @@ class DenoisingBranching_ConvNN_2D_K_All(nn.Module):
         
         
 class DenoisingBranching_ConvNN_2D_K_N(nn.Module):
-    def __init__(self, in_ch=3, kernel_size=3, K=9, N = 64, location_channels=False):
+    def __init__(self, in_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, N = 64, location_channels=False):
         super(DenoisingBranching_ConvNN_2D_K_N, self).__init__()
-        self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch, 16, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
-        self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
-        self.conv3 = ConvNN_CNN_Random_BranchingLayer(32, 3, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv3 = ConvNN_CNN_Random_BranchingLayer(32, 3, channel_ratio=(3, 3), kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
 
         self.sigmoid = nn.Sigmoid()
         self.to("mps")
@@ -731,11 +730,11 @@ class DenoisingBranching_ConvNN_2D_K_N(nn.Module):
         self.to("mps")
         
 class DenoisingBranching_ConvNN_2D_Spatial_K_N(nn.Module):
-    def __init__(self, in_ch=3, kernel_size=3, K=9, N = 8, location_channels=False):
+    def __init__(self, in_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, N = 8, location_channels=False):
         super(DenoisingBranching_ConvNN_2D_Spatial_K_N, self).__init__()
-        self.conv1 = ConvNN_CNN_Spatial_BranchingLayer(in_ch, 16, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
-        self.conv2 = ConvNN_CNN_Spatial_BranchingLayer(16, 32, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
-        self.conv3 = ConvNN_CNN_Spatial_BranchingLayer(32, 3, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv1 = ConvNN_CNN_Spatial_BranchingLayer(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv2 = ConvNN_CNN_Spatial_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv3 = ConvNN_CNN_Spatial_BranchingLayer(32, 3, channel_ratio=(3, 3),kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
 
         self.sigmoid = nn.Sigmoid()
         self.to("mps")
