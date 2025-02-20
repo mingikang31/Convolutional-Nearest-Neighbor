@@ -1,9 +1,13 @@
-'''Training script for 2D CNN model'''
+'''Training script for 2D models'''
 
-import time 
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
+import time 
+import wandb
+
+
 
 ### Classification functions ###
 def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
@@ -41,6 +45,95 @@ def evaluate_accuracy(model, test_loader):
     accuracy = 100 * correct / total
     print(f'Accuracy on test set: {accuracy}%')
     return accuracy
+
+def train_eval(model, train_loader, test_loader, criterion, optimizer, num_epochs=10):
+    # Training Model
+    epoch_times = []
+    for epoch in range(num_epochs):
+        model.train()
+        start = time.time()
+        running_loss = 0.0
+        for images, labels in train_loader:
+            images, labels = images.to('mps'), labels.to('mps')
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+        end = time.time()
+        
+        print(f'Epoch {epoch+1}, Time: {end - start}, Loss: {running_loss/len(train_loader)}')
+        epoch_times.append( end - start )
+        
+        # Testing Model 
+        model.eval()
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for images, labels in test_loader:
+                images, labels = images.to('mps'), labels.to('mps')
+                outputs = model(images)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+        accuracy = 100 * correct / total
+        print(f'Epoch {epoch+1}, Accuracy: {accuracy}%')
+        
+    print(f'\n Average epoch time: {sum(epoch_times)/len(epoch_times)}')
+    return None
+
+# Wandb version
+def train_eval_wandb(model, train_loader, test_loader, criterion, optimizer, num_epochs=10):
+
+    run = wandb.init(project="ConvNN - Convolutional Nearest Neighbor", notes="", tags=[model.name], name=model.name)
+
+    wandb.config = {"epochs": num_epochs, "learning_rate": 0.001, "batch_size": 64}
+
+
+    # Training Model
+    epoch_times = []
+    for epoch in range(wandb.config['epochs']):
+        model.train()
+        start = time.time()
+        running_loss = 0.0
+        for images, labels in train_loader:
+            images, labels = images.to('mps'), labels.to('mps') ## TODO edit later
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            
+            running_loss += loss.item()
+        end = time.time()
+        print(f'Epoch {epoch+1}, Time: {end - start}, Loss: {running_loss/len(train_loader)}')
+        epoch_times.append( end - start )
+        
+        
+        # Testing Model 
+        model.eval()
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for images, labels in test_loader:
+                images, labels = images.to('mps'), labels.to('mps') ## TODO edit later
+                outputs = model(images)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+        accuracy = 100 * correct / total
+        print(f'Epoch {epoch+1}, Accuracy: {accuracy}%')
+        
+        wandb.log({"epoch": epoch, "loss": running_loss/len(train_loader), "epoch_time": end - start, "accuracy": accuracy})
+
+        
+    print(f'\n Average epoch time: {sum(epoch_times)/len(epoch_times)}')
+
+    run.finish()
+    
+    return None
+
 
 ### Denoising functions ###
 def train_denoising_model(model, train_loader, criterion, optimizer, num_epochs=10):
@@ -96,21 +189,10 @@ def evaluate_accuracy_psnr(model, test_loader, criterion):
     return average_psnr
 
 
-### Example Usage ###   
-
-# criterion = nn.CrossEntropyLoss()
-# optimizer = optim.Adam(model.parameters(), lr=1e-3) 
-# cnn = cnn.to('mps')
-
-# train_model(cnn, train_loader, criterion, optimizer, num_epochs=10)
-
-# evaluate_accuracy(cnn, test_loader)
-
-
 '''
 Classification : Criterion = nn.CrossEntropyLoss()
 Denoising : Criterion = nn.MSELoss()
-
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
-
 '''
+
+
