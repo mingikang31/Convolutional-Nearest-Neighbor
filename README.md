@@ -526,6 +526,6 @@ Our ongoing research focuses on:
 DETR is released under the Apache 2.0 license. Please see the [LICENSE](LICENSE) file for more information.
 
 # Contributing
-We Welcome feedback and collaboration. Please reach out to: 
+We welcome feedback and collaboration. Please reach out to: 
 - Mingi Kang : mkang2@bowdoin.edu 
 - Jeova Farias : j.farias@bowdoin.edu

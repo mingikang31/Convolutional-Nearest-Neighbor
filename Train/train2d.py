@@ -10,7 +10,18 @@ import wandb
 
 
 ### Classification functions ###
-def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
+def train_model(model, 
+                train_loader, 
+                criterion=None, 
+                optimizer=None,
+                num_epochs=10):
+    
+    if criterion is None:
+        criterion = nn.CrossEntropyLoss()
+        
+    if optimizer is None:
+        optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    
     model.train()
     epoch_times = []
     for epoch in range(num_epochs):
@@ -31,7 +42,9 @@ def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
     print(f'\n Average epoch time: {sum(epoch_times)/len(epoch_times)}')
 
 # Accuracy evaluation function
-def evaluate_accuracy(model, test_loader):
+def evaluate_accuracy(model, 
+                      test_loader):
+    
     model.eval()
     correct = 0
     total = 0
@@ -46,7 +59,19 @@ def evaluate_accuracy(model, test_loader):
     print(f'Accuracy on test set: {accuracy}%')
     return accuracy
 
-def train_eval(model, train_loader, test_loader, criterion, optimizer, num_epochs=10):
+def train_eval(model, 
+               train_loader, 
+               test_loader, 
+               criterion=None, 
+               optimizer=None, 
+               num_epochs=10):
+    
+    if criterion is None:
+        criterion = nn.CrossEntropyLoss()
+    if optimizer is None:
+        optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    
+    
     # Training Model
     epoch_times = []
     for epoch in range(num_epochs):
@@ -84,12 +109,23 @@ def train_eval(model, train_loader, test_loader, criterion, optimizer, num_epoch
     return None
 
 # Wandb version
-def train_eval_wandb(model, train_loader, test_loader, criterion, optimizer, num_epochs=10):
+def train_eval_wandb(model, 
+                     train_loader,
+                     test_loader, 
+                     criterion=None, 
+                     optimizer=None, 
+                     num_epochs=10):
 
     run = wandb.init(project="ConvNN - Convolutional Nearest Neighbor", notes="", tags=[model.name], name=model.name)
 
     wandb.config = {"epochs": num_epochs, "learning_rate": 0.001, "batch_size": 64}
 
+
+    if criterion is None:
+        criterion = nn.CrossEntropyLoss()
+    if optimizer is None:
+        optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    
 
     # Training Model
     epoch_times = []
@@ -136,7 +172,18 @@ def train_eval_wandb(model, train_loader, test_loader, criterion, optimizer, num
 
 
 ### Denoising functions ###
-def train_denoising_model(model, train_loader, criterion, optimizer, num_epochs=10):
+def train_denoising_model(model, 
+                          train_loader, 
+                          criterion=None, 
+                          optimizer=None, 
+                          num_epochs=10):
+    
+    
+    if criterion is None:
+        criterion = nn.MSELoss()
+    if optimizer is None:
+        optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    
     model.train()
     
     epoch_times = []
@@ -159,7 +206,13 @@ def train_denoising_model(model, train_loader, criterion, optimizer, num_epochs=
     print(f'\n Average epoch time: {sum(epoch_times)/len(epoch_times)}')
 
 # Denoising evaluation function
-def evaluate_denoising_accuracy(model, test_loader, criterion):
+def evaluate_denoising_accuracy(model, 
+                                test_loader, 
+                                criterion=None):
+    
+    if criterion is None:
+        criterion = nn.MSELoss()
+    
     model.eval()
     total_loss = 0.0
     with torch.no_grad():
@@ -174,7 +227,13 @@ def evaluate_denoising_accuracy(model, test_loader, criterion):
 
 
 
-def evaluate_accuracy_psnr(model, test_loader, criterion):
+def evaluate_accuracy_psnr(model, 
+                           test_loader, 
+                           criterion=None):
+    
+    if criterion is None:
+        criterion = nn.MSELoss()
+    
     model.eval()
     total_psnr = 0.0
     with torch.no_grad():
