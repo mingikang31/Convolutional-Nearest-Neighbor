@@ -49,6 +49,18 @@ Classification Models
 11. Branching Network (ConvNN Random Sample): kernel_size = 3, K = 9, N = 64 Samples
 12. Branching Network (ConvNN Spatial Sample): kernel_size = 3, K = 9, N = 8 (N^2) Samples
 
+
+** Location Channels added before the layers 
+1. CNN_Location_Before
+
+2. ConvNN_2D_K_All_Location_Before
+3. ConvNN_2D_K_N_Location_Before
+4. ConvNN_2D_Spatial_K_N_Location_Before
+
+5. Branching_ConvNN_2D_K_All_Location_Before
+6. Branching_ConvNN_2D_K_N_Location
+7. Branching_ConvNN_2D_Spatial_K_N_Location
+
 '''
 class CNN(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, kernel_size=3, ):
