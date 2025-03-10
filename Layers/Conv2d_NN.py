@@ -123,6 +123,9 @@ class Conv2d_NN(nn.Module):
 
         self.flatten = nn.Flatten(start_dim=2)
         
+        self.pointwise_conv = nn.Conv2d(self.out_channels + 2, self.out_channels, kernel_size=1)
+        
+        
     def forward(self, x): 
         if self.shuffle_pattern in ["B", "BA"]:
             if self.location_channels: 
@@ -150,12 +153,12 @@ class Conv2d_NN(nn.Module):
         if self.shuffle_pattern in ["A", "BA"]:
             if self.location_channels:
                 x4 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
-                x5 = x4[:, :-2, :, :]
+                x5 = self.pointwise_conv(x4) ## Added Pointwise Conv to reduce channels added for spatial coordinates
             else:
                 x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
         else: 
             if self.location_channels:
-                x5 = x4[:, :-2, :, :]
+                x5 = self.pointwise_conv(x4) ## Added Pointwise Conv to reduce channels added for spatial coordinates
             else: 
                 x5 = x4
 
@@ -262,6 +265,9 @@ class Conv2d_NN_prev(nn.Module):
 
         self.flatten = nn.Flatten(start_dim=2)
         
+        self.pointwise_conv = nn.Conv2d(self.out_channels + 2, self.out_channels, kernel_size=1)
+
+        
     def forward(self, x): 
         if self.shuffle_pattern in ["B", "BA"]:
             if self.location_channels: 
@@ -288,14 +294,13 @@ class Conv2d_NN_prev(nn.Module):
 
         if self.shuffle_pattern in ["A", "BA"]:
             if self.location_channels:
-                x4 = x4[:, :-2, :, :]
+                x4 = self.pointwise_conv(x4)
                 x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
             else:
                 x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
         else: 
             if self.location_channels:
-                x4 = x4[:, :-2, :, :]
-                x5 = x4
+                x5 = self.pointwise_conv(x4)
             else: 
                 x5 = x4
 
@@ -318,13 +323,13 @@ class Conv2d_NN_prev(nn.Module):
 def example_usage():
     """Example Usage of Conv2d_NN Layer"""
     ex = torch.rand(32, 3, 28, 28) 
-    print("Input: ", ex.shape)
+    print("Input: ", ex.shape, '\n')
 
-    conv2d_nn = Conv2d_NN(in_channels=3, out_channels=3, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples=5,magnitude_type="similarity", location_channels=True)
+    conv2d_nn = Conv2d_NN(in_channels=3, out_channels=3, K=3, stride=3, padding=0, shuffle_pattern="B", shuffle_scale=2, samples=5,magnitude_type="similarity", location_channels=False)
     output = conv2d_nn(ex)
-    print("Output: ", output.shape)
+    print("Output: ", output.shape, '\n')
     
     a = conv2d_nn.coordinate_channels(ex.shape, device=ex.device)
-    print("location_channels: ", a.shape)
+    print("location_channels: ", a.shape, '\n')
 
-# example_usage()
+example_usage()

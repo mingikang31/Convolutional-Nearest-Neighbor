@@ -42,7 +42,7 @@ class NoisyCIFAR10(datasets.CIFAR10):
                 transform=None, 
                 target_transform=None, 
                 download=False, 
-                noise_std=0.1
+                noise_std=0.3
                 ):
        
         super(NoisyCIFAR10, self).__init__(root, train=train, transform=transform, target_transform=target_transform, download=download)
@@ -50,6 +50,8 @@ class NoisyCIFAR10(datasets.CIFAR10):
 
    def __getitem__(self, index):
         img, target = super(NoisyCIFAR10, self).__getitem__(index)
+        
+        # Add Gaussian noise to the image
         noisy_img = img + self.noise_std * torch.randn_like(img)
         return noisy_img, img, target
 
@@ -93,7 +95,8 @@ class CIFAR10_denoise:
 
 
 def test_denoise_visual(model, test_loader):
- 
+    count = 0
+    
     for test_data in test_loader:
         noisy_img, img = test_data[0], test_data[1]
         
@@ -140,8 +143,11 @@ def test_denoise_visual(model, test_loader):
         plt.imshow(img.numpy())
 
         plt.show()
-        break  # Remove this break to visualize more images
-    
+
+        if count == 3: 
+            break
+        else:
+            count += 1    
 ### EXAMPLE USAGE ### 
 #cifar10 = CIFAR10()
 

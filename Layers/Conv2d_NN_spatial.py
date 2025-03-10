@@ -70,8 +70,11 @@ class Conv2d_NN_spatial(nn.Module):
                                                    )
                                  
       
-      
       self.flatten = nn.Flatten(start_dim=2)      
+      
+      
+      self.pointwise_conv = nn.Conv2d(self.out_channels + 2, self.out_channels, kernel_size=1)
+
       
       
    def forward(self, x): 
@@ -119,13 +122,13 @@ class Conv2d_NN_spatial(nn.Module):
       if self.shuffle_pattern in ["A", "BA"]:
          if self.location_channels:
             x4 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
-            x5 = x4[:, :-2, :, :]
+            x5 = self.pointwise_conv(x4)
 
          else:
             x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
       else: 
          if self.location_channels:
-            x5 = x4[:, :-2, :, :]
+            x5 = self.pointwise_conv(x4)
          else:
             x5 = x4
 
@@ -205,6 +208,9 @@ class Conv2d_NN_spatial_prev(nn.Module):
       
       self.flatten = nn.Flatten(start_dim=2)      
       
+      self.pointwise_conv = nn.Conv2d(self.out_channels + 2, self.out_channels, kernel_size=1)
+
+      
       
    def forward(self, x): 
       
@@ -251,14 +257,13 @@ class Conv2d_NN_spatial_prev(nn.Module):
       
       if self.shuffle_pattern in ["A", "BA"]:
          if self.location_channels:
-            x4 = x4[:, :-2, :, :]
+            x4 = self.pointwise_conv(x4)
             x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
          else:
             x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
       else: 
          if self.location_channels:
-            x4 = x4[:, :-2, :, :]
-            x5 = x4
+            x5 = self.pointwise_conv(x4)
          else:
             x5 = x4
 

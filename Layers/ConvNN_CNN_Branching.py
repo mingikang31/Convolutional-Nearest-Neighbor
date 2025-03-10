@@ -25,25 +25,46 @@ class ConvNN_CNN_Random_BranchingLayer(nn.Module):
         
         super(ConvNN_CNN_Random_BranchingLayer, self).__init__()
         
-        self.branch1 = nn.Sequential(
-            nn.Conv2d(in_ch, channel_ratio[0], kernel_size, stride=1, padding=1),
-            nn.ReLU()
-        )
+        self.in_ch = in_ch 
+        self.out_ch = out_ch    
+        self.channel_ratio = channel_ratio
+        self.kernel_size = kernel_size
+        self.K = K
+        self.samples = samples
+        self.location_channels = location_channels
         
-        self.branch2 = nn.Sequential(
-            Conv2d_NN(in_ch, channel_ratio[1], K = K, stride = K, samples = samples, location_channels = location_channels), 
-            nn.ReLU()
-        )
+        
+        if self.channel_ratio[0] != 0:
+            self.branch1 = nn.Sequential(
+                nn.Conv2d(in_ch, channel_ratio[0], kernel_size, stride=1, padding=1),
+                nn.ReLU()
+            )
+        
+        if self.channel_ratio[1] != 0:
+            self.branch2 = nn.Sequential(
+                Conv2d_NN(in_ch, channel_ratio[1], K = K, stride = K, samples = samples, location_channels = location_channels), 
+                nn.ReLU()
+            )
+        
+
         self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
 
 
     def forward(self, x):
         
-        x1 = self.branch1(x)
+        if self.channel_ratio[0] != 0:
+            x1 = self.branch1(x)
         
-        x2 = self.branch2(x)
+        if self.channel_ratio[1] != 0:
+            x2 = self.branch2(x)
         
-        concat = torch.cat([x1, x2], dim=1)
+        if self.channel_ratio[0] == 0:
+            concat = x2
+        elif self.channel_ratio[1] == 0:
+            concat = x1
+        else:
+        
+            concat = torch.cat([x1, x2], dim=1)
         
         reduce = self.reduce_channels(concat)
         return reduce
@@ -57,23 +78,44 @@ class ConvNN_CNN_Spatial_BranchingLayer(nn.Module):
         super(ConvNN_CNN_Spatial_BranchingLayer, self).__init__()
         self.kernel_size = kernel_size
         
-        self.branch1 = nn.Sequential(
-            nn.Conv2d(in_ch, channel_ratio[0], kernel_size, stride=1, padding=1),
-            nn.ReLU()
-        )
-        self.branch2 = nn.Sequential(
-            Conv2d_NN_spatial(in_ch, channel_ratio[1], K = K, stride = K, samples = samples, location_channels = location_channels), 
-            nn.ReLU()
-        )
+        self.in_ch = in_ch 
+        self.out_ch = out_ch    
+        self.channel_ratio = channel_ratio
+        self.kernel_size = kernel_size
+        self.K = K
+        self.samples = samples
+        self.location_channels = location_channels
+        
+        if self.channel_ratio[0] != 0:
+            self.branch1 = nn.Sequential(
+                nn.Conv2d(in_ch, channel_ratio[0], kernel_size, stride=1, padding=1),
+                nn.ReLU()
+            )
+            
+        if self.channel_ratio[1] != 0:
+            self.branch2 = nn.Sequential(
+                Conv2d_NN_spatial(in_ch, channel_ratio[1], K = K, stride = K, samples = samples, location_channels = location_channels), 
+                nn.ReLU()
+            )
+
+        
         self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
 
     def forward(self, x):
         
-        x1 = self.branch1(x)
+        if self.channel_ratio[0] != 0:
+            x1 = self.branch1(x)
         
-        x2 = self.branch2(x)
+        if self.channel_ratio[1] != 0:
+            x2 = self.branch2(x)
         
-        concat = torch.cat([x1, x2], dim=1)
+        if self.channel_ratio[0] == 0:
+            concat = x2
+        elif self.channel_ratio[1] == 0:
+            concat = x1
+        else:
+        
+            concat = torch.cat([x1, x2], dim=1)
         
         reduce = self.reduce_channels(concat)
         return reduce

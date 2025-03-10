@@ -67,6 +67,8 @@ class MNIST_denoise:
         
 
 def test_denoise_visual(model, test_loader):
+    
+    count = 0
     for test_data in test_loader:
         noisy_img, img = test_data[0], test_data[1]
         
@@ -89,7 +91,11 @@ def test_denoise_visual(model, test_loader):
         plt.imshow(img.squeeze().cpu().numpy(), cmap='gray')
 
         plt.show()
-        break  # Remove this break to visualize more images
+        if count == 3: 
+            break
+        else:
+            count += 1
+            # Remove this break to visualize more images
 
 ### EXAMPLE USAGE ### 
 # mnist = MNIST()

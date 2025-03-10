@@ -428,6 +428,337 @@ class Branching_ConvNN_2D_Spatial_K_N(nn.Module):
         self.to("mps")
 
 
+### Location added before layers Models ** X' ###
+class CNN_Location_Before(nn.Module):
+    def __init__(self, in_ch=3, num_classes=10, kernel_size=3):
+        super(CNN_Location_Before, self).__init__()
+        
+        
+        self.conv1 = nn.Conv2d(in_ch+2, 16, kernel_size=kernel_size, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=kernel_size, stride=1, padding=1)
+
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.to("mps")
+        self.name = "CNN_Location_Before"
+
+    def forward(self, x):
+        x_coordinates = self.coordinate_channels(x.shape, x.device)
+        x = torch.cat((x, x_coordinates), dim=1)
+        
+        x = self.relu(self.conv1(x))
+        x = self.relu(self.conv2(x))
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to("mps")
+            
+    def coordinate_channels(self, tensor_shape, device):
+        x_ind = torch.arange(0, tensor_shape[2])
+        y_ind = torch.arange(0, tensor_shape[3])
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_grid = x_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        y_grid = y_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        
+        xy_grid = torch.cat((x_grid, y_grid), dim=1)
+        xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
+        return xy_grid_normalized.to(device)
+
+class ConvNN_2D_K_All_Location_Before(nn.Module):
+    def __init__(self, in_ch=3, num_classes=10, K=9):
+        super(ConvNN_2D_K_All_Location_Before, self).__init__()
+        
+        self.conv1 = Conv2d_NN(in_ch+2, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all")
+        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all")
+
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.to("mps")
+        self.name = "ConvNN_2D_K_All_Location_Before"
+
+    def forward(self, x):
+        x_coordinates = self.coordinate_channels(x.shape, x.device)
+        x = torch.cat((x, x_coordinates), dim=1)
+        
+        x = self.relu(self.conv1(x))
+        x = self.relu(self.conv2(x))
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to("mps")
+        
+    def coordinate_channels(self, tensor_shape, device):
+        x_ind = torch.arange(0, tensor_shape[2])
+        y_ind = torch.arange(0, tensor_shape[3])
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_grid = x_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        y_grid = y_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        
+        xy_grid = torch.cat((x_grid, y_grid), dim=1)
+        xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
+        return xy_grid_normalized.to(device)
+
+class ConvNN_2D_K_N_Location_Before(nn.Module):
+    def __init__(self, in_ch=3, num_classes=10, K=9, N = 64):
+        super(ConvNN_2D_K_N_Location_Before, self).__init__()
+        
+        self.conv1 = Conv2d_NN(in_ch+2, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N)
+        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N)
+
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.to("mps")
+        self.name = "ConvNN_2D_K_N_Location_Before"
+
+    def forward(self, x):
+        x_coordinates = self.coordinate_channels(x.shape, x.device)
+        x = torch.cat((x, x_coordinates), dim=1)
+        
+        x = self.relu(self.conv1(x))
+        x = self.relu(self.conv2(x))
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to("mps")
+        
+    def coordinate_channels(self, tensor_shape, device):
+        x_ind = torch.arange(0, tensor_shape[2])
+        y_ind = torch.arange(0, tensor_shape[3])
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_grid = x_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        y_grid = y_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        
+        xy_grid = torch.cat((x_grid, y_grid), dim=1)
+        xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
+        return xy_grid_normalized.to(device)
+
+class ConvNN_2D_Spatial_K_N_Location_Before(nn.Module):
+    def __init__(self, in_ch=3, num_classes=10, K=9, N = 8):
+        super(ConvNN_2D_Spatial_K_N_Location_Before, self).__init__()
+        
+        self.conv1 = Conv2d_NN_spatial(in_ch+2, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N)
+        self.conv2 = Conv2d_NN_spatial(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N)
+
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.to("mps")
+        self.name = "ConvNN_2D_Spatial_K_N_Location_Before"
+
+    def forward(self, x):
+        x_coordinates = self.coordinate_channels(x.shape, x.device)
+        x = torch.cat((x, x_coordinates), dim=1)
+        
+        x = self.relu(self.conv1(x))
+        x = self.relu(self.conv2(x))
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to("mps")
+        
+    def coordinate_channels(self, tensor_shape, device):
+        x_ind = torch.arange(0, tensor_shape[2])
+        y_ind = torch.arange(0, tensor_shape[3])
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_grid = x_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        y_grid = y_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        
+        xy_grid = torch.cat((x_grid, y_grid), dim=1)
+        xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
+        return xy_grid_normalized.to(device)
+
+class Branching_ConvNN_2D_K_All_Location_Before(nn.Module):
+    def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, location_channels = False):
+        
+        super(Branching_ConvNN_2D_K_All_Location_Before, self).__init__()
+        self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch+2, 16, 
+            channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples="all", location_channels=location_channels)
+        self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples="all", location_channels=location_channels)
+        
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.to("mps")
+        self.name = "Branching_ConvNN_2D_K_All_Location_Before"
+
+    def forward(self, x):
+        x_coordinates = self.coordinate_channels(x.shape, x.device)
+        x = torch.cat((x, x_coordinates), dim=1)
+        x = self.conv1(x)
+        x = self.conv2(x)
+        
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to("mps")
+        
+    def coordinate_channels(self, tensor_shape, device):
+        x_ind = torch.arange(0, tensor_shape[2])
+        y_ind = torch.arange(0, tensor_shape[3])
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_grid = x_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        y_grid = y_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        
+        xy_grid = torch.cat((x_grid, y_grid), dim=1)
+        xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
+        return xy_grid_normalized.to(device)
+    
+class Branching_ConvNN_2D_K_N_Location_Before(nn.Module):
+    def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, N = 64, location_channels = False):
+        
+        super(Branching_ConvNN_2D_K_N_Location_Before, self).__init__()
+        self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch+2, 16, 
+            channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.to("mps")
+        self.name = "Branching_ConvNN_2D_K_N_Location_Before"
+
+    def forward(self, x):
+        x_coordinates = self.coordinate_channels(x.shape, x.device)
+        x = torch.cat((x, x_coordinates), dim=1)
+        x = self.conv1(x)
+        x = self.conv2(x)
+        
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to("mps")
+        
+    def coordinate_channels(self, tensor_shape, device):
+        x_ind = torch.arange(0, tensor_shape[2])
+        y_ind = torch.arange(0, tensor_shape[3])
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_grid = x_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        y_grid = y_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        
+        xy_grid = torch.cat((x_grid, y_grid), dim=1)
+        xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
+        return xy_grid_normalized.to(device)
+
+class Branching_ConvNN_2D_Spatial_K_N_Location_Before(nn.Module):
+    def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, N = 8, location_channels = False):
+        
+        super(Branching_ConvNN_2D_Spatial_K_N_Location_Before, self).__init__()
+        self.conv1 = ConvNN_CNN_Spatial_BranchingLayer(in_ch+2, 16, 
+            channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv2 = ConvNN_CNN_Spatial_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.to("mps")
+        self.name = "Branching_ConvNN_2D_Spatial_K_N"
+
+    def forward(self, x):
+        x_coordinates = self.coordinate_channels(x.shape, x.device)
+        x = torch.cat((x, x_coordinates), dim=1)
+        x = self.conv1(x)
+        x = self.conv2(x)
+        
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to("mps")
+        
+    def coordinate_channels(self, tensor_shape, device):
+        x_ind = torch.arange(0, tensor_shape[2])
+        y_ind = torch.arange(0, tensor_shape[3])
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_grid = x_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        y_grid = y_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        
+        xy_grid = torch.cat((x_grid, y_grid), dim=1)
+        xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
+        return xy_grid_normalized.to(device)
+
 def classification_check():
     # Models
     models = [CNN(), ConvNN_2D_K_All(), 
@@ -436,7 +767,11 @@ def classification_check():
               ConvNN_2D_Spatial_K_N_Location(),Local_Global_ConvNN_2D(), 
               Global_Local_ConvNN_2D(), 
               Branching_ConvNN_2D_K_All(), Branching_ConvNN_2D_K_N(),
-              Branching_ConvNN_2D_Spatial_K_N()
+              Branching_ConvNN_2D_Spatial_K_N(), 
+                CNN_Location_Before(), ConvNN_2D_K_All_Location_Before(),
+                ConvNN_2D_K_N_Location_Before(), ConvNN_2D_Spatial_K_N_Location_Before(),
+                Branching_ConvNN_2D_K_All_Location_Before(), Branching_ConvNN_2D_K_N_Location_Before(),
+                Branching_ConvNN_2D_Spatial_K_N_Location_Before()
               ]
               
     # Data
@@ -454,8 +789,8 @@ def classification_check():
 
 if __name__ == '__main__':
     
-    # print("Classification Models")
-    # classification_check()
+    print("Classification Models")
+    classification_check()
     
     pass
     

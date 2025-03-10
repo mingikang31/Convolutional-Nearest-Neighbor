@@ -1,5 +1,5 @@
 '''2D Models for Convolutional Neural Networks.'''
-'''Classification & Denoising Model'''
+'''Denoising Model'''
 ### All Models are based on the CIFAR10 dataset dimensions. ###
 
 # PyTorch
@@ -51,11 +51,11 @@ Denoising Models
 '''
 
 class DenoisingCNN(nn.Module):
-    def __init__(self, in_ch=3, kernel_size=3):
+    def __init__(self, in_ch=3,out_ch=3, kernel_size=3):
         super(DenoisingCNN, self).__init__()
         self.conv1 = nn.Conv2d(in_ch, 16, kernel_size=kernel_size, stride=1, padding=1)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=kernel_size, stride=1, padding=1)
-        self.conv3 = nn.Conv2d(32, 3, kernel_size=kernel_size, stride=1, padding=1)
+        self.conv3 = nn.Conv2d(32, out_ch, kernel_size=kernel_size, stride=1, padding=1)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()  # Output activation
         
@@ -75,11 +75,11 @@ class DenoisingCNN(nn.Module):
         self.to("mps")
 
 class DenoisingConvNN_2D_K_All(nn.Module):
-    def __init__(self, in_ch=3, K=9):
+    def __init__(self, in_ch=3, out_ch=3, K=9):
         super(DenoisingConvNN_2D_K_All, self).__init__()
         self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all")
         self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all")
-        self.conv3 = Conv2d_NN(32, 3, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all") 
+        self.conv3 = Conv2d_NN(32, out_ch, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all") 
 
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
@@ -100,11 +100,11 @@ class DenoisingConvNN_2D_K_All(nn.Module):
         self.to("mps")
 
 class DenoisingConvNN_2D_K_N(nn.Module):
-    def __init__(self, in_ch=3, K=9, N = 64):
+    def __init__(self, in_ch=3, out_ch=3, K=9, N = 64):
         super(DenoisingConvNN_2D_K_N, self).__init__()
         self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N)
         self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N)
-        self.conv3 = Conv2d_NN(32, 3, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N)
+        self.conv3 = Conv2d_NN(32, out_ch, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N)
 
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
@@ -125,11 +125,11 @@ class DenoisingConvNN_2D_K_N(nn.Module):
         self.to("mps")
 
 class DenoisingConvNN_2D_Spatial_K_N(nn.Module):
-    def __init__(self, in_ch=3, K=9, N = 8):
+    def __init__(self, in_ch=3, out_ch=3, K=9, N = 8):
         super(DenoisingConvNN_2D_Spatial_K_N, self).__init__()
         self.conv1 = Conv2d_NN_spatial(in_ch, 16, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N)
         self.conv2 = Conv2d_NN_spatial(16, 32, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N)
-        self.conv3 = Conv2d_NN_spatial(32, 3, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N)
+        self.conv3 = Conv2d_NN_spatial(32, out_ch, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N)
 
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
@@ -150,11 +150,11 @@ class DenoisingConvNN_2D_Spatial_K_N(nn.Module):
         self.to("mps")
 
 class DenoisingConvNN_2D_K_All_Location(nn.Module):
-    def __init__(self, in_ch=3, K=9):
+    def __init__(self, in_ch=3, out_ch=3, K=9):
         super(DenoisingConvNN_2D_K_All_Location, self).__init__()
         self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", location_channels=True)
         self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", location_channels=True)
-        self.conv3 = Conv2d_NN(32, 3, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", location_channels=True)
+        self.conv3 = Conv2d_NN(32, out_ch, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", location_channels=True)
 
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
@@ -175,11 +175,11 @@ class DenoisingConvNN_2D_K_All_Location(nn.Module):
         self.to("mps")
         
 class DenoisingConvNN_2D_K_N_Location(nn.Module):
-    def __init__(self, in_ch=3, K=9, N = 64):
+    def __init__(self, in_ch=3, out_ch=3, K=9, N = 64):
         super(DenoisingConvNN_2D_K_N_Location, self).__init__()
         self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
         self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
-        self.conv3 = Conv2d_NN(32, 3, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
+        self.conv3 = Conv2d_NN(32, out_ch, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
 
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
@@ -200,11 +200,11 @@ class DenoisingConvNN_2D_K_N_Location(nn.Module):
         self.to("mps")
 
 class DenoisingConvNN_2D_Spatial_K_N_Location(nn.Module):
-    def __init__(self, in_ch=3, K=9, N = 8):
+    def __init__(self, in_ch=3, out_ch=3, K=9, N = 8):
         super(DenoisingConvNN_2D_Spatial_K_N_Location, self).__init__()
         self.conv1 = Conv2d_NN_spatial(in_ch, 16, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
         self.conv2 = Conv2d_NN_spatial(16, 32, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
-        self.conv3 = Conv2d_NN_spatial(32, 3, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
+        self.conv3 = Conv2d_NN_spatial(32, out_ch, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
 
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
@@ -226,11 +226,11 @@ class DenoisingConvNN_2D_Spatial_K_N_Location(nn.Module):
         self.to("mps")
 
 class DenoisingLocal_Global_ConvNN_2D(nn.Module):
-    def __init__(self, in_ch=3, kernel_size=3, K=9, N = "all", location_channels=False):
+    def __init__(self, in_ch=3, out_ch=3, kernel_size=3, K=9, N = "all", location_channels=False):
         super(DenoisingLocal_Global_ConvNN_2D, self).__init__()
         self.conv1 = nn.Conv2d(in_ch, 16, kernel_size=kernel_size, stride=1, padding=1)
         self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=location_channels)
-        self.conv3 = Conv2d_NN(32, 3, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=location_channels)
+        self.conv3 = Conv2d_NN(32, out_ch, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=location_channels)
 
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
@@ -250,11 +250,11 @@ class DenoisingLocal_Global_ConvNN_2D(nn.Module):
         self.to("mps")
 
 class DenoisingGlobal_Local_ConvNN_2D(nn.Module):
-    def __init__(self, in_ch=3, kernel_size=3, K=9, N = "all", location_channels=False):
+    def __init__(self, in_ch=3,out_ch=3, kernel_size=3, K=9, N = "all", location_channels=False):
         super(DenoisingGlobal_Local_ConvNN_2D, self).__init__()
         self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=location_channels)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=kernel_size, stride=1, padding=1)
-        self.conv3 = nn.Conv2d(32, 3, kernel_size=kernel_size, stride=1, padding=1) 
+        self.conv3 = nn.Conv2d(32, out_ch, kernel_size=kernel_size, stride=1, padding=1) 
 
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
@@ -274,11 +274,11 @@ class DenoisingGlobal_Local_ConvNN_2D(nn.Module):
         self.to("mps")
         
 class DenoisingBranching_ConvNN_2D_K_All(nn.Module):
-    def __init__(self, in_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, location_channels=False):
+    def __init__(self, in_ch=3, out_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, location_channels=False):
         super(DenoisingBranching_ConvNN_2D_K_All, self).__init__()
         self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, location_channels=location_channels)
         self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, location_channels=location_channels)
-        self.conv3 = ConvNN_CNN_Random_BranchingLayer(32, 3, channel_ratio=(3, 3), kernel_size=kernel_size, K=K, location_channels=location_channels)
+        self.conv3 = ConvNN_CNN_Random_BranchingLayer(32, out_ch, channel_ratio=(out_ch, out_ch), kernel_size=kernel_size, K=K, location_channels=location_channels)
 
         self.sigmoid = nn.Sigmoid()
         self.to("mps")
@@ -298,11 +298,11 @@ class DenoisingBranching_ConvNN_2D_K_All(nn.Module):
         
         
 class DenoisingBranching_ConvNN_2D_K_N(nn.Module):
-    def __init__(self, in_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, N = 64, location_channels=False):
+    def __init__(self, in_ch=3, out_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, N = 64, location_channels=False):
         super(DenoisingBranching_ConvNN_2D_K_N, self).__init__()
         self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
         self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
-        self.conv3 = ConvNN_CNN_Random_BranchingLayer(32, 3, channel_ratio=(3, 3), kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv3 = ConvNN_CNN_Random_BranchingLayer(32, out_ch, channel_ratio=(out_ch, out_ch), kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
 
         self.sigmoid = nn.Sigmoid()
         self.to("mps")
@@ -321,11 +321,11 @@ class DenoisingBranching_ConvNN_2D_K_N(nn.Module):
         self.to("mps")
         
 class DenoisingBranching_ConvNN_2D_Spatial_K_N(nn.Module):
-    def __init__(self, in_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, N = 8, location_channels=False):
+    def __init__(self, in_ch=3, out_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, N = 8, location_channels=False):
         super(DenoisingBranching_ConvNN_2D_Spatial_K_N, self).__init__()
         self.conv1 = ConvNN_CNN_Spatial_BranchingLayer(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
         self.conv2 = ConvNN_CNN_Spatial_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
-        self.conv3 = ConvNN_CNN_Spatial_BranchingLayer(32, 3, channel_ratio=(3, 3),kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
+        self.conv3 = ConvNN_CNN_Spatial_BranchingLayer(32, out_ch, channel_ratio=(out_ch, out_ch),kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels)
 
         self.sigmoid = nn.Sigmoid()
         self.to("mps")
