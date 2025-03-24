@@ -18,8 +18,233 @@ import faiss
 import numpy as np
 
 
+class Conv1d_NN_optimized(nn.Module): 
+    """
+    Convolution 1D Nearest Neighbor Layer for Convolutional Neural Networks.
+    
+    Attributes:
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        K (int): Number of Nearest Neighbors for consideration.
+        stride (int): Stride size.
+        padding (int): Padding size.
+        shuffle_pattern (str): Shuffle pattern.
+        shuffle_scale (int): Shuffle scale factor.
+        samples (int/str): Number of samples to consider.
+        magnitude_type (str): Distance or Similarity.
+        
+    Notes:
+        - K must be same as stride. K == stride.
+    """
+    
+    def __init__(self, 
+                 in_channels, 
+                 out_channels, 
+                 K=3, 
+                 stride=3, 
+                 padding=0, 
+                 shuffle_pattern='N/A', 
+                 shuffle_scale=2, 
+                 samples='all', 
+                 magnitude_type='similarity'
+                 ): 
+        
+        """
+        Initializes the Conv1d_NN module.
+        
+        Parameters:
+            in_channels (int): Number of input channels.
+            out_channels (int): Number of output channels.
+            K (int): Number of Nearest Neighbors for consideration.
+            stride (int): Stride size.
+            padding (int): Padding size.
+            shuffle_pattern (str): Shuffle pattern: "B", "A", "BA".
+            shuffle_scale (int): Shuffle scale factor.
+            samples (int/str): Number of samples to consider.
+            magnitude_type (str): Distance or Similarity.
+        """
+        
+        super().__init__()
+        
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.K = K
+        self.stride = stride 
+        self.padding = padding
+        self.shuffle_pattern = shuffle_pattern 
+        self.shuffle_scale = shuffle_scale
+        self.samples = int(samples) if samples != 'all' else samples 
+        self.magnitude_type = magnitude_type 
+        self.maximum = True if self.magnitude_type == 'similarity' else False
+        
+        # Unshuffle layer 
+        self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
+        
+        # Shuffle Layer 
+        self.shuffle_layer = PixelShuffle1D(upscale_factor=self.shuffle_scale)
+        
+        # Channels for Conv1d Layer
+        self.in_channels = in_channels * shuffle_scale if self.shuffle_pattern in ["BA", "B"] else in_channels
+        self.out_channels = out_channels * shuffle_scale if self.shuffle_pattern in ["BA", "A"] else out_channels
 
-class Conv1d_NN(nn.Module): 
+        # Conv1d Layer 
+        self.conv1d_layer = Conv1d(in_channels=self.in_channels, 
+                                    out_channels=self.out_channels, 
+                                    kernel_size=self.K, 
+                                    stride=self.stride, 
+                                    padding=self.padding)
+
+    def forward(self, x): 
+        # Consider all samples 
+        if self.samples == 'all': 
+            # Unshuffle Layer 
+            if self.shuffle_pattern in ["B", "BA"]:
+                x1 = self.unshuffle_layer(x)
+            else:
+                x1 = x
+            
+            # Calculate Distance/Similarity Matrix + Prime Vmap 2D
+            if self.magnitude_type == 'distance': 
+                matrix_magnitude = self._calculate_distance_matrix(x1)
+            elif self.magnitude_type == 'similarity':
+                matrix_magnitude = self._calculate_similarity_matrix(x1)
+                
+            prime_2d = self._prime(x1, matrix_magnitude, self.K, self.maximum) 
+            
+            # Conv1d Layer
+            x2 = self.conv1d_layer(prime_2d)
+            
+            
+            # Shuffle Layer 
+            if self.shuffle_pattern in ["A", "BA"]:
+                x3 = self.shuffle_layer(x2)
+            else:
+                x3 = x2
+            
+            return x3
+        
+        # Consider N samples
+        else: 
+            # Unshuffle Layer 
+            if self.shuffle_pattern in ["B", "BA"]:
+                x1 = self.unshuffle_layer(x)
+            else:
+                x1 = x
+                
+            # Calculate Distance/Similarity Matrix + Prime       
+            rand_idx = torch.randperm(x1.shape[2], device=x1.device)[:self.samples]
+            
+            x1_sample = x1[:, :, rand_idx]
+            
+            if self.magnitude_type == 'distance':
+                matrix_magnitude = self._calculate_distance_matrix_N(x1, x1_sample)
+            elif self.magnitude_type == 'similarity':
+                matrix_magnitude = self._calculate_similarity_matrix_N(x1, x1_sample)
+                
+            range_idx = torch.arange(len(rand_idx), device=x1.device)
+                
+        
+            if self.magnitude_type == 'distance':
+                matrix_magnitude[:, rand_idx, range_idx] = float('inf') 
+            elif self.magnitude_type == 'similarity':
+                matrix_magnitude[:, rand_idx, range_idx] = float('-inf')
+                
+            
+            prime = self._prime_N(x1, matrix_magnitude, self.K, rand_idx, self.maximum)
+            
+            # Conv1d Layer
+            x2 = self.conv1d_layer(prime)
+            
+            # Shuffle Layer
+            if self.shuffle_pattern in ["A", "BA"]:
+                x3 = self.shuffle_layer(x2)
+            else:
+                x3 = x2
+            
+            return x3
+    
+    
+    def _calculate_distance_matrix(self, matrix, sqrt=False):
+        norm_squared = torch.sum(matrix ** 2, dim=1, keepdim=True)
+        dot_product = torch.bmm(matrix.transpose(2, 1), matrix)
+        dist_matrix = norm_squared + norm_squared.transpose(2, 1) - 2 * dot_product
+        
+        dist_matrix = torch.clamp(dist_matrix, min=0) # remove negative values
+        
+        if sqrt:
+            dist_matrix = torch.sqrt(dist_matrix)
+        return dist_matrix
+    
+    def _calculate_distance_matrix_N(self, matrix, matrix_sample, sqrt=False):
+        norm_squared = torch.sum(matrix ** 2, dim=1, keepdim=True).permute(0, 2, 1)
+        norm_squared_sample = torch.sum(matrix_sample ** 2, dim=1, keepdim=True).transpose(2, 1).permute(0, 2, 1)
+        
+        dot_product = torch.bmm(matrix.transpose(2, 1), matrix_sample)
+        
+        dist_matrix = norm_squared + norm_squared_sample - 2 * dot_product
+        
+        dist_matrix = torch.clamp(dist_matrix, min=0) # remove negative values
+        
+        if sqrt:
+            dist_matrix = torch.sqrt(dist_matrix)
+        return dist_matrix
+    
+    
+    def _calculate_similarity_matrix(self, matrix):
+        norm_matrix = F.normalize(matrix, p=2, dim=1) # p=2 (L2 Norm - Euclidean Distance), dim=1 (across the channels)
+        similarity_matrix = torch.bmm(norm_matrix.transpose(2, 1), norm_matrix)
+        return similarity_matrix
+    
+    def _calculate_similarity_matrix_N(self, matrix, matrix_sample):
+        norm_matrix = F.normalize(matrix, p=2, dim=1) # p=2 (L2 Norm - Euclidean Distance), dim=1 (across the channels)
+        norm_sample = F.normalize(matrix_sample, p=2, dim=1)
+        similarity_matrix = torch.bmm(norm_matrix.transpose(2, 1), norm_sample)
+        return similarity_matrix
+
+    def _prime(self, matrix, magnitude_matrix, K, maximum):
+        b, c, t = matrix.shape 
+
+        _, topk_indices = torch.topk(magnitude_matrix, k = K, dim=2, largest=maximum)
+        
+        tk = topk_indices.shape[-1]
+        
+        assert K == tk, "Error: K must be same as tk. K == tk."
+        
+        indices_expanded = topk_indices.unsqueeze(1).expand(b, c, t, tk)
+        batch_indices = torch.arange(b).view(b, 1, 1, 1).expand(b, c, t, tk)
+        channel_indices = torch.arange(c).view(1, c, 1, 1).expand(b, c, t, tk)
+        
+        prime = matrix[batch_indices, channel_indices, indices_expanded]
+        prime = prime.view(b, c, -1)
+        return prime
+    
+    def _prime_N(self, matrix, magnitude_matrix, K, rand_idx, maximum):
+        
+        b, c, t = matrix.shape
+
+        _, topk_indices = torch.topk(magnitude_matrix, k=K - 1, dim=2, largest=maximum)
+        tk = topk_indices.shape[-1]
+        assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
+        
+        mapped_tensor = rand_idx[topk_indices]
+
+
+        token_indices = torch.arange(t, device=matrix.device).view(1, t, 1).expand(b, t, 1)
+        
+        final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
+
+        indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
+        
+        batch_indices = torch.arange(b, device=matrix.device).view(b, 1, 1, 1).expand(b, c, t, K)
+        channel_indices = torch.arange(c, device=matrix.device).view(1, c, 1, 1).expand(b, c, t, K)
+
+        prime = matrix[batch_indices, channel_indices, indices_expanded]  
+        
+        prime = prime.view(b, c, -1)
+        return prime
+
+
+class Conv1d_NN(nn.Module):
     """
     Convolution 1D Nearest Neighbor Layer for Convolutional Neural Networks.
     
@@ -133,7 +358,8 @@ class Conv1d_NN(nn.Module):
                 x1 = x
                 
             # Calculate Distance/Similarity Matrix + Prime Vmap 2D
-            rand_idx = torch.tensor(np.random.choice(x1.shape[2], self.samples, replace=False)) # list 
+            rand_idx = torch.randperm(x1.shape[2], device=x1.device)[:self.samples]
+            
             x1_sample = x1[:, :, rand_idx]
             
             if self.magnitude_type == 'distance':
