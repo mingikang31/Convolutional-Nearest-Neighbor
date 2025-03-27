@@ -26,7 +26,9 @@ class NoisyCBSD68(Dataset):
         super(NoisyCBSD68, self).__init__()
         self.noise_std = noise_std
         
-        self.images = self.load_images("/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/Data/CBSD68_data")
+        # self.images = self.load_images("/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/Data/CBSD68_data")
+        self.images = self.load_images("/home/mkang2/Convolutional-Nearest-Neighbor/Data/CBSD68_data")
+
         self.data = self.create_image_set(self.images, target_count)
         
     def __getitem__(self, index):
@@ -172,7 +174,7 @@ class NoisyCBSD68_dataset:
         plt.tight_layout()
         plt.show()
         
-def test_denoise_visual_BSD(model, test_data, n=3):
+def test_denoise_visual_CBSD(model, test_data, n=3, device='mps'):
     fig, axes = plt.subplots(n, 3, figsize=(15, 5*n))
     
     for i in range(n):
@@ -182,11 +184,11 @@ def test_denoise_visual_BSD(model, test_data, n=3):
         if img.dim() == 3 and img.size(0) == 3:  # If it's a color image with 3 channels
             img_display = img.permute(1, 2, 0).cpu().numpy()
             noisy_img_display = noisy_img.permute(1, 2, 0).cpu().numpy()
-            model_input = noisy_img.unsqueeze(0).to("mps")  # Add batch dimension for model
+            model_input = noisy_img.unsqueeze(0).to(device)  # Add batch dimension for model
         else:
             img_display = img.squeeze().cpu().numpy()
             noisy_img_display = noisy_img.squeeze().cpu().numpy()
-            model_input = noisy_img.unsqueeze(0).unsqueeze(0).to("mps")
+            model_input = noisy_img.unsqueeze(0).unsqueeze(0).to(device)
         
         # Display original clean image
         axes[i, 0].imshow(img_display)
@@ -228,4 +230,4 @@ def example_usage():
     print("Shape of image: ", noisy_cbsd68.shape())
     noisy_cbsd68.visual(n=5)
   
-example_usage()
+# example_usage()

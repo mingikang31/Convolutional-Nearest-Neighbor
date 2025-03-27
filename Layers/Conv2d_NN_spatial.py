@@ -6,7 +6,6 @@ import torch.nn.functional as F
 from Conv1d_NN_spatial import Conv1d_NN_spatial
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 
-import faiss
 import numpy as np 
 
 

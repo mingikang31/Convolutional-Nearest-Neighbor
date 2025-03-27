@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 import time 
-import wandb
+# import wandb
 
 
 
@@ -14,7 +14,9 @@ def train_model(model,
                 train_loader, 
                 criterion=None, 
                 optimizer=None,
-                num_epochs=10):
+                num_epochs=10, 
+                device = 'mps'
+               ):
     
     if criterion is None:
         criterion = nn.CrossEntropyLoss()
@@ -28,7 +30,7 @@ def train_model(model,
         start = time.time()
         running_loss = 0.0
         for images, labels in train_loader:
-            images, labels = images.to('mps'), labels.to('mps') ## TODO edit later
+            images, labels = images.to(device), labels.to(device) ## TODO edit later
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs, labels)
@@ -43,14 +45,16 @@ def train_model(model,
 
 # Accuracy evaluation function
 def evaluate_accuracy(model, 
-                      test_loader):
+                      test_loader, 
+                      device='mps'
+                     ):
     
     model.eval()
     correct = 0
     total = 0
     with torch.no_grad():
         for images, labels in test_loader:
-            images, labels = images.to('mps'), labels.to('mps') ## TODO edit later
+            images, labels = images.to(device), labels.to(device) ## TODO edit later
             outputs = model(images)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
@@ -64,7 +68,9 @@ def train_eval(model,
                test_loader, 
                criterion=None, 
                optimizer=None, 
-               num_epochs=10):
+               num_epochs=10, 
+               device='mps'
+              ):
     
     if criterion is None:
         criterion = nn.CrossEntropyLoss()
@@ -79,7 +85,7 @@ def train_eval(model,
         start = time.time()
         running_loss = 0.0
         for images, labels in train_loader:
-            images, labels = images.to('mps'), labels.to('mps')
+            images, labels = images.to(device), labels.to(device)
             optimizer.zero_grad()
             outputs = model(images)
             loss = criterion(outputs, labels)
@@ -97,7 +103,7 @@ def train_eval(model,
         total = 0
         with torch.no_grad():
             for images, labels in test_loader:
-                images, labels = images.to('mps'), labels.to('mps')
+                images, labels = images.to(device), labels.to(device)
                 outputs = model(images)
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
@@ -109,6 +115,7 @@ def train_eval(model,
     return None
 
 # Wandb version
+'''
 def train_eval_wandb(model, 
                      train_loader,
                      test_loader, 
@@ -169,14 +176,15 @@ def train_eval_wandb(model,
     run.finish()
     
     return None
-
+'''
 
 ### Denoising functions ###
 def train_denoising_model(model, 
                           train_loader, 
                           criterion=None, 
                           optimizer=None, 
-                          num_epochs=10):
+                          num_epochs=10, 
+                          device='mps'):
     
     
     if criterion is None:
@@ -191,7 +199,7 @@ def train_denoising_model(model,
         start = time.time()
         running_loss = 0.0
         for noisy_images, clean_images, _ in train_loader:
-            noisy_images, clean_images = noisy_images.to('mps'), clean_images.to('mps')
+            noisy_images, clean_images = noisy_images.to(device), clean_images.to(device)
             optimizer.zero_grad()
             outputs = model(noisy_images)
             loss = criterion(outputs, clean_images)
@@ -208,7 +216,9 @@ def train_denoising_model(model,
 # Denoising evaluation function
 def evaluate_denoising_accuracy(model, 
                                 test_loader, 
-                                criterion=None):
+                                criterion=None, 
+                                device='mps'
+                               ):
     
     if criterion is None:
         criterion = nn.MSELoss()
@@ -217,7 +227,7 @@ def evaluate_denoising_accuracy(model,
     total_loss = 0.0
     with torch.no_grad():
         for noisy_images, clean_images, _ in test_loader:
-            noisy_images, clean_images = noisy_images.to('mps'), clean_images.to('mps')
+            noisy_images, clean_images = noisy_images.to(device), clean_images.to(device)
             outputs = model(noisy_images)
             loss = criterion(outputs, clean_images)
             total_loss += loss.item()
@@ -229,7 +239,8 @@ def evaluate_denoising_accuracy(model,
 
 def evaluate_accuracy_psnr(model, 
                            test_loader, 
-                           criterion=None):
+                           criterion=None, 
+                           device='mps'):
     
     if criterion is None:
         criterion = nn.MSELoss()
@@ -238,7 +249,7 @@ def evaluate_accuracy_psnr(model,
     total_psnr = 0.0
     with torch.no_grad():
         for noisy_images, clean_images, _ in test_loader:
-            noisy_images, clean_images = noisy_images.to('mps'), clean_images.to('mps')
+            noisy_images, clean_images = noisy_images.to(device), clean_images.to(device)
             outputs = model(noisy_images)
             mse = criterion(outputs, clean_images)
             psnr = 20 * torch.log10(torch.tensor(1.0)) - 10 * torch.log10(mse)

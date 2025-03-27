@@ -14,7 +14,7 @@ import torch.nn as nn
 from torch.nn import Conv1d
 import torch.nn.functional as F
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
-
+import numpy as np
 
 class Conv1d_NN_optimized_v2(nn.Module): 
     """

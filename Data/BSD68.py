@@ -26,7 +26,9 @@ class NoisyBSD68(Dataset):
         super(NoisyBSD68, self).__init__()
         self.noise_std = noise_std
         
-        self.images = self.load_images("/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/Data/BSD68_data")
+        # self.images = self.load_images("/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/Data/BSD68_data")
+        self.images = self.load_images("/home/mkang2/Convolutional-Nearest-Neighbor/Data/BSD68_data")
+
         self.data = self.create_image_set(self.images, target_count)
         
     def __getitem__(self, index):
@@ -155,7 +157,7 @@ class NoisyBSD68_dataset:
         plt.tight_layout()
         plt.show()
         
-def test_denoise_visual_BSD(model, test_data, n=3):
+def test_denoise_visual_BSD(model, test_data, n=3, device='mps'):
     fig, axes = plt.subplots(n, 3, figsize=(15, 5*n))
     
     for i in range(n):
@@ -178,7 +180,7 @@ def test_denoise_visual_BSD(model, test_data, n=3):
         # Generate and display denoised image
         model.eval()
         with torch.no_grad():
-            denoised_img = model(noisy_img.unsqueeze(0).unsqueeze(0).to("mps"))
+            denoised_img = model(noisy_img.unsqueeze(0).unsqueeze(0).to(device))
             denoised_img = denoised_img.squeeze().cpu().numpy()
             axes[i, 2].imshow(denoised_img, cmap='gray')
             axes[i, 2].set_title("Denoised", fontsize=22)
@@ -202,4 +204,4 @@ def example_usage():
     print("Shape of image: ", noisy_bsd68.shape())
     noisy_bsd68.visual(n=5)
   
-example_usage()
+# example_usage()

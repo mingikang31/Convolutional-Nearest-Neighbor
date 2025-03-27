@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import optim
 from torchsummary import summary
+import numpy as np
 
 # ConvNN
 from Conv1d_NN import *
