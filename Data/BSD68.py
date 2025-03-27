@@ -122,13 +122,16 @@ class NoisyBSD68(Dataset):
 class NoisyBSD68_dataset:
     def __init__(self, 
                  batch_size=64,
-                 noise_std=0.3):
+                 noise_std=0.3, 
+                 train_count=200, 
+                 test_count=40
+                ):
         
         self.batch_size = batch_size
         
         
-        self.train_data = NoisyBSD68(target_count=200, noise_std=noise_std)
-        self.test_data = NoisyBSD68(target_count=40, noise_std=noise_std)
+        self.train_data = NoisyBSD68(target_count=train_count, noise_std=noise_std)
+        self.test_data = NoisyBSD68(target_count=test_count, noise_std=noise_std)
         
         self.train_loader = DataLoader(dataset=self.train_data, batch_size=batch_size, shuffle=True)
         self.test_loader = DataLoader(dataset=self.test_data, batch_size=batch_size, shuffle=True)
