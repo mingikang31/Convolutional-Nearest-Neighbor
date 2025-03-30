@@ -20,16 +20,20 @@ from torchvision import transforms, datasets
 class NoisyBSD68(Dataset):
     def __init__(self, 
                  target_count=5000,
+                 target_size=200, 
                  noise_std=0.3
                  ):
         
         super(NoisyBSD68, self).__init__()
+        
+        self.target_count = target_count
+        self.target_size = target_size
         self.noise_std = noise_std
         
-        # self.images = self.load_images("/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/Data/BSD68_data")
-        self.images = self.load_images("/home/mkang2/Convolutional-Nearest-Neighbor/Data/BSD68_data")
+        # self.images = self.load_images("/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/Data/BSD68_data") # Local
+        self.images = self.load_images("/home/mkang2/Convolutional-Nearest-Neighbor/Data/BSD68_data") # Server
 
-        self.data = self.create_image_set(self.images, target_count)
+        self.data = self.create_image_set(self.images, self.target_count, self.target_size)
         
     def __getitem__(self, index):
         img, target = self.data[index], self.data[index]
@@ -75,7 +79,7 @@ class NoisyBSD68(Dataset):
         return images
 
     @staticmethod
-    def create_image_set(images, target_count, target_size=200):
+    def create_image_set(images, target_count, target_size):
         
         image_set = []
         
@@ -124,17 +128,24 @@ class NoisyBSD68_dataset:
                  batch_size=64,
                  noise_std=0.3, 
                  train_count=200, 
-                 test_count=40
+                 test_count=40, 
+                 target_size=200
                 ):
+    
         
         self.batch_size = batch_size
+        self.noise_std = noise_std
+        self.train_count = train_count
+        self.test_count = test_count
+        self.target_size = target_size
+
         
         
-        self.train_data = NoisyBSD68(target_count=train_count, noise_std=noise_std)
-        self.test_data = NoisyBSD68(target_count=test_count, noise_std=noise_std)
+        self.train_data = NoisyBSD68(target_count=self.train_count, noise_std=self.noise_std, target_size=self.target_size)
+        self.test_data = NoisyBSD68(target_count=self.test_count, noise_std=self.noise_std, target_size=self.target_size)
         
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=batch_size, shuffle=True)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=batch_size, shuffle=True)
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.batch_size, shuffle=True)
         
     def shape(self):    
         return self.train_data[0][0].shape
@@ -197,7 +208,7 @@ def example_usage():
     '''Example Usage of NoisyBSD68_dataset'''
     
     
-    noisy_bsd68 = NoisyBSD68_dataset(batch_size=64, noise_std=0.1)
+    noisy_bsd68 = NoisyBSD68_dataset(batch_size=64, noise_std=0.1, target_size=50)
     
     print(len(noisy_bsd68.train_data))
     print(len(noisy_bsd68.test_data))
@@ -207,4 +218,4 @@ def example_usage():
     print("Shape of image: ", noisy_bsd68.shape())
     noisy_bsd68.visual(n=5)
   
-# example_usage()
+example_usage()
