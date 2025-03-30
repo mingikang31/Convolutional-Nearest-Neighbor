@@ -218,4 +218,4 @@ def example_usage():
     print("Shape of image: ", noisy_bsd68.shape())
     noisy_bsd68.visual(n=5)
   
-example_usage()
+# example_usage()
