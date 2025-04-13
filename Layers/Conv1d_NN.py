@@ -18,7 +18,7 @@ import numpy as np
 
 class Conv1d_NN_optimized_v2(nn.Module): 
     """
-    Convolution 1D Nearest Neighbor Layer for Convolutional Neural Networks.
+    Convolution 1D Nearest Neighbor Layer
     
     Attributes:
         in_channels (int): Number of input channels.
@@ -62,7 +62,7 @@ class Conv1d_NN_optimized_v2(nn.Module):
             magnitude_type (str): Distance or Similarity.
         """
         
-        super().__init__()
+        super(Conv1d_NN).__init__()
         
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -219,7 +219,7 @@ class Conv1d_NN_optimized_v2(nn.Module):
         prime = prime.view(b, c, -1)
         return prime
     
-    def _prime_N_v2(self, matrix, magnitude_matrix, K, rand_idx, maximum):
+    def _prime_N(self, matrix, magnitude_matrix, K, rand_idx, maximum):
         b, c, t = matrix.shape
 
         # Get top-(K-1) indices from the magnitude matrix; shape: [b, t, K-1]
