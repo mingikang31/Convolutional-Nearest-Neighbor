@@ -1,5 +1,6 @@
 .vscode
 __pycache__
+__pycache__/*
 Layers/__pycache__
 Testing/data/*
 
@@ -13,8 +14,11 @@ Playground/data/*
 
 *tempCodeRunnerFile.py
 
+.gitignore
 
+KVT/*
 
+KVT
 
 
 # Byte-compiled / optimized / DLL files
