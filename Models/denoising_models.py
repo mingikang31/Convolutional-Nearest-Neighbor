@@ -17,6 +17,7 @@ from Conv2d_NN import *
 
 from Conv1d_NN_spatial import *
 from Conv2d_NN_spatial import *
+from Conv2d_NN_Attn import *
 
 from ConvNN_CNN_Branching import *
 
@@ -42,12 +43,17 @@ Denoising Models
 6. ConvNN 2D Random Sampling: K = 9, N = 64, Location Channels
 7. ConvNN 2D Spatial Sampling: K = 9, N = 8 (N^2) Samples, Location Channels
 
-8. Local -> Global ConvNN 2D: kernel_size = 3, K = 9, All Samples
-9. Global -> Local ConvNN 2D: kernel_size = 3, K = 9, All Samples
+8. ConvNN 2D Attention: K = 9, N = All Samples + Attention
+9. ConvNN 2D Attention Random Sampling: K = 9, N = 64 + Attention
 
-10. Branching Network (ConvNN All Sample): kernel_size = 3, K = 9, N = All Samples
-11. Branching Network (ConvNN Random Sample): kernel_size = 3, K = 9, N = 64 Samples
-12. Branching Network (ConvNN Spatial Sample): kernel_size = 3, K = 9, N = 8 (N^2) Samples
+10. Local -> Global ConvNN 2D: kernel_size = 3, K = 9, All Samples
+11. Global -> Local ConvNN 2D: kernel_size = 3, K = 9, All Samples
+
+12. Branching Network (ConvNN All Sample): kernel_size = 3, K = 9, N = All Samples
+13. Branching Network (ConvNN Random Sample): kernel_size = 3, K = 9, N = 64 Samples
+14. Branching Network (ConvNN Spatial Sample): kernel_size = 3, K = 9, N = 8 (N^2) Samples
+15. Branching Network (ConvNN Attentention): kernel_size = 3, K = 9, N = 64 Samples
+
 '''
 
 class DenoisingCNN(nn.Module):
@@ -155,7 +161,61 @@ class DenoisingConvNN_2D_Spatial_K_N(nn.Module):
         self.to("cpu")
         print(summary(self, input_size))
         self.to(self.device)
+        
+class DenoisingConvNN_2D_Attn_K_All(nn.Module):
+    def __init__(self, in_ch=3, out_ch=3, K=9, device='mps', image_size=(32, 32)):
+        super(DenoisingConvNN_2D_Attn_K_All, self).__init__()
+        self.conv1 = Conv2d_NN_Attn(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", image_size=image_size)
+        self.conv2 = Conv2d_NN_Attn(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", image_size=image_size)
+        self.conv3 = Conv2d_NN_Attn(32, out_ch, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", image_size=image_size) 
 
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+        self.device = device
+        self.to(device)
+        self.name = "DenoisingConvNN_2D_Attn_K_All"
+
+    def forward(self, x):
+        x = self.relu(self.conv1(x))
+        x = self.relu(self.conv2(x))
+        x = self.conv3(x)
+        # x = self.sigmoid(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to(self.device)
+
+class DenoisingConvNN_2D_Attn_K_N(nn.Module):
+    def __init__(self, in_ch=3, out_ch=3, K=9, N=64, device='mps', image_size=(32, 32)):
+        super(DenoisingConvNN_2D_Attn_K_N, self).__init__()
+        self.conv1 = Conv2d_NN_Attn(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size)
+        self.conv2 = Conv2d_NN_Attn(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size)
+        self.conv3 = Conv2d_NN_Attn(32, out_ch, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size)
+
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+        self.device = device
+        self.to(self.device)
+        self.name = "DenoisingConvNN_2D_Attn_K_N"
+
+
+    def forward(self, x):
+        x = self.relu(self.conv1(x))
+        x = self.relu(self.conv2(x))
+        x = self.conv3(x)
+        # x = self.sigmoid(x)
+        return x
+
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to(self.device)
+        
+### Location Channels Models ###
 class DenoisingConvNN_2D_K_All_Location(nn.Module):
     def __init__(self, in_ch=3, out_ch=3, K=9, device='mps'):
         super(DenoisingConvNN_2D_K_All_Location, self).__init__()
@@ -236,7 +296,35 @@ class DenoisingConvNN_2D_Spatial_K_N_Location(nn.Module):
         self.to("cpu")
         print(summary(self, input_size))
         self.to(self.device)
+        
+class DenoisingConvNN_2D_Attn_K_N_Location(nn.Module):
+    def __init__(self, in_ch=3, out_ch=3, K=9, N = 8, image_size = (32, 32), device='mps'):
+        super(DenoisingConvNN_2D_Attn_K_N_Location, self).__init__()
+        self.conv1 = Conv2d_NN_Attn(in_ch, 16, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size, location_channels=True)
+        self.conv2 = Conv2d_NN_Attn(16, 32, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size, location_channels=True)
+        self.conv3 = Conv2d_NN_Attn(32, out_ch, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size, location_channels=True)
 
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+        self.device = device
+        self.to(self.device)
+        self.name = "DenoisingConvNN_2D_Attn_K_N_Location"
+
+
+    def forward(self, x):
+        x = self.relu(self.conv1(x))
+        x = self.relu(self.conv2(x))
+        x = self.conv3(x)
+        # x = self.sigmoid(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to(self.device)
+
+### Local -> Global and Global -> Local Models ###
 class DenoisingLocal_Global_ConvNN_2D(nn.Module):
     def __init__(self, in_ch=3, out_ch=3, kernel_size=3, K=9, N = "all", location_channels=False, device='mps'):
         super(DenoisingLocal_Global_ConvNN_2D, self).__init__()
@@ -289,6 +377,8 @@ class DenoisingGlobal_Local_ConvNN_2D(nn.Module):
         print(summary(self, input_size))
         self.to(self.device)
         
+        
+### Branching Models ###
 class DenoisingBranching_ConvNN_2D_K_All(nn.Module):
     def __init__(self, in_ch=3, out_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, location_channels=False, device='mps'):
         super(DenoisingBranching_ConvNN_2D_K_All, self).__init__()
@@ -311,8 +401,7 @@ class DenoisingBranching_ConvNN_2D_K_All(nn.Module):
     def summary(self, input_size = (3, 32, 32)): 
         self.to("cpu")
         print(summary(self, input_size))
-        self.to(self.device)
-        
+        self.to(self.device)      
         
 class DenoisingBranching_ConvNN_2D_K_N(nn.Module):
     def __init__(self, in_ch=3, out_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, N = 64, location_channels=False, device='mps'):
@@ -363,18 +452,50 @@ class DenoisingBranching_ConvNN_2D_Spatial_K_N(nn.Module):
         self.to("cpu")
         print(summary(self, input_size))
         self.to(self.device)
+        
+class DenoisingBranching_ConvNN_2D_Attn_K_N(nn.Module):
+    def __init__(self, in_ch=3, out_ch=3, channel_ratio=(16, 16), kernel_size=3, K=9, N = 64, location_channels=False, device='mps', image_size=(32, 32)):
+        super(DenoisingBranching_ConvNN_2D_Attn_K_N, self).__init__()
+        self.conv1 = ConvNN_CNN_Attention_BranchingLayer(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, samples=N, image_size = image_size, location_channels=location_channels)
+        self.conv2 = ConvNN_CNN_Attention_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N,  image_size = image_size, location_channels=location_channels)
+        self.conv3 = ConvNN_CNN_Attention_BranchingLayer(32, out_ch, channel_ratio=(out_ch, out_ch), kernel_size=kernel_size, K=K, samples=N, image_size = image_size, location_channels=location_channels)
 
+        self.sigmoid = nn.Sigmoid()
+
+        self.device = device
+        self.to(self.device)
+        self.name = "DenoisingBranching_ConvNN_2D_Attn_K_N"
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        # x = self.sigmoid(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to(self.device)
+
+
+
+### Check Function ###
 def denoising_check():
     
     # Models
     models = [DenoisingCNN(), DenoisingConvNN_2D_K_All(),
               DenoisingConvNN_2D_K_N(), DenoisingConvNN_2D_Spatial_K_N(),
+              DenoisingConvNN_2D_Attn_K_All(), DenoisingConvNN_2D_Attn_K_N(),
+              
               DenoisingConvNN_2D_K_All_Location(), DenoisingConvNN_2D_K_N_Location(),
-              DenoisingConvNN_2D_Spatial_K_N_Location(), DenoisingLocal_Global_ConvNN_2D(),
+              DenoisingConvNN_2D_Spatial_K_N_Location(), DenoisingConvNN_2D_Attn_K_N_Location(),
+              
+              DenoisingLocal_Global_ConvNN_2D(),
               DenoisingGlobal_Local_ConvNN_2D(), 
               
               DenoisingBranching_ConvNN_2D_K_All(), DenoisingBranching_ConvNN_2D_K_N(),
-              DenoisingBranching_ConvNN_2D_Spatial_K_N()
+              DenoisingBranching_ConvNN_2D_Spatial_K_N(), DenoisingBranching_ConvNN_2D_Attn_K_N()
               
               ]
 
@@ -385,16 +506,16 @@ def denoising_check():
     for model in models:
         try:
             ex_out = model(ex)
-            print(f"Output Shape: {ex_out.shape}\n")
+            print(f"{model.name}'s output Shape: {ex_out.shape}\n")
         except Exception as e:
             print(f"Error: {e}\n")
 
 if __name__ == '__main__':
     
-    # print("Denoising Models")
-    # denoising_check()
+    print("Denoising Models")
+    denoising_check()
     
-    pass
+    # pass
     
     
 
