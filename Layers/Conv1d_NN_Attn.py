@@ -11,7 +11,6 @@ import torch.nn.functional as F
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 import numpy as np 
 
-
 class Conv1d_NN_Attn(nn.Module):
     """
     Convolutional 1D Nearest Neighbors Attention Layer 
@@ -24,10 +23,10 @@ class Conv1d_NN_Attn(nn.Module):
                 stride=3, 
                 padding=0, 
                 shuffle_pattern='N/A', 
-                shuffle_scale=2, 
+                shuffle_scale=1, 
                 samples='all', 
                 magnitude_type='similarity', 
-                num_tokens=224, 
+                num_tokens = 224
                 ): 
         
         """
@@ -57,7 +56,7 @@ class Conv1d_NN_Attn(nn.Module):
         self.samples = int(samples) if samples != 'all' else samples 
         self.magnitude_type = magnitude_type 
         self.maximum = True if self.magnitude_type == 'similarity' else False
-        self.num_tokens = int(num_tokens / 2) if self.shuffle_pattern in ["B", "BA"] else num_tokens
+        self.num_tokens =  int(num_tokens / 2) if self.shuffle_pattern in ["B", "BA"] else num_tokens        
         
         # Unshuffle layer 
         self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
@@ -77,10 +76,12 @@ class Conv1d_NN_Attn(nn.Module):
                                     padding=self.padding)
         
         # Linear Layer for Query, Key, Value
-        self.q = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
-        self.k = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
-        self.v = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
-                
+        self.w_q = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
+        self.w_k = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
+        self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
+
+        
+        
         
     def forward(self, x): 
         # Consider all samples 
@@ -90,12 +91,11 @@ class Conv1d_NN_Attn(nn.Module):
                 x1 = self.unshuffle_layer(x)
             else:
                 x1 = x
-                
-            # Q, K, V 
-            q = self.q(x1)
-            k = self.k(x1)
-            v = self.v(x1)
             
+            # Q, K, V 
+            q = self.w_q(x1)
+            k = self.w_k(x1)
+            v = self.w_v(x1)
             
             # Calculate Distance/Similarity Matrix + Prime Vmap 2D
             if self.magnitude_type == 'distance': 
@@ -125,10 +125,11 @@ class Conv1d_NN_Attn(nn.Module):
             else:
                 x1 = x
                 
-            # Q, K, V
-            q = self.q(x1)
-            k = self.k(x1)
-            v = self.v(x1)
+            # Q, K, V 
+            q = self.w_q(x1)
+            k = self.w_k(x1)
+            v = self.w_v(x1)
+            
                 
             # Calculate Distance/Similarity Matrix + Prime       
             rand_idx = torch.randperm(x1.shape[2], device=x1.device)[:self.samples]
@@ -267,10 +268,13 @@ def example_usage():
                                     K=3,
                                     stride=3,
                                     padding=0,
-                                    shuffle_pattern='BA',
+                                    shuffle_pattern='NA',
                                     shuffle_scale=2,
-                                    samples='all',
-                                    magnitude_type='similarity',
+                                    samples=10,
+                                    magnitude_type='similarity', 
                                     num_tokens=32)
     out = conv1d_NN_attn(ex)
     print('Conv1d_NN_Attn output shape:', out.shape)
+
+# example_usage()
+

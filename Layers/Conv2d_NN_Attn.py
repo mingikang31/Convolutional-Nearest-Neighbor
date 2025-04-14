@@ -56,23 +56,8 @@ class Conv2d_NN_Attn(nn.Module):
             samples (int/str): Number of samples to consider.
             magnitude_type (str): Distance or Similarity.
         """
-        # assert K == stride, "K must be same as stride. K == stride"
-        # assert shuffle_pattern in ["B", "A", "BA"], "Shuffle pattern must be one of: B, A, BA"
-        # assert magnitude_type in ["distance", "similarity"], "Magnitude type must be one of: distance, similarity"
-        # assert isinstance(samples, (int, str)), "Samples must be int or str"
-        # assert isinstance(location_channels, bool), "Location channels must be boolean"
-        # assert isinstance(in_channels, int), "Input channels must be int"
-        # assert isinstance(out_channels, int), "Output channels must be int"
-        # assert isinstance(K, int), "K must be int"
-        # assert isinstance(stride, int), "Stride must be int"
-        # assert isinstance(padding, int), "Padding must be int"
-        # assert isinstance(shuffle_scale, int), "Shuffle scale must be int"
-        # assert isinstance(shuffle_pattern, str), "Shuffle pattern must be str"
-        # assert isinstance(magnitude_type, str), "Magnitude type must be str"
         
-        
-        
-        super().__init__()
+        super(Conv2d_NN_Attn, self).__init__()
         
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -92,6 +77,7 @@ class Conv2d_NN_Attn(nn.Module):
             else:
                 self.in_channels_1d = self.in_channels * (self.shuffle_scale**2)
                 self.out_channels_1d = self.out_channels * (self.shuffle_scale **2)
+
         else: 
             if self.location_channels: 
                 self.in_channels_1d = self.in_channels + 2
@@ -99,6 +85,7 @@ class Conv2d_NN_Attn(nn.Module):
             else:
                 self.in_channels_1d = self.in_channels
                 self.out_channels_1d = self.out_channels
+
 
 
         self.num_tokens = int((image_size[0] * image_size[1]) / (self.shuffle_scale**2))
@@ -136,7 +123,6 @@ class Conv2d_NN_Attn(nn.Module):
             else: 
                 x1 = x
                 
-            
         x2 = self.flatten(x1)
 
         x3 = self.Conv1d_NN(x2)  
@@ -170,14 +156,17 @@ class Conv2d_NN_Attn(nn.Module):
         xy_grid = torch.cat((x_grid, y_grid), dim=1)
         xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
         return xy_grid_normalized.to(device)
-
+    
+    
+    
 def example_usage():
     '''Example Usage of Conv2d_NN_Attn Layer'''
 
-    x_test = torch.rand(32, 12, 32, 32)
+    x_test = torch.rand(32, 12, 32, 32).to("mps")
     print("Input: ", x_test.shape)
 
     conv2d_nn_attn = Conv2d_NN_Attn(in_channels=12, out_channels=24, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples=64, magnitude_type="similarity", location_channels=True)
     output = conv2d_nn_attn(x_test)
     print("Output: ", output.shape)
-
+    
+# example_usage()

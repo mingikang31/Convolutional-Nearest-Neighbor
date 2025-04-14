@@ -41,6 +41,9 @@ def train_model(model,
         end = time.time()
         print(f'Epoch {epoch+1}, Time: {end - start}, Loss: {running_loss/len(train_loader)}')
         epoch_times.append( end - start )
+        
+        
+        ##### Do training + testing losses too ###
     print(f'\n Average epoch time: {sum(epoch_times)/len(epoch_times)}')
 
 # Accuracy evaluation function
