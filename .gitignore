@@ -20,6 +20,10 @@ KVT/*
 
 KVT
 
+# Big Notebooks 
+Testing/W9_Image_Shape_Test Denoising.ipynb
+Testing/W9_Image_Denoising.ipynb
+Testing/W9_Image_Count_Test Denoising.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
