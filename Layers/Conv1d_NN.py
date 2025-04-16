@@ -476,6 +476,7 @@ class Conv1d_NN_optimized(nn.Module):
         return prime
 
 
+### Convolutional Nearest Neighbors ###
 class Conv1d_NN(nn.Module):
     """
     Convolution 1D Nearest Neighbor Layer for Convolutional Neural Networks.
@@ -598,13 +599,16 @@ class Conv1d_NN(nn.Module):
                 matrix_magnitude = self.calculate_distance_matrix_N(x1, x1_sample)
             elif self.magnitude_type == 'similarity':
                 matrix_magnitude = self.calculate_similarity_matrix_N(x1, x1_sample)
-                
-            if self.magnitude_type == 'distance':
-                matrix_magnitude[:, rand_idx, np.arange(len(rand_idx))] = np.inf 
-            elif self.magnitude_type == 'similarity':
-                matrix_magnitude[:, rand_idx, np.arange(len(rand_idx))] = -np.inf
-                
             
+            
+            
+            range_idx = torch.arange(len(rand_idx), device=matrix_magnitude.device) 
+            
+            if self.magnitude_type == 'distance':
+                matrix_magnitude[:, rand_idx, range_idx] = float('inf') 
+            elif self.magnitude_type == 'similarity':
+                matrix_magnitude[:, rand_idx, range_idx] = float('-inf')
+                
             prime = self.prime_vmap_2d_N(x1, matrix_magnitude, self.K, rand_idx, self.maximum)
             
             # Conv1d Layer
@@ -718,4 +722,4 @@ def example_usage():
     
     output = nn(x_test)
     print(output.shape)
-        
+    

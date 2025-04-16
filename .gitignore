@@ -8,6 +8,7 @@ Playground/data/*
 
 .env
 
+.DS_Store
 
 .editorconfig
 *.editorconfig
