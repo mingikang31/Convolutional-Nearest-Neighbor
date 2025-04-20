@@ -296,7 +296,8 @@ def example_usage():
    a = conv2d_nn_spatial.coordinate_channels(ex.shape, device=ex.device)
    print("location_channels: ", a.shape)
 
-# example_usage()
-   
+if __name__ == "__main__":
+    example_usage()
+       
    
    

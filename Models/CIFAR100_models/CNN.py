@@ -19,23 +19,23 @@ class CNN(nn.Module):
         self.features = nn.Sequential(
             # Block 1
             nn.Conv2d(in_ch, 8, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(8), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(8), # Added BatchNorm
+            nn.ReLU(),
             
             # Block 2
             nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(16), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(16), # Added BatchNorm
+            nn.ReLU(),
             
             # Block 3
             nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1), 
-            nn.BatchNorm2d(32), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(32), # Added BatchNorm
+            nn.ReLU(),
 
             # Block 4 (New)
             nn.Conv2d(32, 48, kernel_size=3, stride=1, padding=1), 
-            nn.BatchNorm2d(48), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(48), # Added BatchNorm
+            nn.ReLU(),
         )
 
         self.flatten = nn.Flatten()
@@ -45,14 +45,14 @@ class CNN(nn.Module):
         
         # Adjusted classifier size
         self.classifier = nn.Sequential(
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
+            nn.ReLU(),
+            # nn.Dropout(0.5),
             nn.Linear(flattened_size, num_classes), # Increased intermediate size
         )
 
         self.device = device
         self.to(self.device)
-        self.name = "CNN_DeeperWider" # Renamed for clarity
+        self.name = "CNN" # Renamed for clarity
 
 
     def forward(self, x):
@@ -79,7 +79,7 @@ class CNN(nn.Module):
 def cnn(pretrained=False, **kwargs):
     """CNN model with comparable complexity to deit_tiny for CIFAR-100"""
     # Ensure this function now uses the updated CNN class
-    model = CNN(num_classes=100) # Pass num_classes if needed, device handled internally
+    model = CNN(num_classes=100, device='cuda')
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
     #     mean=(0.5071, 0.4867, 0.4408),

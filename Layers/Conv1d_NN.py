@@ -723,3 +723,5 @@ def example_usage():
     output = nn(x_test)
     print(output.shape)
     
+if __name__ == "__main__":
+    example_usage()

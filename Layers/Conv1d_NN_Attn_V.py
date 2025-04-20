@@ -1,7 +1,9 @@
-'''Convolution 1D Nearest Neighbors Attention Layer'''
+'''Convolution 1D Nearest Neighbors Attention Layer V'''
 
 '''
-Conv1d_NN_Attn is a variation of Conv1d_NN that incorporates the attention mechanism. 
+Conv1d_NN_Attn_V is a variation of Conv1d_NN that incorporates the attention mechanism. 
+
+- The only difference is that we only run the V matrix into a linear layer instead of all K, V, and Q. 
 '''
 
 import torch 
@@ -11,7 +13,7 @@ import torch.nn.functional as F
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 import numpy as np 
 
-class Conv1d_NN_Attn(nn.Module):
+class Conv1d_NN_Attn_V(nn.Module):
     """
     Convolutional 1D Nearest Neighbors Attention Layer 
     """
@@ -44,7 +46,7 @@ class Conv1d_NN_Attn(nn.Module):
             magnitude_type (str): Distance or Similarity.
         """
         
-        super(Conv1d_NN_Attn, self).__init__()
+        super(Conv1d_NN_Attn_V, self).__init__()
     
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -76,8 +78,6 @@ class Conv1d_NN_Attn(nn.Module):
                                     padding=self.padding)
         
         # Linear Layer for Query, Key, Value
-        self.w_q = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
-        self.w_k = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
         self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
 
         
@@ -93,8 +93,8 @@ class Conv1d_NN_Attn(nn.Module):
                 x1 = x
             
             # Q, K, V 
-            q = self.w_q(x1)
-            k = self.w_k(x1)
+            q = x1
+            k = x1
             v = self.w_v(x1)
             
             # Calculate Distance/Similarity Matrix + Prime Vmap 2D
@@ -126,10 +126,9 @@ class Conv1d_NN_Attn(nn.Module):
                 x1 = x
                 
             # Q, K, V 
-            q = self.w_q(x1)
-            k = self.w_k(x1)
-            v = self.w_v(x1)
-            
+            q = x1
+            k = x1
+            v = self.w_v(x1)    
                 
             # Calculate Distance/Similarity Matrix + Prime       
             rand_idx = torch.randperm(x1.shape[2], device=x1.device)[:self.samples]
@@ -263,7 +262,7 @@ class Conv1d_NN_Attn(nn.Module):
 def example_usage():
     ex = torch.randn(32, 3, 32)
 
-    conv1d_NN_attn = Conv1d_NN_Attn(in_channels=3,
+    conv1d_NN_attn = Conv1d_NN_Attn_V(in_channels=3,
                                     out_channels=3,
                                     K=3,
                                     stride=3,
@@ -274,7 +273,7 @@ def example_usage():
                                     magnitude_type='similarity', 
                                     num_tokens=32)
     out = conv1d_NN_attn(ex)
-    print('Conv1d_NN_Attn output shape:', out.shape)
+    print('Conv1d_NN_Attn_V output shape:', out.shape)
 
 if __name__ == "__main__":
     example_usage()

@@ -172,3 +172,9 @@ class Conv1d_NN_spatial(nn.Module):
     ### Notes
     # - the indexes do not represent the correct index of the pixels. Because the pixels are spatially sampled before flattening, it does not correlate with the same indices as the iamge.
     
+def example_usage():
+    pass ## TODO Later
+    
+if __name__ == "__main__":
+    example_usage()
+    

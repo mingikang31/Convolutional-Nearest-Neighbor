@@ -1,14 +1,14 @@
-'''Convolution 2D Nearest Neighbor Attention Layer'''
+'''Convolution 2D Nearest Neighbor Attention V Layer'''
 
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F
-from Conv1d_NN_Attn import Conv1d_NN_Attn
+from Conv1d_NN_Attn_V import Conv1d_NN_Attn_V
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 
 import numpy as np
 
-class Conv2d_NN_Attn(nn.Module): 
+class Conv2d_NN_Attn_V(nn.Module): 
     """
     Convolution 2D Nearest Neighbor Layer for Convolutional Neural Networks.
      - Location Channels : add coordinates -> unshuffle -> flatten -> ConvNN -> unflatten -> shuffle -> remove coordinate 
@@ -57,7 +57,7 @@ class Conv2d_NN_Attn(nn.Module):
             magnitude_type (str): Distance or Similarity.
         """
         
-        super(Conv2d_NN_Attn, self).__init__()
+        super(Conv2d_NN_Attn_V, self).__init__()
         
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -90,7 +90,7 @@ class Conv2d_NN_Attn(nn.Module):
 
         self.num_tokens = int((image_size[0] * image_size[1]) / (self.shuffle_scale**2))
 
-        self.Conv1d_NN = Conv1d_NN_Attn(in_channels=self.in_channels_1d,
+        self.Conv1d_NN = Conv1d_NN_Attn_V(in_channels=self.in_channels_1d,
                                     out_channels=self.out_channels_1d,
                                     K=self.K,
                                     stride=self.stride,
@@ -162,10 +162,10 @@ class Conv2d_NN_Attn(nn.Module):
 def example_usage():
     '''Example Usage of Conv2d_NN_Attn Layer'''
 
-    x_test = torch.rand(32, 12, 32, 32).to("mps")
+    x_test = torch.rand(32, 3, 32, 32).to("mps")
     print("Input: ", x_test.shape)
 
-    conv2d_nn_attn = Conv2d_NN_Attn(in_channels=12, out_channels=24, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples=64, magnitude_type="similarity", location_channels=True)
+    conv2d_nn_attn = Conv2d_NN_Attn_V(in_channels=3, out_channels=6, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples=64, magnitude_type="similarity", location_channels=True).to('mps')
     output = conv2d_nn_attn(x_test)
     print("Output: ", output.shape)
     

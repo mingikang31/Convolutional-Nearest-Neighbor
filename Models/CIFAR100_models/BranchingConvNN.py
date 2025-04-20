@@ -1091,6 +1091,400 @@ class Conv2d_NN_Attn(nn.Module):
         xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
         return xy_grid_normalized.to(device)
     
+class Conv1d_NN_Attn_V(nn.Module):
+    """
+    Convolutional 1D Nearest Neighbors Attention Layer 
+    """
+    
+    def __init__(self, 
+                in_channels, 
+                out_channels, 
+                K=3, 
+                stride=3, 
+                padding=0, 
+                shuffle_pattern='N/A', 
+                shuffle_scale=1, 
+                samples='all', 
+                magnitude_type='similarity', 
+                num_tokens = 224
+                ): 
+        
+        """
+        Initializes the Conv1d_NN module.
+        
+        Parameters:
+            in_channels (int): Number of input channels.
+            out_channels (int): Number of output channels.
+            K (int): Number of Nearest Neighbors for consideration.
+            stride (int): Stride size.
+            padding (int): Padding size.
+            shuffle_pattern (str): Shuffle pattern: "B", "A", "BA".
+            shuffle_scale (int): Shuffle scale factor.
+            samples (int/str): Number of samples to consider.
+            magnitude_type (str): Distance or Similarity.
+        """
+        
+        super(Conv1d_NN_Attn_V, self).__init__()
+    
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.K = K
+        self.stride = stride 
+        self.padding = padding
+        self.shuffle_pattern = shuffle_pattern 
+        self.shuffle_scale = shuffle_scale
+        self.samples = int(samples) if samples != 'all' else samples 
+        self.magnitude_type = magnitude_type 
+        self.maximum = True if self.magnitude_type == 'similarity' else False
+        self.num_tokens =  int(num_tokens / 2) if self.shuffle_pattern in ["B", "BA"] else num_tokens        
+        
+        # Unshuffle layer 
+        self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
+        
+        # Shuffle Layer 
+        self.shuffle_layer = PixelShuffle1D(upscale_factor=self.shuffle_scale)
+        
+        # Channels for Conv1d Layer
+        self.in_channels = in_channels * shuffle_scale if self.shuffle_pattern in ["BA", "B"] else in_channels
+        self.out_channels = out_channels * shuffle_scale if self.shuffle_pattern in ["BA", "A"] else out_channels
+
+        # Conv1d Layer 
+        self.conv1d_layer = Conv1d(in_channels=self.in_channels, 
+                                    out_channels=self.out_channels, 
+                                    kernel_size=self.K, 
+                                    stride=self.stride, 
+                                    padding=self.padding)
+        
+        # Linear Layer for Query, Key, Value
+        self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
+
+        
+        
+        
+    def forward(self, x): 
+        # Consider all samples 
+        if self.samples == 'all': 
+            # Unshuffle Layer 
+            if self.shuffle_pattern in ["B", "BA"]:
+                x1 = self.unshuffle_layer(x)
+            else:
+                x1 = x
+            
+            # Q, K, V 
+            q = x1
+            k = x1
+            v = self.w_v(x1)
+            
+            # Calculate Distance/Similarity Matrix + Prime Vmap 2D
+            if self.magnitude_type == 'distance': 
+                matrix_magnitude = self._calculate_distance_matrix(k, q, sqrt=True)
+            elif self.magnitude_type == 'similarity':
+                matrix_magnitude = self._calculate_similarity_matrix(k, q)
+                
+            prime_2d = self._prime(v, matrix_magnitude, self.K, self.maximum) 
+            
+            # Conv1d Layer
+            x2 = self.conv1d_layer(prime_2d)
+            
+            
+            # Shuffle Layer 
+            if self.shuffle_pattern in ["A", "BA"]:
+                x3 = self.shuffle_layer(x2)
+            else:
+                x3 = x2
+            
+            return x3
+        
+        # Consider N samples
+        else: 
+            # Unshuffle Layer 
+            if self.shuffle_pattern in ["B", "BA"]:
+                x1 = self.unshuffle_layer(x)
+            else:
+                x1 = x
+                
+            # Q, K, V 
+            q = x1
+            k = x1
+            v = self.w_v(x1)    
+                
+            # Calculate Distance/Similarity Matrix + Prime       
+            rand_idx = torch.randperm(x1.shape[2], device=x1.device)[:self.samples]
+            
+            q_sample = q[:, :, rand_idx]
+            
+            if self.magnitude_type == 'distance':
+                matrix_magnitude = self._calculate_distance_matrix_N(k, q_sample, sqrt=True)
+            elif self.magnitude_type == 'similarity':
+                matrix_magnitude = self._calculate_similarity_matrix_N(k, q_sample)
+                
+            range_idx = torch.arange(len(rand_idx), device=x1.device)
+                
+        
+            if self.magnitude_type == 'distance':
+                matrix_magnitude[:, rand_idx, range_idx] = float('inf') 
+            elif self.magnitude_type == 'similarity':
+                matrix_magnitude[:, rand_idx, range_idx] = float('-inf')
+                
+            
+            prime = self._prime_N(v, matrix_magnitude, self.K, rand_idx, self.maximum)
+            
+            # Conv1d Layer
+            x2 = self.conv1d_layer(prime)
+            
+            # Shuffle Layer
+            if self.shuffle_pattern in ["A", "BA"]:
+                x3 = self.shuffle_layer(x2)
+            else:
+                x3 = x2
+            
+            return x3
+        
+
+    def _calculate_similarity_matrix(self, K, Q):
+        k_norm = F.normalize(K, p=2, dim=1)
+        q_norm = F.normalize(Q, p=2, dim=1)
+        similarity_matrix = torch.bmm(k_norm.transpose(2, 1), q_norm)  # [B, N, M]
+        similarity_matrix = torch.clamp(similarity_matrix, min=0)  # remove negative values
+        return similarity_matrix
+    
+    def _calculate_similarity_matrix_N(self, K, Q):
+        k_norm = F.normalize(K, p=2, dim=1)
+        q_norm = F.normalize(Q, p=2, dim=1)
+        similarity_matrix = torch.bmm(k_norm.transpose(2, 1), q_norm)  # [B, N, M]
+        similarity_matrix = torch.clamp(similarity_matrix, min=0)  # remove negative values
+        return similarity_matrix
+        
+
+    def _calculate_distance_matrix(self, K, Q, sqrt=False):
+        norm_squared_K = torch.sum(K**2, dim=1, keepdim=True) 
+        norm_squared_Q = torch.sum(Q**2, dim=1, keepdim=True) 
+        
+        dot_product = torch.bmm(K.transpose(2, 1), Q)  
+        
+        # Broadcasting: [B, 1, N] + [B, M, 1] - 2*[B, N, M]
+        dist_matrix = norm_squared_K + norm_squared_Q.transpose(2, 1) - 2 * dot_product
+        
+        dist_matrix = torch.clamp(dist_matrix, min=0)  # remove negative values
+        
+        if sqrt:
+            dist_matrix = torch.sqrt(dist_matrix)
+        
+        return dist_matrix
+
+    def _calculate_distance_matrix_N(self, K, Q, sqrt=False):
+        norm_squared_K = torch.sum(K**2, dim=1, keepdim=True).permute(0, 2, 1)
+        norm_squared_Q = torch.sum(Q**2, dim=1, keepdim=True).transpose(2, 1).permute(0, 2, 1)
+        
+        dot_product = torch.bmm(K.transpose(2, 1), Q)  
+        
+        # Broadcasting: [B, 1, N] + [B, M, 1] - 2*[B, N, M]
+        dist_matrix = norm_squared_K + norm_squared_Q - 2 * dot_product
+        
+        dist_matrix = torch.clamp(dist_matrix, min=0)  # remove negative values
+        
+        if sqrt:
+            dist_matrix = torch.sqrt(dist_matrix)
+        
+        return dist_matrix
+
+    def _prime(self, v, qk, K, maximum):
+        b, c, t = v.shape 
+        
+        _, topk_indices = torch.topk(qk, k=K, dim=-1, largest = maximum)
+        
+        topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)
+        
+        v_expanded = v.unsqueeze(-1).expand(b, c, t, K)
+        
+        prime = torch.gather(v_expanded, dim=2, index=topk_indices_exp)
+        
+        prime = prime.reshape(b, c, -1)
+
+        return prime
+        
+            
+            
+    def _prime_N(self, v, qk, K, rand_idx, maximum):
+        b, c, t = v.shape
+
+        # Get top-(K-1) indices from the magnitude matrix; shape: [b, t, K-1]
+        _, topk_indices = torch.topk(qk, k=K - 1, dim=2, largest=maximum)
+        tk = topk_indices.shape[-1]
+        assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
+
+        # Map indices from the sampled space to the full token indices using rand_idx.
+        # mapped_tensor will have shape: [b, t, K-1]
+        mapped_tensor = rand_idx[topk_indices]
+
+        # Create self indices for each token; shape: [1, t, 1] then expand to [b, t, 1]
+        token_indices = torch.arange(t, device=v.device).view(1, t, 1).expand(b, t, 1)
+
+        # Concatenate self index with neighbor indices to form final indices; shape: [b, t, K]
+        final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
+
+        # Expand final_indices to include the channel dimension; result shape: [b, c, t, K]
+        indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
+
+        # Expand matrix to shape [b, c, t, 1] and then to [b, c, t, K] (ensuring contiguous memory)
+        v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
+
+        # Gather neighbor features along the token dimension (dim=2)
+        prime = torch.gather(v_expanded, dim=2, index=indices_expanded)  # shape: [b, c, t, K]
+
+        # Flatten the token and neighbor dimensions into one: [b, c, t*K]
+        prime = prime.reshape(b, c, -1)
+        return prime
+    
+class Conv2d_NN_Attn_V(nn.Module): 
+    """
+    Convolution 2D Nearest Neighbor Layer for Convolutional Neural Networks.
+     - Location Channels : add coordinates -> unshuffle -> flatten -> ConvNN -> unflatten -> shuffle -> remove coordinate 
+    
+    Attributes: 
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        K (int): Number of Nearest Neighbors for consideration.
+        stride (int): Stride size.
+        padding (int): Padding size.
+        shuffle_pattern (str): Shuffle pattern.
+        shuffle_scale (int): Shuffle scale factor.
+        samples (int/str): Number of samples to consider.
+        magnitude_type (str): Distance or Similarity.
+        
+    Notes:
+        - K must be same as stride. K == stride.
+    """
+    
+    def __init__(self, 
+                in_channels, 
+                out_channels, 
+                K=3,
+                stride=3, 
+                padding=0, 
+                shuffle_pattern="BA", 
+                shuffle_scale=2, 
+                samples="all", 
+                magnitude_type="similarity",
+                location_channels=False, 
+                image_size=(32, 32)
+                ): 
+        
+        """
+        Initializes the Conv2d_NN module.
+        
+        Parameters:
+            in_channels (int): Number of input channels.
+            out_channels (int): Number of output channels.
+            K (int): Number of Nearest Neighbors for consideration.
+            stride (int): Stride size.
+            padding (int): Padding size.
+            shuffle_pattern (str): Shuffle pattern: "B", "A", "BA".
+            shuffle_scale (int): Shuffle scale factor.
+            samples (int/str): Number of samples to consider.
+            magnitude_type (str): Distance or Similarity.
+        """
+        
+        super(Conv2d_NN_Attn_V, self).__init__()
+        
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.K = K
+        self.stride = stride
+        self.padding = padding
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        self.samples = int(samples) if samples != "all" else samples
+        self.magnitude_type = magnitude_type
+        self.location_channels = location_channels
+
+        if (self.shuffle_pattern in ["B", "BA"]):
+            if self.location_channels: 
+                self.in_channels_1d = (self.in_channels + 2) * (self.shuffle_scale**2)
+                self.out_channels_1d = (self.out_channels + 2) * (self.shuffle_scale **2)
+            else:
+                self.in_channels_1d = self.in_channels * (self.shuffle_scale**2)
+                self.out_channels_1d = self.out_channels * (self.shuffle_scale **2)
+
+        else: 
+            if self.location_channels: 
+                self.in_channels_1d = self.in_channels + 2
+                self.out_channels_1d = self.out_channels + 2
+            else:
+                self.in_channels_1d = self.in_channels
+                self.out_channels_1d = self.out_channels
+
+
+
+        self.num_tokens = int((image_size[0] * image_size[1]) / (self.shuffle_scale**2))
+
+        self.Conv1d_NN = Conv1d_NN_Attn_V(in_channels=self.in_channels_1d,
+                                    out_channels=self.out_channels_1d,
+                                    K=self.K,
+                                    stride=self.stride,
+                                    padding=self.padding,
+                                    samples=self.samples, 
+                                    shuffle_pattern="NA",
+                                    shuffle_scale=1, 
+                                    magnitude_type=self.magnitude_type, 
+                                    num_tokens=self.num_tokens
+                                    )
+
+        self.flatten = nn.Flatten(start_dim=2)
+        
+        self.pointwise_conv = nn.Conv2d(self.out_channels + 2, self.out_channels, kernel_size=1)
+        
+        
+    def forward(self, x): 
+        if self.shuffle_pattern in ["B", "BA"]:
+            if self.location_channels: 
+                x_coordinates = self.coordinate_channels(x.shape, device=x.device)
+                x = torch.cat((x, x_coordinates), dim=1)
+                x1 = nn.functional.pixel_unshuffle(x, self.shuffle_scale)
+            else: 
+                x1 = nn.functional.pixel_unshuffle(x, self.shuffle_scale)
+            
+        else: 
+            if self.location_channels:
+                x_coordinates = self.coordinate_channels(x.shape, device=x.device)
+                x1 = torch.cat((x, x_coordinates), dim=1)
+            else: 
+                x1 = x
+                
+        x2 = self.flatten(x1)
+
+        x3 = self.Conv1d_NN(x2)  
+
+        unflatten = nn.Unflatten(dim=2, unflattened_size=x1.shape[2:])
+        x4 = unflatten(x3)
+
+        if self.shuffle_pattern in ["A", "BA"]:
+            if self.location_channels:
+                x4 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
+                x5 = self.pointwise_conv(x4) ## Added Pointwise Conv to reduce channels added for spatial coordinates
+            else:
+                x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
+        else: 
+            if self.location_channels:
+                x5 = self.pointwise_conv(x4) ## Added Pointwise Conv to reduce channels added for spatial coordinates
+            else: 
+                x5 = x4
+
+        return x5
+    
+    def coordinate_channels(self, tensor_shape, device):
+        x_ind = torch.arange(0, tensor_shape[2])
+        y_ind = torch.arange(0, tensor_shape[3])
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_grid = x_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        y_grid = y_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        
+        xy_grid = torch.cat((x_grid, y_grid), dim=1)
+        xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
+        return xy_grid_normalized.to(device)
+
 ### Pixel Shuffle and Unshuffle Layers ###
 class PixelShuffle1D(nn.Module): 
     """
@@ -1271,7 +1665,6 @@ class ConvNN_CNN_Spatial_BranchingLayer(nn.Module):
         reduce = self.reduce_channels(concat)
         return reduce
     
-    
 class ConvNN_CNN_Attention_BranchingLayer(nn.Module):
     def __init__(self, in_ch, out_ch, channel_ratio=(16, 16), kernel_size=3, K=9, samples = "all", location_channels = False, image_size = (32, 32)):
         # Channel_ratio must add up to 2*out_ch
@@ -1324,7 +1717,57 @@ class ConvNN_CNN_Attention_BranchingLayer(nn.Module):
         reduce = self.reduce_channels(concat)
         return reduce
     
+class ConvNN_CNN_Attention_V_BranchingLayer(nn.Module):
+    def __init__(self, in_ch, out_ch, channel_ratio=(16, 16), kernel_size=3, K=9, samples = "all", location_channels = False, image_size = (32, 32)):
+        # Channel_ratio must add up to 2*out_ch
+        assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
+        assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
+        
+        super(ConvNN_CNN_Attention_V_BranchingLayer, self).__init__()
+        
+        self.in_ch = in_ch 
+        self.out_ch = out_ch    
+        self.channel_ratio = channel_ratio
+        self.kernel_size = kernel_size
+        self.K = K
+        self.samples = samples
+        self.location_channels = location_channels
+        
+        
+        if self.channel_ratio[0] != 0:
+            self.branch1 = nn.Sequential(
+                nn.Conv2d(in_ch, channel_ratio[0], kernel_size, stride=1, padding=1),
+                nn.ReLU()
+            )
+        
+        if self.channel_ratio[1] != 0:
+            self.branch2 = nn.Sequential(
+                Conv2d_NN_Attn_V(in_ch, channel_ratio[1], K = K, stride = K, samples = samples, image_size=image_size, location_channels = location_channels), 
+                nn.ReLU()
+            )
+        
 
+        self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
+
+
+    def forward(self, x):
+        
+        if self.channel_ratio[0] != 0:
+            x1 = self.branch1(x)
+        
+        if self.channel_ratio[1] != 0:
+            x2 = self.branch2(x)
+        
+        if self.channel_ratio[0] == 0:
+            concat = x2
+        elif self.channel_ratio[1] == 0:
+            concat = x1
+        else:
+        
+            concat = torch.cat([x1, x2], dim=1)
+        
+        reduce = self.reduce_channels(concat)
+        return reduce
 
 '''Model Modules'''
 class Branching_ConvNN_K_All(nn.Module):
@@ -1334,23 +1777,23 @@ class Branching_ConvNN_K_All(nn.Module):
         self.features = nn.Sequential(
             # Block 1
             ConvNN_CNN_Random_BranchingLayer(in_ch, 8, K=K, channel_ratio=channel_ratio, kernel_size=kernel_size),
-            nn.BatchNorm2d(8), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(8), # Added BatchNorm
+            nn.ReLU(),
             
             # Block 2
             ConvNN_CNN_Random_BranchingLayer(8, 16, K=K, channel_ratio=(channel_ratio[0]*2, channel_ratio[1]*2), kernel_size=kernel_size),
-            nn.BatchNorm2d(16), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(16), # Added BatchNorm
+            nn.ReLU(),
             
             # Block 3
             ConvNN_CNN_Random_BranchingLayer(16, 32, K=K, channel_ratio=(channel_ratio[0]*4, channel_ratio[1]*4), kernel_size=kernel_size),
-            nn.BatchNorm2d(32), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(32), # Added BatchNorm
+            nn.ReLU(),
 
             # Block 4 (New)
             ConvNN_CNN_Random_BranchingLayer(32, 48, K=K, channel_ratio=(channel_ratio[0]*6, channel_ratio[1]*6), kernel_size=kernel_size),
-            nn.BatchNorm2d(48), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(48), # Added BatchNorm
+            nn.ReLU(),
         )
 
         self.flatten = nn.Flatten()
@@ -1360,8 +1803,8 @@ class Branching_ConvNN_K_All(nn.Module):
         
         # Adjusted classifier size
         self.classifier = nn.Sequential(
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
+            nn.ReLU(),
+            # nn.Dropout(0.5),
             nn.Linear(flattened_size, num_classes), # Increased intermediate size
         )
 
@@ -1397,23 +1840,23 @@ class Branching_ConvNN_K_N(nn.Module):
         self.features = nn.Sequential(
             # Block 1
             ConvNN_CNN_Random_BranchingLayer(in_ch, 8, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size),
-            nn.BatchNorm2d(8), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(8), # Added BatchNorm
+            nn.ReLU(),
             
             # Block 2
             ConvNN_CNN_Random_BranchingLayer(8, 16, K=K, samples=N, channel_ratio=(channel_ratio[0]*2, channel_ratio[1]*2), kernel_size=kernel_size),
-            nn.BatchNorm2d(16), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(16), # Added BatchNorm
+            nn.ReLU(),
             
             # Block 3
             ConvNN_CNN_Random_BranchingLayer(16, 32, K=K, samples=N, channel_ratio=(channel_ratio[0]*4, channel_ratio[1]*4), kernel_size=kernel_size),
-            nn.BatchNorm2d(32), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(32), # Added BatchNorm
+            nn.ReLU(),
 
             # Block 4 (New)
             ConvNN_CNN_Random_BranchingLayer(32, 48, K=K, samples=N, channel_ratio=(channel_ratio[0]*6, channel_ratio[1]*6), kernel_size=kernel_size),
-            nn.BatchNorm2d(48), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(48), # Added BatchNorm
+            nn.ReLU(),
         )
 
         self.flatten = nn.Flatten()
@@ -1423,8 +1866,8 @@ class Branching_ConvNN_K_N(nn.Module):
         
         # Adjusted classifier size
         self.classifier = nn.Sequential(
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
+            nn.ReLU(),
+            # nn.Dropout(0.5),
             nn.Linear(flattened_size, num_classes), # Increased intermediate size
         )
 
@@ -1460,23 +1903,23 @@ class Branching_ConvNN_Spatial_K_N(nn.Module):
         self.features = nn.Sequential(
             # Block 1
             ConvNN_CNN_Spatial_BranchingLayer(in_ch, 8, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size),
-            nn.BatchNorm2d(8), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(8), # Added BatchNorm
+            nn.ReLU(),
             
             # Block 2
             ConvNN_CNN_Spatial_BranchingLayer(8, 16, K=K, samples=N, channel_ratio=(channel_ratio[0]*2, channel_ratio[1]*2), kernel_size=kernel_size),
-            nn.BatchNorm2d(16), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(16), # Added BatchNorm
+            nn.ReLU(),
             
             # Block 3
             ConvNN_CNN_Spatial_BranchingLayer(16, 32, K=K, samples=N, channel_ratio=(channel_ratio[0]*4, channel_ratio[1]*4), kernel_size=kernel_size),
-            nn.BatchNorm2d(32), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(32), # Added BatchNorm
+            nn.ReLU(),
 
             # Block 4 (New)
             ConvNN_CNN_Spatial_BranchingLayer(32, 48, K=K, samples=N, channel_ratio=(channel_ratio[0]*6, channel_ratio[1]*6), kernel_size=kernel_size),
-            nn.BatchNorm2d(48), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(48), # Added BatchNorm
+            nn.ReLU(),
         )
 
         self.flatten = nn.Flatten()
@@ -1486,8 +1929,8 @@ class Branching_ConvNN_Spatial_K_N(nn.Module):
         
         # Adjusted classifier size
         self.classifier = nn.Sequential(
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
+            nn.ReLU(),
+            # nn.Dropout(0.5),
             nn.Linear(flattened_size, num_classes), # Increased intermediate size
         )
 
@@ -1523,23 +1966,23 @@ class Branching_ConvNN_Attention_K_N(nn.Module):
         self.features = nn.Sequential(
             # Block 1
             ConvNN_CNN_Attention_BranchingLayer(in_ch, 8, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size),
-            nn.BatchNorm2d(8), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(8), # Added BatchNorm
+            nn.ReLU(),
             
             # Block 2
             ConvNN_CNN_Attention_BranchingLayer(8, 16, K=K, samples=N, channel_ratio=(channel_ratio[0]*2, channel_ratio[1]*2), kernel_size=kernel_size),
-            nn.BatchNorm2d(16), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(16), # Added BatchNorm
+            nn.ReLU(),
             
             # Block 3
             ConvNN_CNN_Attention_BranchingLayer(16, 32, K=K, samples=N, channel_ratio=(channel_ratio[0]*4, channel_ratio[1]*4), kernel_size=kernel_size),
-            nn.BatchNorm2d(32), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(32), # Added BatchNorm
+            nn.ReLU(),
 
             # Block 4 (New)
             ConvNN_CNN_Attention_BranchingLayer(32, 48, K=K, samples=N, channel_ratio=(channel_ratio[0]*6, channel_ratio[1]*6), kernel_size=kernel_size),
-            nn.BatchNorm2d(48), # Added BatchNorm
-            nn.ReLU(inplace=True),
+            # nn.BatchNorm2d(48), # Added BatchNorm
+            nn.ReLU(),
         )
 
         self.flatten = nn.Flatten()
@@ -1549,14 +1992,77 @@ class Branching_ConvNN_Attention_K_N(nn.Module):
         
         # Adjusted classifier size
         self.classifier = nn.Sequential(
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
+            nn.ReLU(),
+            # nn.Dropout(0.5),
             nn.Linear(flattened_size, num_classes), # Increased intermediate size
         )
 
         self.device = device
         self.to(self.device)
         self.name = "Branching_ConvNN_Attention_K_N" # Renamed for clarity
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.flatten(x)
+        x = self.classifier(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        # Ensure the model is on CPU for torchsummary if it causes issues with MPS
+        original_device = next(self.parameters()).device
+        try:
+            self.to("cpu")
+            print(f"--- Summary for {self.name} ---")
+            # torchsummary expects batch dimension, but input_size doesn't include it
+            summary(self, input_size=input_size, device="cpu") 
+        except Exception as e:
+            print(f"Could not generate summary: {e}")
+        finally:
+            # Move model back to its original device
+            self.to(original_device)
+
+class Branching_ConvNN_Attention_V_K_N(nn.Module):
+    def __init__(self, in_ch=3, K=9, N=64, kernel_size=3, channel_ratio=(8, 8),num_classes=100, device="mps"):
+        super(Branching_ConvNN_Attention_V_K_N, self).__init__()
+        # Increased width and added a layer
+        self.features = nn.Sequential(
+            # Block 1
+            ConvNN_CNN_Attention_V_BranchingLayer(in_ch, 8, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size),
+            # nn.BatchNorm2d(8), # Added BatchNorm
+            nn.ReLU(),
+            
+            # Block 2
+            ConvNN_CNN_Attention_V_BranchingLayer(8, 16, K=K, samples=N, channel_ratio=(channel_ratio[0]*2, channel_ratio[1]*2), kernel_size=kernel_size),
+            # nn.BatchNorm2d(16), # Added BatchNorm
+            nn.ReLU(),
+            
+            # Block 3
+            ConvNN_CNN_Attention_V_BranchingLayer(16, 32, K=K, samples=N, channel_ratio=(channel_ratio[0]*4, channel_ratio[1]*4), kernel_size=kernel_size),
+            # nn.BatchNorm2d(32), # Added BatchNorm
+            nn.ReLU(),
+
+            # Block 4 (New)
+            ConvNN_CNN_Attention_V_BranchingLayer(32, 48, K=K, samples=N, channel_ratio=(channel_ratio[0]*6, channel_ratio[1]*6), kernel_size=kernel_size),
+            # nn.BatchNorm2d(48), # Added BatchNorm
+            nn.ReLU(),
+        )
+
+        self.flatten = nn.Flatten()
+        
+        # Calculate the flattened size: 512 channels * 2 * 2 spatial dimensions
+        flattened_size = 48 * 32 * 32
+        
+        # Adjusted classifier size
+        self.classifier = nn.Sequential(
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.Linear(flattened_size, num_classes), # Increased intermediate size
+        )
+
+        self.device = device
+        self.to(self.device)
+        self.name = "Branching_ConvNN_Attention_V_K_N" # Renamed for clarity
 
 
     def forward(self, x):
@@ -1586,7 +2092,7 @@ class Branching_ConvNN_Attention_K_N(nn.Module):
 def branching_convnn_k_all(pretrained=False, **kwargs):
     """Branching ConvNN K All Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_K_All(in_ch=3, K=9, kernel_size=3, channel_ratio=(4, 4), num_classes=100)
+    model = Branching_ConvNN_K_All(in_ch=3, K=9, kernel_size=3, channel_ratio=(8, 8), num_classes=100, device='cuda')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -1600,7 +2106,7 @@ def branching_convnn_k_all(pretrained=False, **kwargs):
 def branching_convnn_k_n(pretrained=False, **kwargs):
     """Branching ConvNN K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_K_N(in_ch=3, K=9, N=64, kernel_size=3, channel_ratio=(8, 8), num_classes=100)
+    model = Branching_ConvNN_K_N(in_ch=3, K=9, N=64, kernel_size=3, channel_ratio=(8, 8), num_classes=100, device='cuda')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -1615,7 +2121,7 @@ def branching_convnn_k_n(pretrained=False, **kwargs):
 def branching_convnn_spatial_k_n(pretrained=False, **kwargs):
     """Branching ConvNN Spatial K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_Spatial_K_N(in_ch=3, K=9, N=8, kernel_size=3, channel_ratio=(8, 8), num_classes=100)
+    model = Branching_ConvNN_Spatial_K_N(in_ch=3, K=9, N=8, kernel_size=3, channel_ratio=(8, 8), num_classes=100, device='cuda')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -1630,7 +2136,7 @@ def branching_convnn_spatial_k_n(pretrained=False, **kwargs):
 def branching_convnn_attention_k_n(pretrained=False, **kwargs):
     """Branching ConvNN Attention K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_Attention_K_N(in_ch=3, K=9, N=64, kernel_size=3, channel_ratio=(8, 8), num_classes=100)
+    model = Branching_ConvNN_Attention_K_N(in_ch=3, K=9, N=64, kernel_size=3, channel_ratio=(8, 8), num_classes=100, device='cuda')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -1639,13 +2145,12 @@ def branching_convnn_attention_k_n(pretrained=False, **kwargs):
     #     num_classes=100
     # )
     return model
-
 
 @register_model
-def branching_convnn_k_all(pretrained=False, **kwargs):
-    """Branching ConvNN K All Samples"""
+def branching_convnn_attention_v_k_n(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_K_All(in_ch=3, K=9, kernel_size=3, channel_ratio=(8, 8),num_classes=100)
+    model = Branching_ConvNN_Attention_V_K_N(in_ch=3, K=9, N=64, kernel_size=3, channel_ratio=(8, 8), num_classes=100, device='cuda')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -1654,7 +2159,6 @@ def branching_convnn_k_all(pretrained=False, **kwargs):
     #     num_classes=100
     # )
     return model
-
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -1667,6 +2171,7 @@ if __name__ == "__main__":
         branching_convnn_k_n(),
         branching_convnn_spatial_k_n(),
         branching_convnn_attention_k_n(),
+        branching_convnn_attention_v_k_n()
     ]
     
     x = torch.randn(1, 3, 32, 32).to('mps')

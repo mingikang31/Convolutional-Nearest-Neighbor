@@ -12,16 +12,16 @@ from torchsummary import summary
 # ConvNN
 import sys
 sys.path.append('../Layers')
-from Conv1d_NN import *
-from Conv2d_NN import *
+from Conv2d_NN import Conv2d_NN
 
-from Conv1d_NN_spatial import *
-from Conv2d_NN_spatial import *
+from Conv2d_NN_spatial import Conv2d_NN_spatial
 
-from Conv1d_NN_Attn import *
-from Conv2d_NN_Attn import * 
+from Conv2d_NN_Attn import Conv2d_NN_Attn
 
-from ConvNN_CNN_Branching import *
+from Conv2d_NN_Attn_V import Conv2d_NN_Attn_V
+
+
+from ConvNN_CNN_Branching import ConvNN_CNN_Random_BranchingLayer, ConvNN_CNN_Spatial_BranchingLayer, ConvNN_CNN_Attention_BranchingLayer, ConvNN_CNN_Attention_V_BranchingLayer
 
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 
@@ -348,6 +348,74 @@ class ConvNN_2D_Attn_K_N(nn.Module):
         print(summary(self, input_size))
         self.to(self.device)
         
+class ConvNN_2D_Attn_V_K_All(nn.Module):
+    def __init__(self, in_ch=3, num_classes=10, K=9, image_size=(32, 32), device="mps"):
+        super(ConvNN_2D_Attn_V_K_All, self).__init__()
+        self.conv1 = Conv2d_NN_Attn_V(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", image_size=image_size)
+        self.conv2 = Conv2d_NN_Attn_V(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", image_size=image_size)
+
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.device = device
+        self.to(self.device)
+        self.name = "ConvNN_2D_Attn_V_K_All"
+
+
+    def forward(self, x):
+        x = self.relu(self.conv1(x))        
+        x = self.relu(self.conv2(x))
+
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+
+        return x
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to(self.device)
+        
+class ConvNN_2D_Attn_V_K_N(nn.Module):
+    def __init__(self, in_ch=3, num_classes=10, K=9, N = 64, image_size=(32, 32), device="mps"):
+        super(ConvNN_2D_Attn_V_K_N, self).__init__()
+        self.conv1 = Conv2d_NN_Attn_V(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size)
+        self.conv2 = Conv2d_NN_Attn_V(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size)
+
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.device = device
+        self.to(self.device)
+        self.name = "ConvNN_2D_Attn_V_K_N"
+
+
+    def forward(self, x):
+        x = self.relu(self.conv1(x))
+        x = self.relu(self.conv2(x))
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to(self.device)
+            
+        
+        
+        
+        
 ### Local + Global Models ###
 class Local_Global_ConvNN_2D(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, kernel_size=3, K=9, N = "all", location_channels = False, device="mps"):
@@ -525,6 +593,40 @@ class Branching_ConvNN_2D_Attn_K_N(nn.Module):
         self.device = device
         self.to(self.device)
         self.name = "Branching_ConvNN_2D_Attn_K_N"
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to(self.device)
+        
+
+class Branching_ConvNN_2D_Attn_V_K_N(nn.Module):
+    def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, N = 64, location_channels = False, image_size = (32, 32), device="mps"):
+        
+        super(Branching_ConvNN_2D_Attn_V_K_N, self).__init__()
+        self.conv1 = ConvNN_CNN_Attention_V_BranchingLayer(in_ch, 16, 
+            channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels, image_size=image_size)
+        self.conv2 = ConvNN_CNN_Attention_V_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, location_channels=location_channels, image_size = image_size)
+        
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.device = device
+        self.to(self.device)
+        self.name = "Branching_ConvNN_2D_Attn_V_K_N"
 
     def forward(self, x):
         x = self.conv1(x)
@@ -848,7 +950,7 @@ class Branching_ConvNN_2D_Spatial_K_N_Location_Before(nn.Module):
         self.relu = nn.ReLU()
         self.device = device
         self.to(self.device)
-        self.name = "Branching_ConvNN_2D_Spatial_K_N"
+        self.name = "Branching_ConvNN_2D_Spatial_K_N_Location_Before"
 
     def forward(self, x):
         x_coordinates = self.coordinate_channels(x.shape, x.device)
@@ -889,12 +991,15 @@ def classification_check():
               
               ConvNN_2D_Attn_K_All(), 
               ConvNN_2D_Attn_K_N(), 
+              ConvNN_2D_Attn_V_K_All(),
+              ConvNN_2D_Attn_V_K_N(),
               
               Local_Global_ConvNN_2D(), 
               Global_Local_ConvNN_2D(), 
               
-              Branching_ConvNN_2D_K_All(), Branching_ConvNN_2D_K_N(),
-              Branching_ConvNN_2D_Spatial_K_N(), Branching_ConvNN_2D_Attn_K_N(),
+              Branching_ConvNN_2D_K_All(), 
+              Branching_ConvNN_2D_K_N(),
+              Branching_ConvNN_2D_Spatial_K_N(), Branching_ConvNN_2D_Attn_K_N(), Branching_ConvNN_2D_Attn_V_K_N(),
               
               
                 CNN_Location_Before(), ConvNN_2D_K_All_Location_Before(),
@@ -910,9 +1015,9 @@ def classification_check():
     for model in models:
         try:
             ex_out = model(ex)
-            # print(f"{model.name}'s output Shape: {ex_out.shape}\n")
-            print("Model Name: ", model.name)
-            print(model.summary())
+            print(f"{model.name}'s output Shape: {ex_out.shape}\n")
+            # print("Model Name: ", model.name)
+            # print(model.summary())
         except Exception as e:
             print(f"Error: {e}\n")
             
@@ -921,8 +1026,5 @@ def classification_check():
 if __name__ == '__main__':
     
     print("Classification Models")
-    classification_check()
-    
-    pass
-    
+    classification_check()    
     
