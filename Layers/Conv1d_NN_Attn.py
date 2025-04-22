@@ -259,23 +259,19 @@ class Conv1d_NN_Attn(nn.Module):
         prime = prime.reshape(b, c, -1)
         return prime
     
-    
-def example_usage():
-    ex = torch.randn(32, 3, 32)
+if __name__ == "__main__":
+    x = torch.randn(64, 3, 256)
 
     conv1d_NN_attn = Conv1d_NN_Attn(in_channels=3,
-                                    out_channels=3,
+                                    out_channels=8,
                                     K=3,
                                     stride=3,
                                     padding=0,
                                     shuffle_pattern='NA',
                                     shuffle_scale=2,
-                                    samples=10,
+                                    samples=64,
                                     magnitude_type='similarity', 
-                                    num_tokens=32)
-    out = conv1d_NN_attn(ex)
-    print('Conv1d_NN_Attn output shape:', out.shape)
-
-if __name__ == "__main__":
-    example_usage()
-    
+                                    num_tokens=256)
+    output = conv1d_NN_attn(x)
+    print("Input shape:", x.shape) 
+    print("Output shape:", output.shape) 

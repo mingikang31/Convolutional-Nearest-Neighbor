@@ -1,74 +1,28 @@
-'''Convolution 2D Nearest Neighbor Attention Layer'''
+'''Attention 2D Layer'''
 
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F
-from Conv1d_NN_Attn import Conv1d_NN_Attn
+from Attention1d import Attention1d
 
-import numpy as np
-
-class Conv2d_NN_Attn(nn.Module): 
-    """
-    Convolution 2D Nearest Neighbor Layer for Convolutional Neural Networks.
-     - Location Channels : add coordinates -> unshuffle -> flatten -> ConvNN -> unflatten -> shuffle -> remove coordinate 
-    
-    Attributes: 
-        in_channels (int): Number of input channels.
-        out_channels (int): Number of output channels.
-        K (int): Number of Nearest Neighbors for consideration.
-        stride (int): Stride size.
-        padding (int): Padding size.
-        shuffle_pattern (str): Shuffle pattern.
-        shuffle_scale (int): Shuffle scale factor.
-        samples (int/str): Number of samples to consider.
-        magnitude_type (str): Distance or Similarity.
-        
-    Notes:
-        - K must be same as stride. K == stride.
-    """
-    
+class Attention2d(nn.Module):
     def __init__(self, 
-                in_channels, 
-                out_channels, 
-                K=3,
-                stride=3, 
-                padding=0, 
-                shuffle_pattern="BA", 
-                shuffle_scale=2, 
-                samples="all", 
-                magnitude_type="similarity",
-                location_channels=False, 
-                image_size=(32, 32)
-                ): 
-        
-        """
-        Initializes the Conv2d_NN module.
-        
-        Parameters:
-            in_channels (int): Number of input channels.
-            out_channels (int): Number of output channels.
-            K (int): Number of Nearest Neighbors for consideration.
-            stride (int): Stride size.
-            padding (int): Padding size.
-            shuffle_pattern (str): Shuffle pattern: "B", "A", "BA".
-            shuffle_scale (int): Shuffle scale factor.
-            samples (int/str): Number of samples to consider.
-            magnitude_type (str): Distance or Similarity.
-        """
-        
-        super(Conv2d_NN_Attn, self).__init__()
+                 in_channels,
+                 out_channels,
+                 shuffle_pattern='N/A',
+                 shuffle_scale=1,
+                 num_heads=1,
+                 location_channels=False,
+                 ): 
+        super(Attention2d, self).__init__()
         
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.K = K
-        self.stride = stride
-        self.padding = padding
         self.shuffle_pattern = shuffle_pattern
         self.shuffle_scale = shuffle_scale
-        self.samples = int(samples) if samples != "all" else samples
-        self.magnitude_type = magnitude_type
+        self.num_heads = num_heads
         self.location_channels = location_channels
-
+        
         if (self.shuffle_pattern in ["B", "BA"]):
             if self.location_channels: 
                 self.in_channels_1d = (self.in_channels + 2) * (self.shuffle_scale**2)
@@ -84,32 +38,21 @@ class Conv2d_NN_Attn(nn.Module):
             else:
                 self.in_channels_1d = self.in_channels
                 self.out_channels_1d = self.out_channels
-
-
-
-        self.num_tokens = int((image_size[0] * image_size[1]) / (self.shuffle_scale**2))
-
+                
         self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
         self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
         
-        self.Conv1d_NN = Conv1d_NN_Attn(in_channels=self.in_channels_1d,
-                                    out_channels=self.out_channels_1d,
-                                    K=self.K,
-                                    stride=self.stride,
-                                    padding=self.padding,
-                                    samples=self.samples, 
-                                    shuffle_pattern="NA",
-                                    shuffle_scale=1, 
-                                    magnitude_type=self.magnitude_type, 
-                                    num_tokens=self.num_tokens
-                                    )
-
-        self.flatten = nn.Flatten(start_dim=2)
+        self.attention1d = Attention1d(in_channels=self.in_channels_1d,
+                                        out_channels=self.out_channels_1d,
+                                        shuffle_pattern="N/A",
+                                        shuffle_scale=1,
+                                        num_heads=self.num_heads
+                                          )
         
+        self.flatten = nn.Flatten(start_dim=2)
         self.pointwise_conv = nn.Conv2d(self.out_channels + 2, self.out_channels, kernel_size=1)
         
-        
-    def forward(self, x): 
+    def forward(self, x):
         if self.shuffle_pattern in ["B", "BA"]:
             if self.location_channels: 
                 x_coordinates = self.coordinate_channels(x.shape, device=x.device)
@@ -126,8 +69,7 @@ class Conv2d_NN_Attn(nn.Module):
                 x1 = x
                 
         x2 = self.flatten(x1)
-
-        x3 = self.Conv1d_NN(x2)  
+        x3 = self.attention1d(x2)
 
         unflatten = nn.Unflatten(dim=2, unflattened_size=x1.shape[2:])
         x4 = unflatten(x3)
@@ -143,7 +85,6 @@ class Conv2d_NN_Attn(nn.Module):
                 x5 = self.pointwise_conv(x4) ## Added Pointwise Conv to reduce channels added for spatial coordinates
             else: 
                 x5 = x4
-
         return x5
     
     def coordinate_channels(self, tensor_shape, device):
@@ -158,12 +99,11 @@ class Conv2d_NN_Attn(nn.Module):
         xy_grid = torch.cat((x_grid, y_grid), dim=1)
         xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
         return xy_grid_normalized.to(device)
-    
-if __name__ == "__main__":
-    x = torch.rand(32, 3, 32, 32)
 
-    conv2d_nn_attn = Conv2d_NN_Attn(in_channels=3, out_channels=8, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples=64, magnitude_type="similarity", location_channels=False)
-    output = conv2d_nn_attn(x)
+if __name__ == "__main__":
+    x = torch.randn(32, 3, 32, 32) 
+    attention_layer = Attention2d(in_channels=3, out_channels=8, shuffle_pattern='BA', shuffle_scale=2, num_heads=1)
+    output = attention_layer(x)
     
     print("Input shape:", x.shape) # Should be (64, 3, 32, 32)
     print("Output shape:", output.shape) # Should be (64, 8, 32, 32)

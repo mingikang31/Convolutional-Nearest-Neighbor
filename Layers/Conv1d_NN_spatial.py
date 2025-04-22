@@ -13,7 +13,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
-import numpy as np
 
 class Conv1d_NN_spatial(nn.Module): 
     """
@@ -166,15 +165,4 @@ class Conv1d_NN_spatial(nn.Module):
             reshape = torch.flatten(neigh, start_dim=1)
             return reshape
         return neigh
-    
-    
-    
-    ### Notes
-    # - the indexes do not represent the correct index of the pixels. Because the pixels are spatially sampled before flattening, it does not correlate with the same indices as the iamge.
-    
-def example_usage():
-    pass ## TODO Later
-    
-if __name__ == "__main__":
-    example_usage()
     

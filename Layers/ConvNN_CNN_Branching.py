@@ -22,6 +22,9 @@ from Conv2d_NN_Attn import *
 from Conv1d_NN_Attn_V import * 
 from Conv2d_NN_Attn_V import *
 
+from Attention1d import Attention1d
+from Attention2d import Attention2d
+
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 
 
@@ -232,6 +235,43 @@ class ConvNN_CNN_Attention_V_BranchingLayer(nn.Module):
         reduce = self.reduce_channels(concat)
         return reduce
     
+    
+class CNN_Attention_BranchingLayer(nn.Module):
+    def __init__(self, in_ch, out_ch, kernel_size=3):
+        # Channel_ratio must add up to 2*out_ch
+
+        super(CNN_Attention_BranchingLayer, self).__init__()
+        
+        self.in_ch = in_ch 
+        self.out_ch = out_ch    
+        self.kernel_size = kernel_size
+
+    
+        self.branch1 = nn.Sequential(
+            nn.Conv2d(in_ch, out_ch, kernel_size, stride=1, padding=1),
+            nn.ReLU()
+        )
+        
+
+        self.branch2 = nn.Sequential(
+            Attention2d(in_ch, out_ch, shuffle_pattern="BA", shuffle_scale=2, num_heads=1, location_channels=False),
+            nn.ReLU()
+        )
+        
+
+        self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
+
+
+    def forward(self, x):
+        x1 = self.branch1(x)
+
+        x2 = self.branch2(x)
+        
+        concat = torch.cat([x1, x2], dim=1)
+        
+        reduce = self.reduce_channels(concat)
+        return reduce
+    
 '''EXAMPLE USAGE'''
 def example_usage():
     '''Example Usage of ConvNN_CNN_Random_BranchingLayer and ConvNN_CNN_Spatial_BranchingLayer'''
@@ -255,6 +295,11 @@ def example_usage():
     convnn_cnn_attention_v = ConvNN_CNN_Attention_V_BranchingLayer(in_ch=3, out_ch=16, channel_ratio=(28, 4), kernel_size=3, K=3, samples=5, location_channels=True)
     output_attention = convnn_cnn_attention_v(ex)
     print("Output Attention V Branching: ", output_attention.shape)
+    
+    
+    cnn_attention = CNN_Attention_BranchingLayer(in_ch=3, out_ch=16, kernel_size=3)
+    output_attention = cnn_attention(ex)
+    print("Output CNN Attention Branching: ", output_attention.shape)
     
 if __name__ == "__main__":
     example_usage()

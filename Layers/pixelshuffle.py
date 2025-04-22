@@ -40,7 +40,6 @@ class PixelShuffle1D(nn.Module):
         
         return x 
    
-
 class PixelUnshuffle1D(nn.Module):  
     """
     1D Pixel Unshuffle Layer for Convolutional Neural Networks.

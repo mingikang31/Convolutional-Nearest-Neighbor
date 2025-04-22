@@ -70,7 +70,7 @@ class Conv1d_NN_Attn_V(nn.Module):
         self.in_channels = in_channels * shuffle_scale if self.shuffle_pattern in ["BA", "B"] else in_channels
         self.out_channels = out_channels * shuffle_scale if self.shuffle_pattern in ["BA", "A"] else out_channels
 
-        # Conv1d Layer 
+        # Conv1d Layer         
         self.conv1d_layer = Conv1d(in_channels=self.in_channels, 
                                     out_channels=self.out_channels, 
                                     kernel_size=self.K, 
@@ -104,7 +104,6 @@ class Conv1d_NN_Attn_V(nn.Module):
                 matrix_magnitude = self._calculate_similarity_matrix(k, q)
                 
             prime_2d = self._prime(v, matrix_magnitude, self.K, self.maximum) 
-            
             # Conv1d Layer
             x2 = self.conv1d_layer(prime_2d)
             
@@ -148,9 +147,7 @@ class Conv1d_NN_Attn_V(nn.Module):
             elif self.magnitude_type == 'similarity':
                 matrix_magnitude[:, rand_idx, range_idx] = float('-inf')
                 
-            
             prime = self._prime_N(v, matrix_magnitude, self.K, rand_idx, self.maximum)
-            
             # Conv1d Layer
             x2 = self.conv1d_layer(prime)
             
@@ -258,23 +255,20 @@ class Conv1d_NN_Attn_V(nn.Module):
         prime = prime.reshape(b, c, -1)
         return prime
     
-    
-def example_usage():
-    ex = torch.randn(32, 3, 32)
+if __name__ == "__main__":
+    x = torch.randn(64, 3, 256)
 
-    conv1d_NN_attn = Conv1d_NN_Attn_V(in_channels=3,
-                                    out_channels=3,
+    conv1d_NN_attn_v = Conv1d_NN_Attn_V(in_channels=3,
+                                    out_channels=8,
                                     K=3,
                                     stride=3,
                                     padding=0,
-                                    shuffle_pattern='NA',
+                                    shuffle_pattern='BA',
                                     shuffle_scale=2,
-                                    samples=10,
+                                    samples='all',
                                     magnitude_type='similarity', 
-                                    num_tokens=32)
-    out = conv1d_NN_attn(ex)
-    print('Conv1d_NN_Attn_V output shape:', out.shape)
-
-if __name__ == "__main__":
-    example_usage()
+                                    num_tokens=256)
+    out = conv1d_NN_attn_v(x)
+    print("Input shape:", x.shape) 
+    print("Output shape:", out.shape) 
     

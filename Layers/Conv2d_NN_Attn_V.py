@@ -104,6 +104,9 @@ class Conv2d_NN_Attn_V(nn.Module):
 
         self.flatten = nn.Flatten(start_dim=2)
         
+        self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
+        self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
+        
         self.pointwise_conv = nn.Conv2d(self.out_channels + 2, self.out_channels, kernel_size=1)
         
         
@@ -112,9 +115,9 @@ class Conv2d_NN_Attn_V(nn.Module):
             if self.location_channels: 
                 x_coordinates = self.coordinate_channels(x.shape, device=x.device)
                 x = torch.cat((x, x_coordinates), dim=1)
-                x1 = nn.functional.pixel_unshuffle(x, self.shuffle_scale)
+                x1 = self.unshuffle_layer(x)
             else: 
-                x1 = nn.functional.pixel_unshuffle(x, self.shuffle_scale)
+                x1 = self.unshuffle_layer(x)
             
         else: 
             if self.location_channels:
@@ -132,10 +135,10 @@ class Conv2d_NN_Attn_V(nn.Module):
 
         if self.shuffle_pattern in ["A", "BA"]:
             if self.location_channels:
-                x4 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
+                x4 = self.shuffle_layer(x4)
                 x5 = self.pointwise_conv(x4) ## Added Pointwise Conv to reduce channels added for spatial coordinates
             else:
-                x5 = nn.functional.pixel_shuffle(x4, self.shuffle_scale)
+                x5 = self.shuffle_layer(x4)
         else: 
             if self.location_channels:
                 x5 = self.pointwise_conv(x4) ## Added Pointwise Conv to reduce channels added for spatial coordinates
@@ -157,18 +160,12 @@ class Conv2d_NN_Attn_V(nn.Module):
         xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
         return xy_grid_normalized.to(device)
     
-    
-    
-def example_usage():
-    '''Example Usage of Conv2d_NN_Attn Layer'''
-
-    x_test = torch.rand(32, 3, 32, 32).to("mps")
-    print("Input: ", x_test.shape)
-
-    conv2d_nn_attn = Conv2d_NN_Attn_V(in_channels=3, out_channels=6, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples=64, magnitude_type="similarity", location_channels=True).to('mps')
-    output = conv2d_nn_attn(x_test)
-    print("Output: ", output.shape)
-    
 if __name__ == "__main__":
-    example_usage()
+    x = torch.rand(32, 3, 32, 32)
+
+    conv2d_nn_attn = Conv2d_NN_Attn_V(in_channels=3, out_channels=8, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples=64, magnitude_type="similarity", location_channels=False)
+    output = conv2d_nn_attn(x)
     
+    print("Input shape:", x.shape) # Should be (32, 3, 32, 32)
+    print("Output shape:", output.shape) # Should be (32, 8, 32, 32)
+        

@@ -20,8 +20,10 @@ from Conv2d_NN_Attn import Conv2d_NN_Attn
 
 from Conv2d_NN_Attn_V import Conv2d_NN_Attn_V
 
+from Attention2d import Attention2d
 
-from ConvNN_CNN_Branching import ConvNN_CNN_Random_BranchingLayer, ConvNN_CNN_Spatial_BranchingLayer, ConvNN_CNN_Attention_BranchingLayer, ConvNN_CNN_Attention_V_BranchingLayer
+
+from ConvNN_CNN_Branching import ConvNN_CNN_Random_BranchingLayer, ConvNN_CNN_Spatial_BranchingLayer, ConvNN_CNN_Attention_BranchingLayer, ConvNN_CNN_Attention_V_BranchingLayer, CNN_Attention_BranchingLayer
 
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 
@@ -412,9 +414,38 @@ class ConvNN_2D_Attn_V_K_N(nn.Module):
         print(summary(self, input_size))
         self.to(self.device)
             
-        
-        
-        
+### Attention Models ### 
+class Attention_2D(nn.Module):
+    def __init__(self, in_ch=3, num_classes=10, K=9, device="mps"):
+        super(Attention_2D, self).__init__()
+        self.conv1 = Attention2d(in_ch, 16, shuffle_pattern="BA", shuffle_scale=2, num_heads=1)
+        self.conv2 = Attention2d(16, 32, shuffle_pattern="BA", shuffle_scale=2, num_heads=1)
+
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.device = device
+        self.to(self.device)
+        self.name = "Attention_2D"
+
+
+    def forward(self, x):
+        x = self.relu(self.conv1(x))        
+        x = self.relu(self.conv2(x))
+
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+
+        return x
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to(self.device)
         
 ### Local + Global Models ###
 class Local_Global_ConvNN_2D(nn.Module):
@@ -627,6 +658,38 @@ class Branching_ConvNN_2D_Attn_V_K_N(nn.Module):
         self.device = device
         self.to(self.device)
         self.name = "Branching_ConvNN_2D_Attn_V_K_N"
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        
+        x = self.flatten(x)
+
+        x = self.relu(self.fc1(x))
+        x = self.fc2(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        self.to("cpu")
+        print(summary(self, input_size))
+        self.to(self.device)
+
+class Branching_CNN_Attn(nn.Module):
+    def __init__(self, in_ch=3, num_classes=10, kernel_size=3, device="mps"):
+        
+        super(Branching_CNN_Attn, self).__init__()
+        self.conv1 = CNN_Attention_BranchingLayer(in_ch=in_ch, out_ch=16, kernel_size=kernel_size)
+        self.conv2 = CNN_Attention_BranchingLayer(in_ch=16, out_ch=32, kernel_size=kernel_size)
+        
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(32768, 1024)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+        self.relu = nn.ReLU()
+        self.device = device
+        self.to(self.device)
+        self.name = "Branching_CNN_Attn"
 
     def forward(self, x):
         x = self.conv1(x)
@@ -985,23 +1048,26 @@ class Branching_ConvNN_2D_Spatial_K_N_Location_Before(nn.Module):
 def classification_check():
     # Models
     models = [CNN(), ConvNN_2D_K_All(), 
-              ConvNN_2D_K_N(), ConvNN_2D_Spatial_K_N(),
-              ConvNN_2D_K_All_Location(), ConvNN_2D_K_N_Location(), 
-              ConvNN_2D_Spatial_K_N_Location(),
-              
-              ConvNN_2D_Attn_K_All(), 
-              ConvNN_2D_Attn_K_N(), 
-              ConvNN_2D_Attn_V_K_All(),
-              ConvNN_2D_Attn_V_K_N(),
-              
-              Local_Global_ConvNN_2D(), 
-              Global_Local_ConvNN_2D(), 
-              
-              Branching_ConvNN_2D_K_All(), 
-              Branching_ConvNN_2D_K_N(),
-              Branching_ConvNN_2D_Spatial_K_N(), Branching_ConvNN_2D_Attn_K_N(), Branching_ConvNN_2D_Attn_V_K_N(),
-              
-              
+                ConvNN_2D_K_N(), ConvNN_2D_Spatial_K_N(),
+                ConvNN_2D_K_All_Location(), ConvNN_2D_K_N_Location(), 
+                ConvNN_2D_Spatial_K_N_Location(),
+
+                ConvNN_2D_Attn_K_All(), 
+                ConvNN_2D_Attn_K_N(), 
+                ConvNN_2D_Attn_V_K_All(),
+                ConvNN_2D_Attn_V_K_N(),
+
+                Attention_2D(),
+
+                Local_Global_ConvNN_2D(), 
+                Global_Local_ConvNN_2D(), 
+
+                Branching_ConvNN_2D_K_All(), 
+                Branching_ConvNN_2D_K_N(),
+                Branching_ConvNN_2D_Spatial_K_N(), Branching_ConvNN_2D_Attn_K_N(), Branching_ConvNN_2D_Attn_V_K_N(),
+                Branching_CNN_Attn(),
+
+
                 CNN_Location_Before(), ConvNN_2D_K_All_Location_Before(),
                 ConvNN_2D_K_N_Location_Before(), ConvNN_2D_Spatial_K_N_Location_Before(),
                 Branching_ConvNN_2D_K_All_Location_Before(), Branching_ConvNN_2D_K_N_Location_Before(),
