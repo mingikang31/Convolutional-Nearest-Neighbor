@@ -1045,6 +1045,10 @@ class Branching_ConvNN_2D_Spatial_K_N_Location_Before(nn.Module):
         xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
         return xy_grid_normalized.to(device)
 
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 def classification_check():
     # Models
     models = [CNN(), ConvNN_2D_K_All(), 
@@ -1082,13 +1086,16 @@ def classification_check():
         try:
             ex_out = model(ex)
             print(f"{model.name}'s output Shape: {ex_out.shape}\n")
-            # print("Model Name: ", model.name)
+            
+            # print(f"{model.name}'s Number of Parameters: {count_parameters(model)}\n")
+            
             # print(model.summary())
         except Exception as e:
             print(f"Error: {e}\n")
             
 
-
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 if __name__ == '__main__':
     
     print("Classification Models")
