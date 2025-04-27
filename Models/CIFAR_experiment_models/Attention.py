@@ -227,7 +227,7 @@ class PixelUnshuffle1D(nn.Module):
         return x 
 
 class Attention(nn.Module):
-    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, num_heads=1, num_classes=100, device="mps"):
+    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, num_heads=4, num_classes=100, device="mps"):
         super(Attention, self).__init__()
         
         assert num_layers >= 2, "Number of layers must be at least 2"
@@ -287,7 +287,7 @@ class Attention(nn.Module):
             
 @register_model 
 def attention_100(pretrained=False, **kwargs):
-    model = Attention(in_ch=3, mid_ch=16, num_layers=2, num_classes=100, device="mps")
+    model = Attention(in_ch=3, mid_ch=16, num_layers=2, num_heads=4, num_classes=100, device="mps")
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
     #     mean=(0.5071, 0.4867, 0.4408),
@@ -298,7 +298,7 @@ def attention_100(pretrained=False, **kwargs):
 
 @register_model 
 def attention_10(pretrained=False, **kwargs):
-    model = Attention(in_ch=3, mid_ch=16, num_layers=2, num_classes=10, device="mps")
+    model = Attention(in_ch=3, mid_ch=16, num_layers=2, num_heads=4, num_classes=10, device="mps")
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
     #     mean=(0.5071, 0.4867, 0.4408),

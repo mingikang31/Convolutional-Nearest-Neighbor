@@ -12,7 +12,6 @@ from torchsummary import summary
 
 '''Layer Modules for ConvNN, ConvNN_Spatial, ConvNN_Attn, PixelShuffle1D, PixelUnshuffle1D'''
 ### Convolutional Nearest Neighbors ###
-
 class Conv1d_NN(nn.Module): 
     """
     Convolution 1D Nearest Neighbor Layer
@@ -1486,6 +1485,147 @@ class Conv2d_NN_Attn_V(nn.Module):
         xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
         return xy_grid_normalized.to(device)
 
+### Attention Layers 
+class Attention1d(nn.Module):
+    def __init__(self, 
+                 in_channels, 
+                 out_channels, 
+                 shuffle_pattern='N/A', 
+                 shuffle_scale=1, 
+                 num_heads=1
+                 ):
+        super(Attention1d, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        self.num_heads = num_heads
+        
+        
+        self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
+        self.shuffle_layer = PixelShuffle1D(upscale_factor=self.shuffle_scale)
+        
+        # Channels for Attention 
+        self.in_channels = self.in_channels * self.shuffle_scale if self.shuffle_pattern in ["BA", "B"] else in_channels
+        self.out_channels = self.out_channels * self.shuffle_scale if self.shuffle_pattern in ["BA", "A"] else out_channels
+        
+        self.multi_head_attention = nn.MultiheadAttention(embed_dim=self.out_channels, num_heads=self.num_heads, batch_first=True)
+        
+        self.conv1x1 = nn.Conv1d(self.in_channels, self.out_channels, kernel_size=1)
+        
+    def forward(self, x):
+        if self.shuffle_pattern in ["BA", "B"]:
+            x1 = self.unshuffle_layer(x)
+        else: 
+            x1 = x 
+        
+        x1 = self.conv1x1(x1) # [B, C, N]
+        x1 = x1.permute(0, 2, 1)
+        
+        x2 = self.multi_head_attention(x1, x1, x1)[0] # (B, N, C)
+        x2 = x2.permute(0, 2, 1) # (B, C, N)
+        
+        if self.shuffle_pattern in ["BA", "A"]:
+            x3 = self.shuffle_layer(x2)
+        else: 
+            x3 = x2
+        return x3
+    
+class Attention2d(nn.Module):
+    def __init__(self, 
+                 in_channels,
+                 out_channels,
+                 shuffle_pattern='N/A',
+                 shuffle_scale=1,
+                 num_heads=1,
+                 location_channels=False,
+                 ): 
+        super(Attention2d, self).__init__()
+        
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        self.num_heads = num_heads
+        self.location_channels = location_channels
+        
+        if (self.shuffle_pattern in ["B", "BA"]):
+            if self.location_channels: 
+                self.in_channels_1d = (self.in_channels + 2) * (self.shuffle_scale**2)
+                self.out_channels_1d = (self.out_channels + 2) * (self.shuffle_scale **2)
+            else:
+                self.in_channels_1d = self.in_channels * (self.shuffle_scale**2)
+                self.out_channels_1d = self.out_channels * (self.shuffle_scale **2)
+
+        else: 
+            if self.location_channels: 
+                self.in_channels_1d = self.in_channels + 2
+                self.out_channels_1d = self.out_channels + 2
+            else:
+                self.in_channels_1d = self.in_channels
+                self.out_channels_1d = self.out_channels
+                
+        self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
+        self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
+        
+        self.attention1d = Attention1d(in_channels=self.in_channels_1d,
+                                        out_channels=self.out_channels_1d,
+                                        shuffle_pattern="N/A",
+                                        shuffle_scale=1,
+                                        num_heads=self.num_heads
+                                          )
+        
+        self.flatten = nn.Flatten(start_dim=2)
+        self.pointwise_conv = nn.Conv2d(self.out_channels + 2, self.out_channels, kernel_size=1)
+        
+    def forward(self, x):
+        if self.shuffle_pattern in ["B", "BA"]:
+            if self.location_channels: 
+                x_coordinates = self.coordinate_channels(x.shape, device=x.device)
+                x = torch.cat((x, x_coordinates), dim=1)
+                x1 = self.unshuffle_layer(x)
+            else: 
+                x1 = self.unshuffle_layer(x)
+            
+        else: 
+            if self.location_channels:
+                x_coordinates = self.coordinate_channels(x.shape, device=x.device)
+                x1 = torch.cat((x, x_coordinates), dim=1)
+            else: 
+                x1 = x
+                
+        x2 = self.flatten(x1)
+        x3 = self.attention1d(x2)
+
+        unflatten = nn.Unflatten(dim=2, unflattened_size=x1.shape[2:])
+        x4 = unflatten(x3)
+
+        if self.shuffle_pattern in ["A", "BA"]:
+            if self.location_channels:
+                x4 = self.shuffle_layer(x4)
+                x5 = self.pointwise_conv(x4) ## Added Pointwise Conv to reduce channels added for spatial coordinates
+            else:
+                x5 = self.shuffle_layer(x4)
+        else: 
+            if self.location_channels:
+                x5 = self.pointwise_conv(x4) ## Added Pointwise Conv to reduce channels added for spatial coordinates
+            else: 
+                x5 = x4
+        return x5
+    
+    def coordinate_channels(self, tensor_shape, device):
+        x_ind = torch.arange(0, tensor_shape[2])
+        y_ind = torch.arange(0, tensor_shape[3])
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_grid = x_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        y_grid = y_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        
+        xy_grid = torch.cat((x_grid, y_grid), dim=1)
+        xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
+        return xy_grid_normalized.to(device)
+
 ### Pixel Shuffle and Unshuffle Layers ###
 class PixelShuffle1D(nn.Module): 
     """
@@ -1563,38 +1703,63 @@ class PixelUnshuffle1D(nn.Module):
         return x 
 
 ### Convolutional Nearest Neighbors - Branching Layers ###
-class ConvNN_CNN_Random_BranchingLayer(nn.Module):
-    def __init__(self, in_ch, out_ch, channel_ratio=(16, 16), kernel_size=3, K=9, samples = "all", location_channels = False):
+
+class Conv2d_ConvNN_Random_Branching(nn.Module):
+    def __init__(self, 
+                 in_ch, 
+                 out_ch, 
+                 channel_ratio=(16, 16), 
+                 kernel_size=3,
+                 K=9, 
+                 shuffle_pattern="BA", 
+                 shuffle_scale=2, 
+                 samples="all", 
+                 location_channels = False):
+        
         # Channel_ratio must add up to 2*out_ch
         assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
-        super(ConvNN_CNN_Random_BranchingLayer, self).__init__()
+        super(Conv2d_ConvNN_Random_Branching, self).__init__()
         
         self.in_ch = in_ch 
         self.out_ch = out_ch    
         self.channel_ratio = channel_ratio
+        
         self.kernel_size = kernel_size
         self.K = K
+        
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        
         self.samples = samples
         self.location_channels = location_channels
         
         
         if self.channel_ratio[0] != 0:
             self.branch1 = nn.Sequential(
-                nn.Conv2d(in_ch, channel_ratio[0], kernel_size, stride=1, padding=1),
+                nn.Conv2d(self.in_ch, 
+                          self.channel_ratio[0], 
+                          self.kernel_size, 
+                          stride=1, 
+                          padding=1),
                 nn.ReLU()
             )
         
         if self.channel_ratio[1] != 0:
             self.branch2 = nn.Sequential(
-                Conv2d_NN(in_ch, channel_ratio[1], K = K, stride = K, samples = samples, location_channels = location_channels), 
+                Conv2d_NN(self.in_ch, 
+                          self.channel_ratio[1], 
+                          K = self.K, 
+                          stride = self.K, 
+                          samples = self.samples, 
+                          shuffle_pattern=self.shuffle_pattern, 
+                          shuffle_scale=self.shuffle_scale,
+                          location_channels = self.location_channels), 
                 nn.ReLU()
             )
         
-
-        self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
-
+        self.reduce_channels = nn.Conv2d(self.out_ch*2, self.out_ch, 1)
 
     def forward(self, x):
         
@@ -1615,13 +1780,23 @@ class ConvNN_CNN_Random_BranchingLayer(nn.Module):
         reduce = self.reduce_channels(concat)
         return reduce
 
-class ConvNN_CNN_Spatial_BranchingLayer(nn.Module):
-    def __init__(self, in_ch, out_ch, channel_ratio=(16, 16), kernel_size=3, K=9, samples = 8, location_channels = False):
+class Conv2d_ConvNN_Spatial_Branching(nn.Module):
+    def __init__(self, 
+                 in_ch, 
+                 out_ch, 
+                 channel_ratio=(16, 16), 
+                 kernel_size=3, 
+                 K=9, 
+                 samples=8, 
+                 shuffle_pattern="BA", 
+                 shuffle_scale=2, 
+                 location_channels = False):
+        
         # Channel_ratio must add up to 2*out_ch
         assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
-        super(ConvNN_CNN_Spatial_BranchingLayer, self).__init__()
+        super(Conv2d_ConvNN_Spatial_Branching, self).__init__()
         self.kernel_size = kernel_size
         
         self.in_ch = in_ch 
@@ -1630,21 +1805,427 @@ class ConvNN_CNN_Spatial_BranchingLayer(nn.Module):
         self.kernel_size = kernel_size
         self.K = K
         self.samples = samples
+        
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        
         self.location_channels = location_channels
         
         if self.channel_ratio[0] != 0:
             self.branch1 = nn.Sequential(
-                nn.Conv2d(in_ch, channel_ratio[0], kernel_size, stride=1, padding=1),
+                nn.Conv2d(self.in_ch, 
+                          self.channel_ratio[0], 
+                          self.kernel_size, 
+                          stride=1, 
+                          padding=1
+                         ),
                 nn.ReLU()
             )
             
         if self.channel_ratio[1] != 0:
             self.branch2 = nn.Sequential(
-                Conv2d_NN_spatial(in_ch, channel_ratio[1], K = K, stride = K, samples = samples, location_channels = location_channels), 
+                Conv2d_NN_spatial(self.in_ch, 
+                                  self.channel_ratio[1], 
+                                  K=self.K, 
+                                  stride=self.K, 
+                                  samples=self.samples, 
+                                  shuffle_pattern=self.shuffle_pattern, 
+                                  shuffle_scale=self.shuffle_scale,
+                                  location_channels=self.location_channels), 
                 nn.ReLU()
             )
 
+        self.reduce_channels = nn.Conv2d(self.out_ch*2, self.out_ch, 1)
+
+    def forward(self, x):
         
+        if self.channel_ratio[0] != 0:
+            x1 = self.branch1(x)
+        
+        if self.channel_ratio[1] != 0:
+            x2 = self.branch2(x)
+        
+        if self.channel_ratio[0] == 0:
+            concat = x2
+        elif self.channel_ratio[1] == 0:
+            concat = x1
+        else:
+        
+            concat = torch.cat([x1, x2], dim=1)
+        
+        reduce = self.reduce_channels(concat)
+        return reduce
+        
+class Conv2d_ConvNN_Attn_Branching(nn.Module):
+    def __init__(self, 
+                 in_ch, 
+                 out_ch, 
+                 channel_ratio=(16, 16), 
+                 kernel_size=3, 
+                 K=9, 
+                 samples="all", 
+                 shuffle_pattern="BA", 
+                 shuffle_scale=2, 
+                 location_channels=False, 
+                 image_size=(32, 32)):
+        
+        # Channel_ratio must add up to 2*out_ch
+        assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
+        assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
+        
+        super(Conv2d_ConvNN_Attn_Branching, self).__init__()
+        
+        self.in_ch = in_ch 
+        self.out_ch = out_ch    
+        self.channel_ratio = channel_ratio
+        self.kernel_size = kernel_size
+        self.K = K
+        self.samples = samples
+        
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        
+        self.location_channels = location_channels
+        
+        self.image_size = image_size 
+        
+        
+        if self.channel_ratio[0] != 0:
+            self.branch1 = nn.Sequential(
+                nn.Conv2d(self.in_ch, 
+                          self.channel_ratio[0], 
+                          self.kernel_size, 
+                          stride=1, 
+                          padding=1
+                         ),
+                nn.ReLU()
+            )
+        
+        if self.channel_ratio[1] != 0:
+            self.branch2 = nn.Sequential(
+                Conv2d_NN_Attn(self.in_ch, 
+                               self.channel_ratio[1], 
+                               K=self.K, 
+                               stride=self.K, 
+                               samples=self.samples, 
+                               shuffle_pattern=self.shuffle_pattern,
+                               shuffle_scale=self.shuffle_scale,    
+                               image_size=self.image_size, 
+                               location_channels=self.location_channels), 
+                nn.ReLU()
+            )
+        
+        self.reduce_channels = nn.Conv2d(self.out_ch*2, self.out_ch, 1)
+
+    def forward(self, x):
+        
+        if self.channel_ratio[0] != 0:
+            x1 = self.branch1(x)
+        
+        if self.channel_ratio[1] != 0:
+            x2 = self.branch2(x)
+        
+        if self.channel_ratio[0] == 0:
+            concat = x2
+        elif self.channel_ratio[1] == 0:
+            concat = x1
+        else:
+        
+            concat = torch.cat([x1, x2], dim=1)
+        
+        reduce = self.reduce_channels(concat)
+        return reduce
+    
+class Conv2d_ConvNN_Attn_V_Branching(nn.Module):
+    def __init__(self, 
+                 in_ch, 
+                 out_ch, 
+                 channel_ratio=(16, 16), 
+                 kernel_size=3, 
+                 K=9, 
+                 samples="all", 
+                 shuffle_pattern="BA",
+                 shuffle_scale=2,
+                 location_channels = False,
+                 image_size = (32, 32)):
+        # Channel_ratio must add up to 2*out_ch
+        assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
+        assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
+        
+        super(Conv2d_ConvNN_Attn_V_Branching, self).__init__()
+        
+        self.in_ch = in_ch 
+        self.out_ch = out_ch    
+        self.channel_ratio = channel_ratio
+        self.kernel_size = kernel_size
+        self.K = K
+        self.samples = samples
+        self.shuffle_pattern = shuffle_pattern 
+        self.shuffle_scale = shuffle_scale
+        self.image_size = image_size
+        self.location_channels = location_channels
+        
+        
+        if self.channel_ratio[0] != 0:
+            self.branch1 = nn.Sequential(
+                nn.Conv2d(self.in_ch, 
+                          self.channel_ratio[0], 
+                          self.kernel_size, 
+                          stride=1, 
+                          padding=1
+                         ),
+                nn.ReLU()
+            )
+        
+        if self.channel_ratio[1] != 0:
+            self.branch2 = nn.Sequential(
+                Conv2d_NN_Attn_V(self.in_ch, 
+                                 self.channel_ratio[1], 
+                                 K = self.K, 
+                                 stride = self.K, 
+                                 samples = self.samples, 
+                                 shuffle_pattern=self.shuffle_pattern,
+                                 shuffle_scale=self.shuffle_scale,
+                                 image_size = self.image_size, 
+                                 location_channels = self.location_channels
+                                ), 
+                nn.ReLU()
+            )
+
+        self.reduce_channels = nn.Conv2d(self.out_ch*2, self.out_ch, 1)
+
+    def forward(self, x):
+        
+        if self.channel_ratio[0] != 0:
+            x1 = self.branch1(x)
+        
+        if self.channel_ratio[1] != 0:
+            x2 = self.branch2(x)
+        
+        if self.channel_ratio[0] == 0:
+            concat = x2
+        elif self.channel_ratio[1] == 0:
+            concat = x1
+        else:
+        
+            concat = torch.cat([x1, x2], dim=1)
+        
+        reduce = self.reduce_channels(concat)
+        return reduce
+
+class Attention_ConvNN_Random_Branching(nn.Module):
+    def __init__(self, 
+                 in_ch, 
+                 out_ch, 
+                 channel_ratio=(16, 16), 
+                 K=9, 
+                 shuffle_pattern="BA",
+                 shuffle_scale=2,
+                 num_heads=1, 
+                 samples = "all", 
+                 location_channels = False):
+        
+        # Channel_ratio must add up to 2*out_ch
+        assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
+        assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
+        
+        super(Attention_ConvNN_Random_Branching, self).__init__()
+        
+        self.in_ch = in_ch 
+        self.out_ch = out_ch    
+        self.channel_ratio = channel_ratio
+        
+        self.K = K
+        
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        
+        self.num_heads = num_heads  
+        self.samples = samples
+        self.location_channels = location_channels
+        
+        
+        if self.channel_ratio[0] != 0:
+            self.branch1 = nn.Sequential(
+                Attention2d(self.in_ch,
+                            self.channel_ratio[0], 
+                            shuffle_pattern=self.shuffle_pattern,
+                            shuffle_scale=self.shuffle_scale,
+                            num_heads=self.num_heads,
+                            location_channels=self.location_channels),
+                nn.ReLU()
+            )
+        
+        if self.channel_ratio[1] != 0:
+            self.branch2 = nn.Sequential(
+                Conv2d_NN(self.in_ch, 
+                          self.channel_ratio[1], 
+                          K=self.K, 
+                          stride=self.K, 
+                          samples=self.samples, 
+                          shuffle_pattern=self.shuffle_pattern,
+                          shuffle_scale=self.shuffle_scale,
+                          location_channels=self.location_channels), 
+                nn.ReLU()
+            )
+        
+        self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
+
+    def forward(self, x):
+        
+        if self.channel_ratio[0] != 0:
+            x1 = self.branch1(x)
+        
+        if self.channel_ratio[1] != 0:
+            x2 = self.branch2(x)
+        
+        if self.channel_ratio[0] == 0:
+            concat = x2
+        elif self.channel_ratio[1] == 0:
+            concat = x1
+        else:
+        
+            concat = torch.cat([x1, x2], dim=1)
+        
+        reduce = self.reduce_channels(concat)
+        return reduce
+
+class Attention_ConvNN_Spatial_Branching(nn.Module):
+    def __init__(self, 
+                 in_ch, 
+                 out_ch, 
+                 channel_ratio=(16, 16), 
+                 K=9, 
+                 samples = 8, 
+                 shuffle_pattern="BA",  
+                 shuffle_scale=2,    
+                 num_heads=1,   
+                 location_channels = False):
+        
+        # Channel_ratio must add up to 2*out_ch
+        assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
+        assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
+        
+        super(Attention_ConvNN_Spatial_Branching, self).__init__()
+        
+        self.in_ch = in_ch 
+        self.out_ch = out_ch    
+        self.channel_ratio = channel_ratio
+        self.K = K
+        self.samples = samples
+        
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        self.num_heads = num_heads
+        
+        self.location_channels = location_channels
+        
+        if self.channel_ratio[0] != 0:
+            self.branch1 = nn.Sequential(
+                Attention2d(in_channels=self.in_ch, 
+                            out_channels=self.channel_ratio[0], 
+                            shuffle_pattern=self.shuffle_pattern,
+                            shuffle_scale=self.shuffle_scale,
+                            num_heads=self.num_heads,
+                            location_channels=self.location_channels),
+                nn.ReLU()
+            )
+            
+        if self.channel_ratio[1] != 0:
+            self.branch2 = nn.Sequential(
+                Conv2d_NN_spatial(in_channels=in_ch, 
+                                  out_channels=channel_ratio[1], 
+                                  K=self.K, 
+                                  stride=self.K, 
+                                  samples=self.samples, 
+                                  shuffle_pattern=self.shuffle_pattern,
+                                  shuffle_scale=self.shuffle_scale,
+                                  location_channels=self.location_channels), 
+                nn.ReLU()
+            )
+
+        self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
+
+    def forward(self, x):
+        
+        if self.channel_ratio[0] != 0:
+            x1 = self.branch1(x)
+        
+        if self.channel_ratio[1] != 0:
+            x2 = self.branch2(x)
+        
+        if self.channel_ratio[0] == 0:
+            concat = x2
+        elif self.channel_ratio[1] == 0:
+            concat = x1
+        else:
+        
+            concat = torch.cat([x1, x2], dim=1)
+        
+        reduce = self.reduce_channels(concat)
+        return reduce
+        
+class Attention_ConvNN_Attn_Branching(nn.Module):
+    def __init__(self, 
+                 in_ch, 
+                 out_ch, 
+                 channel_ratio=(16, 16), 
+                 kernel_size=3, 
+                 K=9, 
+                 samples="all", 
+                 shuffle_pattern="BA", 
+                 shuffle_scale=2, 
+                 num_heads=1, 
+                 location_channels = False, 
+                 image_size=(32, 32)):
+        
+        # Channel_ratio must add up to 2*out_ch
+        assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
+        assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
+        
+        super(Attention_ConvNN_Attn_Branching, self).__init__()
+        
+        self.in_ch = in_ch 
+        self.out_ch = out_ch    
+        self.channel_ratio = channel_ratio
+        self.kernel_size = kernel_size
+        self.K = K
+        self.samples = samples
+        
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        self.num_heads = num_heads
+        self.image_size = image_size
+        
+        self.location_channels = location_channels
+        
+        
+        if self.channel_ratio[0] != 0:
+            self.branch1 = nn.Sequential(
+                Attention2d(in_channels=self.in_ch, 
+                            out_channels=self.channel_ratio[0], 
+                            shuffle_pattern=self.shuffle_pattern,
+                            shuffle_scale=self.shuffle_scale,
+                            num_heads=self.num_heads,
+                            location_channels=self.location_channels),
+                nn.ReLU()
+            )
+            
+        
+        if self.channel_ratio[1] != 0:
+            self.branch2 = nn.Sequential(
+                Conv2d_NN_Attn(self.in_ch, 
+                               self.channel_ratio[1], 
+                               K=self.K, 
+                               stride=self.K, 
+                               samples=self.samples, 
+                               shuffle_pattern=self.shuffle_pattern,
+                               shuffle_scale=self.shuffle_scale,
+                               image_size=self.image_size, 
+                               location_channels=self.location_channels), 
+                nn.ReLU()
+            )
+
         self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
 
     def forward(self, x):
@@ -1666,13 +2247,25 @@ class ConvNN_CNN_Spatial_BranchingLayer(nn.Module):
         reduce = self.reduce_channels(concat)
         return reduce
     
-class ConvNN_CNN_Attention_BranchingLayer(nn.Module):
-    def __init__(self, in_ch, out_ch, channel_ratio=(16, 16), kernel_size=3, K=9, samples = "all", location_channels = False, image_size = (32, 32)):
+class Attention_ConvNN_Attn_V_Branching(nn.Module):
+    def __init__(self, 
+                    in_ch, 
+                    out_ch, 
+                    channel_ratio=(16, 16), 
+                    kernel_size=3, 
+                    K=9, 
+                    samples="all", 
+                    shuffle_pattern="BA", 
+                    shuffle_scale=2, 
+                    num_heads=1, 
+                    location_channels = False, 
+                    image_size = (32, 32)):
+        
         # Channel_ratio must add up to 2*out_ch
         assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
-        super(ConvNN_CNN_Attention_BranchingLayer, self).__init__()
+        super(Attention_ConvNN_Attn_V_Branching, self).__init__()
         
         self.in_ch = in_ch 
         self.out_ch = out_ch    
@@ -1680,24 +2273,42 @@ class ConvNN_CNN_Attention_BranchingLayer(nn.Module):
         self.kernel_size = kernel_size
         self.K = K
         self.samples = samples
+        
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        self.num_heads = num_heads
+        self.image_size = image_size
+        
         self.location_channels = location_channels
         
         
         if self.channel_ratio[0] != 0:
             self.branch1 = nn.Sequential(
-                nn.Conv2d(in_ch, channel_ratio[0], kernel_size, stride=1, padding=1),
+                Attention2d(in_channels=self.in_ch, 
+                            out_channels=self.channel_ratio[0], 
+                            shuffle_pattern=self.shuffle_pattern,
+                            shuffle_scale=self.shuffle_scale,
+                            num_heads=self.num_heads,
+                            location_channels=self.location_channels),
                 nn.ReLU()
             )
+            
         
         if self.channel_ratio[1] != 0:
             self.branch2 = nn.Sequential(
-                Conv2d_NN_Attn(in_ch, channel_ratio[1], K = K, stride = K, samples = samples, image_size=image_size, location_channels = location_channels), 
+                Conv2d_NN_Attn_V(self.in_ch, 
+                               self.channel_ratio[1], 
+                               K=self.K, 
+                               stride=self.K, 
+                               samples=self.samples, 
+                               shuffle_pattern=self.shuffle_pattern,
+                               shuffle_scale=self.shuffle_scale,
+                               image_size=self.image_size, 
+                               location_channels=self.location_channels), 
                 nn.ReLU()
             )
-        
 
         self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
-
 
     def forward(self, x):
         
@@ -1718,62 +2329,72 @@ class ConvNN_CNN_Attention_BranchingLayer(nn.Module):
         reduce = self.reduce_channels(concat)
         return reduce
     
-class ConvNN_CNN_Attention_V_BranchingLayer(nn.Module):
-    def __init__(self, in_ch, out_ch, channel_ratio=(16, 16), kernel_size=3, K=9, samples = "all", location_channels = False, image_size = (32, 32)):
+class Attention_Conv2d_Branching(nn.Module):
+    def __init__(self, 
+                 in_ch, 
+                 out_ch, 
+                 channel_ratio=(16, 16), 
+                 kernel_size=3,
+                 shuffle_pattern="BA", 
+                 shuffle_scale=2, 
+                 num_heads=1, 
+                 location_channels = False,  
+                 ):
         # Channel_ratio must add up to 2*out_ch
-        assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
-        assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
-        
-        super(ConvNN_CNN_Attention_V_BranchingLayer, self).__init__()
+
+        super(Attention_Conv2d_Branching, self).__init__()
         
         self.in_ch = in_ch 
         self.out_ch = out_ch    
         self.channel_ratio = channel_ratio
         self.kernel_size = kernel_size
-        self.K = K
-        self.samples = samples
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        self.num_heads = num_heads
         self.location_channels = location_channels
-        
-        
+
+    
         if self.channel_ratio[0] != 0:
             self.branch1 = nn.Sequential(
-                nn.Conv2d(in_ch, channel_ratio[0], kernel_size, stride=1, padding=1),
+                Attention2d(in_channels=self.in_ch, 
+                            out_channels=self.channel_ratio[0], 
+                            shuffle_pattern=self.shuffle_pattern,
+                            shuffle_scale=self.shuffle_scale,
+                            num_heads=self.num_heads,
+                            location_channels=self.location_channels),
                 nn.ReLU()
             )
+            
         
+
         if self.channel_ratio[1] != 0:
             self.branch2 = nn.Sequential(
-                Conv2d_NN_Attn_V(in_ch, channel_ratio[1], K = K, stride = K, samples = samples, image_size=image_size, location_channels = location_channels), 
+                nn.Conv2d(self.in_ch, 
+                          self.channel_ratio[1], 
+                          self.kernel_size, 
+                          stride=1, 
+                          padding=1
+                         ),
                 nn.ReLU()
             )
         
-
         self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
 
-
     def forward(self, x):
+        x1 = self.branch1(x)
+
+        x2 = self.branch2(x)
         
-        if self.channel_ratio[0] != 0:
-            x1 = self.branch1(x)
-        
-        if self.channel_ratio[1] != 0:
-            x2 = self.branch2(x)
-        
-        if self.channel_ratio[0] == 0:
-            concat = x2
-        elif self.channel_ratio[1] == 0:
-            concat = x1
-        else:
-        
-            concat = torch.cat([x1, x2], dim=1)
+        concat = torch.cat([x1, x2], dim=1)
         
         reduce = self.reduce_channels(concat)
         return reduce
+    
 
 '''Model Modules'''
-class Branching_ConvNN_K_All(nn.Module):
+class B_Conv2d_ConvNN_K_All(nn.Module):
     def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device="mps"):
-        super(Branching_ConvNN_K_All, self).__init__()
+        super(B_Conv2d_ConvNN_K_All, self).__init__()
         
         assert num_layers >= 2, "Number of layers must be at least 2"
         assert mid_ch >= 8, "Middle channels must be at least 8"
@@ -1782,11 +2403,11 @@ class Branching_ConvNN_K_All(nn.Module):
         
         for i in range(num_layers):
             if i == 0:
-                layers.append(ConvNN_CNN_Random_BranchingLayer(in_ch, mid_ch, K=K, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                layers.append(Conv2d_ConvNN_Random_Branching(in_ch, mid_ch, K=K, samples='all', channel_ratio=channel_ratio, kernel_size=kernel_size))
                 # layers.append(nn.BatchNorm2d(mid_ch)) 
                 layers.append(nn.ReLU())
             else: 
-                layers.append(ConvNN_CNN_Random_BranchingLayer(mid_ch, mid_ch, K=K, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                layers.append(Conv2d_ConvNN_Random_Branching(mid_ch, mid_ch, K=K, samples='all', channel_ratio=channel_ratio, kernel_size=kernel_size))
                 # layers.append(nn.BatchNorm2d(mid_ch)) 
                 layers.append(nn.ReLU())
 
@@ -1805,7 +2426,7 @@ class Branching_ConvNN_K_All(nn.Module):
 
         self.device = device
         self.to(self.device)
-        self.name = "Branching_ConvNN_K_All" # Renamed for clarity
+        self.name = "B_Conv2d_ConvNN_K_All" # Renamed for clarity
 
 
     def forward(self, x):
@@ -1828,9 +2449,9 @@ class Branching_ConvNN_K_All(nn.Module):
             # Move model back to its original device
             self.to(original_device)
 
-class Branching_ConvNN_K_N(nn.Module):
+class B_Conv2d_ConvNN_K_N(nn.Module):
     def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device="mps"):
-        super(Branching_ConvNN_K_N, self).__init__()
+        super(B_Conv2d_ConvNN_K_N, self).__init__()
         
         assert num_layers >= 2, "Number of layers must be at least 2"
         assert mid_ch >= 8, "Middle channels must be at least 8"
@@ -1839,11 +2460,11 @@ class Branching_ConvNN_K_N(nn.Module):
         
         for i in range(num_layers):
             if i == 0:
-                layers.append(ConvNN_CNN_Random_BranchingLayer(in_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                layers.append(Conv2d_ConvNN_Random_Branching(in_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
                 # layers.append(nn.BatchNorm2d(mid_ch)) 
                 layers.append(nn.ReLU())
             else: 
-                layers.append(ConvNN_CNN_Random_BranchingLayer(mid_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                layers.append(Conv2d_ConvNN_Random_Branching(mid_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
                 # layers.append(nn.BatchNorm2d(mid_ch)) 
                 layers.append(nn.ReLU())
 
@@ -1862,7 +2483,7 @@ class Branching_ConvNN_K_N(nn.Module):
 
         self.device = device
         self.to(self.device)
-        self.name = "Branching_ConvNN_K_N" # Renamed for clarity
+        self.name = "B_Conv2d_ConvNN_K_N" # Renamed for clarity
 
     def forward(self, x):
         x = self.features(x)
@@ -1884,9 +2505,9 @@ class Branching_ConvNN_K_N(nn.Module):
             # Move model back to its original device
             self.to(original_device)
 
-class Branching_ConvNN_Spatial_K_N(nn.Module):
+class B_Conv2d_ConvNN_Spatial_K_N(nn.Module):
     def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device="mps"):
-        super(Branching_ConvNN_Spatial_K_N, self).__init__()
+        super(B_Conv2d_ConvNN_Spatial_K_N, self).__init__()
         
         assert num_layers >= 2, "Number of layers must be at least 2"
         assert mid_ch >= 8, "Middle channels must be at least 8"
@@ -1895,11 +2516,11 @@ class Branching_ConvNN_Spatial_K_N(nn.Module):
         
         for i in range(num_layers):
             if i == 0:
-                layers.append(ConvNN_CNN_Spatial_BranchingLayer(in_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                layers.append(Conv2d_ConvNN_Spatial_Branching(in_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
                 # layers.append(nn.BatchNorm2d(mid_ch)) 
                 layers.append(nn.ReLU())
             else: 
-                layers.append(ConvNN_CNN_Spatial_BranchingLayer(mid_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                layers.append(Conv2d_ConvNN_Spatial_Branching(mid_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
                 # layers.append(nn.BatchNorm2d(mid_ch)) 
                 layers.append(nn.ReLU())
 
@@ -1918,7 +2539,7 @@ class Branching_ConvNN_Spatial_K_N(nn.Module):
 
         self.device = device
         self.to(self.device)
-        self.name = "Branching_ConvNN_Spatial_K_N" # Renamed for clarity
+        self.name = "B_Conv2d_ConvNN_Spatial_K_N" # Renamed for clarity
 
 
     def forward(self, x):
@@ -1941,9 +2562,9 @@ class Branching_ConvNN_Spatial_K_N(nn.Module):
             # Move model back to its original device
             self.to(original_device)
 
-class Branching_ConvNN_Attention_K_N(nn.Module):
+class B_Conv2d_ConvNN_Attn_K_N(nn.Module):
     def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16),num_classes=100, device="mps"):
-        super(Branching_ConvNN_Attention_K_N, self).__init__()
+        super(B_Conv2d_ConvNN_Attn_K_N, self).__init__()
         
         assert num_layers >= 2, "Number of layers must be at least 2"
         assert mid_ch >= 8, "Middle channels must be at least 8"
@@ -1952,11 +2573,11 @@ class Branching_ConvNN_Attention_K_N(nn.Module):
         
         for i in range(num_layers):
             if i == 0:
-                layers.append(ConvNN_CNN_Attention_BranchingLayer(in_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                layers.append(Conv2d_ConvNN_Attn_Branching(in_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
                 # layers.append(nn.BatchNorm2d(mid_ch)) 
                 layers.append(nn.ReLU())
             else: 
-                layers.append(ConvNN_CNN_Attention_BranchingLayer(mid_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                layers.append(Conv2d_ConvNN_Attn_Branching(mid_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
                 # layers.append(nn.BatchNorm2d(mid_ch)) 
                 layers.append(nn.ReLU())
 
@@ -1975,7 +2596,7 @@ class Branching_ConvNN_Attention_K_N(nn.Module):
 
         self.device = device
         self.to(self.device)
-        self.name = "Branching_ConvNN_Attention_K_N" # Renamed for clarity
+        self.name = "B_Conv2d_ConvNN_Attn_K_N" # Renamed for clarity
 
 
     def forward(self, x):
@@ -1998,9 +2619,9 @@ class Branching_ConvNN_Attention_K_N(nn.Module):
             # Move model back to its original device
             self.to(original_device)
 
-class Branching_ConvNN_Attention_V_K_N(nn.Module):
+class B_Conv2d_ConvNN_Attn_V_K_N(nn.Module):
     def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16),num_classes=100, device="mps"):
-        super(Branching_ConvNN_Attention_V_K_N, self).__init__()
+        super(B_Conv2d_ConvNN_Attn_V_K_N, self).__init__()
         
         assert num_layers >= 2, "Number of layers must be at least 2"
         assert mid_ch >= 8, "Middle channels must be at least 8"
@@ -2009,11 +2630,11 @@ class Branching_ConvNN_Attention_V_K_N(nn.Module):
         
         for i in range(num_layers):
             if i == 0:
-                layers.append(ConvNN_CNN_Attention_V_BranchingLayer(in_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                layers.append(Conv2d_ConvNN_Attn_V_Branching(in_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
                 # layers.append(nn.BatchNorm2d(mid_ch)) 
                 layers.append(nn.ReLU())
             else: 
-                layers.append(ConvNN_CNN_Attention_V_BranchingLayer(mid_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                layers.append(Conv2d_ConvNN_Attn_V_Branching(mid_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
                 # layers.append(nn.BatchNorm2d(mid_ch)) 
                 layers.append(nn.ReLU())
 
@@ -2032,7 +2653,7 @@ class Branching_ConvNN_Attention_V_K_N(nn.Module):
 
         self.device = device
         self.to(self.device)
-        self.name = "Branching_ConvNN_Attention_V_K_N" # Renamed for clarity
+        self.name = "B_Conv2d_ConvNN_Attn_V_K_N" # Renamed for clarity
 
 
     def forward(self, x):
@@ -2055,14 +2676,355 @@ class Branching_ConvNN_Attention_V_K_N(nn.Module):
             # Move model back to its original device
             self.to(original_device)
 
+class B_Attention_ConvNN_K_All(nn.Module):
+    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, num_heads=4,  channel_ratio=(16, 16),num_classes=100, device="mps"):
+        super(B_Attention_ConvNN_K_All, self).__init__()
+        
+        assert num_layers >= 2, "Number of layers must be at least 2"
+        assert mid_ch >= 8, "Middle channels must be at least 8"
+        
+        layers = []
+        
+        for i in range(num_layers):
+            if i == 0:
+                layers.append(Attention_ConvNN_Random_Branching(in_ch, mid_ch, K=K, samples='all', num_heads=num_heads, channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+            else: 
+                layers.append(Attention_ConvNN_Random_Branching(mid_ch, mid_ch, K=K, samples='all', num_heads=num_heads, channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+
+        self.features = nn.Sequential(*layers)
+
+        self.flatten = nn.Flatten()
+        
+        flattened_size = mid_ch * 32 * 32
+        
+        # Adjusted classifier size
+        self.classifier = nn.Sequential(
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.Linear(flattened_size, num_classes), # Increased intermediate size
+        )
+
+        self.device = device
+        self.to(self.device)
+        self.name = "B_Attention_ConvNN_K_All" # Renamed for clarity
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.flatten(x)
+        x = self.classifier(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        # Ensure the model is on CPU for torchsummary if it causes issues with MPS
+        original_device = next(self.parameters()).device
+        try:
+            self.to("cpu")
+            print(f"--- Summary for {self.name} ---")
+            # torchsummary expects batch dimension, but input_size doesn't include it
+            summary(self, input_size=input_size, device="cpu") 
+        except Exception as e:
+            print(f"Could not generate summary: {e}")
+        finally:
+            # Move model back to its original device
+            self.to(original_device)
+
+class B_Attention_ConvNN_K_N(nn.Module):
+    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, num_heads=4, channel_ratio=(16, 16),num_classes=100, device="mps"):
+        super(B_Attention_ConvNN_K_N, self).__init__()
+        
+        assert num_layers >= 2, "Number of layers must be at least 2"
+        assert mid_ch >= 8, "Middle channels must be at least 8"
+        
+        layers = []
+        
+        for i in range(num_layers):
+            if i == 0:
+                layers.append(Attention_ConvNN_Random_Branching(in_ch, mid_ch, K=K, samples=N, num_heads=num_heads, channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+            else: 
+                layers.append(Attention_ConvNN_Random_Branching(mid_ch, mid_ch, K=K, samples=N, num_heads=num_heads, channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+
+        self.features = nn.Sequential(*layers)
+
+        self.flatten = nn.Flatten()
+        
+        flattened_size = mid_ch * 32 * 32
+        
+        # Adjusted classifier size
+        self.classifier = nn.Sequential(
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.Linear(flattened_size, num_classes), # Increased intermediate size
+        )
+
+        self.device = device
+        self.to(self.device)
+        self.name = "B_Attention_ConvNN_K_N" # Renamed for clarity
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.flatten(x)
+        x = self.classifier(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        # Ensure the model is on CPU for torchsummary if it causes issues with MPS
+        original_device = next(self.parameters()).device
+        try:
+            self.to("cpu")
+            print(f"--- Summary for {self.name} ---")
+            # torchsummary expects batch dimension, but input_size doesn't include it
+            summary(self, input_size=input_size, device="cpu") 
+        except Exception as e:
+            print(f"Could not generate summary: {e}")
+        finally:
+            # Move model back to its original device
+            self.to(original_device)
+
+class B_Attention_ConvNN_Spatial_K_N(nn.Module):
+    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, channel_ratio=(16, 16), num_heads=4, num_classes=100, device="mps"):
+        super(B_Attention_ConvNN_Spatial_K_N, self).__init__()
+        
+        assert num_layers >= 2, "Number of layers must be at least 2"
+        assert mid_ch >= 8, "Middle channels must be at least 8"
+        
+        layers = []
+        
+        for i in range(num_layers):
+            if i == 0:
+                layers.append(Attention_ConvNN_Spatial_Branching(in_ch, mid_ch, K=K,  samples=N, num_heads=num_heads,  channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+            else: 
+                layers.append(Attention_ConvNN_Spatial_Branching(mid_ch, mid_ch, K=K, samples=N, num_heads=num_heads, channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+
+        self.features = nn.Sequential(*layers)
+
+        self.flatten = nn.Flatten()
+        
+        flattened_size = mid_ch * 32 * 32
+        
+        # Adjusted classifier size
+        self.classifier = nn.Sequential(
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.Linear(flattened_size, num_classes), # Increased intermediate size
+        )
+
+        self.device = device
+        self.to(self.device)
+        self.name = "B_Attention_ConvNN_Spatial_K_N" # Renamed for clarity
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.flatten(x)
+        x = self.classifier(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        # Ensure the model is on CPU for torchsummary if it causes issues with MPS
+        original_device = next(self.parameters()).device
+        try:
+            self.to("cpu")
+            print(f"--- Summary for {self.name} ---")
+            # torchsummary expects batch dimension, but input_size doesn't include it
+            summary(self, input_size=input_size, device="cpu") 
+        except Exception as e:
+            print(f"Could not generate summary: {e}")
+        finally:
+            # Move model back to its original device
+            self.to(original_device)
+
+class B_Attention_ConvNN_Attn_K_N(nn.Module):
+    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, num_heads=4, channel_ratio=(16, 16),num_classes=100, device="mps"):
+        super(B_Attention_ConvNN_Attn_K_N, self).__init__()
+        
+        assert num_layers >= 2, "Number of layers must be at least 2"
+        assert mid_ch >= 8, "Middle channels must be at least 8"
+        
+        layers = []
+        
+        for i in range(num_layers):
+            if i == 0:
+                layers.append(Attention_ConvNN_Attn_Branching(in_ch, mid_ch, K=K, samples=N, num_heads=num_heads, channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+            else: 
+                layers.append(Attention_ConvNN_Attn_Branching(mid_ch, mid_ch, K=K, samples=N, num_heads=num_heads, channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+
+        self.features = nn.Sequential(*layers)
+
+        self.flatten = nn.Flatten()
+        
+        flattened_size = mid_ch * 32 * 32
+        
+        # Adjusted classifier size
+        self.classifier = nn.Sequential(
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.Linear(flattened_size, num_classes), # Increased intermediate size
+        )
+
+        self.device = device
+        self.to(self.device)
+        self.name = "B_Attention_ConvNN_Attn_K_N" # Renamed for clarity
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.flatten(x)
+        x = self.classifier(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        # Ensure the model is on CPU for torchsummary if it causes issues with MPS
+        original_device = next(self.parameters()).device
+        try:
+            self.to("cpu")
+            print(f"--- Summary for {self.name} ---")
+            # torchsummary expects batch dimension, but input_size doesn't include it
+            summary(self, input_size=input_size, device="cpu") 
+        except Exception as e:
+            print(f"Could not generate summary: {e}")
+        finally:
+            # Move model back to its original device
+            self.to(original_device)
+
+class B_Attention_ConvNN_Attn_V_K_N(nn.Module):
+    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, num_heads=4, channel_ratio=(16, 16),num_classes=100, device="mps"):
+        super(B_Attention_ConvNN_Attn_V_K_N, self).__init__()
+        
+        assert num_layers >= 2, "Number of layers must be at least 2"
+        assert mid_ch >= 8, "Middle channels must be at least 8"
+        
+        layers = []
+        
+        for i in range(num_layers):
+            if i == 0:
+                layers.append(Attention_ConvNN_Attn_V_Branching(in_ch, mid_ch, K=K, samples=N, num_heads=num_heads, channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+            else: 
+                layers.append(Attention_ConvNN_Attn_V_Branching(mid_ch, mid_ch, K=K, samples=N, num_heads=num_heads, channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+
+        self.features = nn.Sequential(*layers)
+
+        self.flatten = nn.Flatten()
+        
+        flattened_size = mid_ch * 32 * 32
+        
+        # Adjusted classifier size
+        self.classifier = nn.Sequential(
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.Linear(flattened_size, num_classes), # Increased intermediate size
+        )
+
+        self.device = device
+        self.to(self.device)
+        self.name = "B_Attention_ConvNN_Attn_V_K_N" # Renamed for clarity
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.flatten(x)
+        x = self.classifier(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        # Ensure the model is on CPU for torchsummary if it causes issues with MPS
+        original_device = next(self.parameters()).device
+        try:
+            self.to("cpu")
+            print(f"--- Summary for {self.name} ---")
+            # torchsummary expects batch dimension, but input_size doesn't include it
+            summary(self, input_size=input_size, device="cpu") 
+        except Exception as e:
+            print(f"Could not generate summary: {e}")
+        finally:
+            # Move model back to its original device
+            self.to(original_device)
+
+class B_Attention_Conv2d(nn.Module):
+    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, kernel_size=3, num_heads=4, channel_ratio=(16, 16), num_classes=100, device="mps"):
+        super(B_Attention_Conv2d, self).__init__()
+        
+        assert num_layers >= 2, "Number of layers must be at least 2"
+        assert mid_ch >= 8, "Middle channels must be at least 8"
+        
+        layers = []
+        
+        for i in range(num_layers):
+            if i == 0:
+                layers.append(Attention_Conv2d_Branching(in_ch, mid_ch, num_heads=num_heads, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+            else: 
+                layers.append(Attention_Conv2d_Branching(mid_ch, mid_ch,num_heads=num_heads, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+
+        self.features = nn.Sequential(*layers)
+
+        self.flatten = nn.Flatten()
+        
+        flattened_size = mid_ch * 32 * 32
+        
+        # Adjusted classifier size
+        self.classifier = nn.Sequential(
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.Linear(flattened_size, num_classes), # Increased intermediate size
+        )
+
+        self.device = device
+        self.to(self.device)
+        self.name = "B_Attention_Conv2d" # Renamed for clarity
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.flatten(x)
+        x = self.classifier(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        # Ensure the model is on CPU for torchsummary if it causes issues with MPS
+        original_device = next(self.parameters()).device
+        try:
+            self.to("cpu")
+            print(f"--- Summary for {self.name} ---")
+            # torchsummary expects batch dimension, but input_size doesn't include it
+            summary(self, input_size=input_size, device="cpu") 
+        except Exception as e:
+            print(f"Could not generate summary: {e}")
+        finally:
+            # Move model back to its original device
+            self.to(original_device)
 
 '''Register Models'''
 
 @register_model
-def branching_convnn_k_all_100(pretrained=False, **kwargs):
+def b_conv2d_convnn_k_all_100(pretrained=False, **kwargs):
     """Branching ConvNN K All Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_K_All(in_ch=3, mid_ch=16, num_layers=2, K=9, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device='mps')
+    model = B_Conv2d_ConvNN_K_All(in_ch=3, mid_ch=16, num_layers=2, K=9, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device='mps')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -2073,10 +3035,10 @@ def branching_convnn_k_all_100(pretrained=False, **kwargs):
     return model
 
 @register_model
-def branching_convnn_k_all_10(pretrained=False, **kwargs):
+def b_conv2d_convnn_k_all_10(pretrained=False, **kwargs):
     """Branching ConvNN K All Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_K_All(in_ch=3, mid_ch=16, num_layers=2, K=9, kernel_size=3, channel_ratio=(16, 16), num_classes=10, device='mps')
+    model = B_Conv2d_ConvNN_K_All(in_ch=3, mid_ch=16, num_layers=2, K=9, kernel_size=3, channel_ratio=(16, 16), num_classes=10, device='mps')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -2087,10 +3049,10 @@ def branching_convnn_k_all_10(pretrained=False, **kwargs):
     return model
 
 @register_model
-def branching_convnn_k_n_100(pretrained=False, **kwargs):
+def b_conv2d_convnn_k_n_100(pretrained=False, **kwargs):
     """Branching ConvNN K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_K_N(in_ch=3, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device='mps')
+    model = B_Conv2d_ConvNN_K_N(in_ch=3, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device='mps')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -2101,10 +3063,10 @@ def branching_convnn_k_n_100(pretrained=False, **kwargs):
     return model
 
 @register_model
-def branching_convnn_k_n_10(pretrained=False, **kwargs):
+def b_conv2d_convnn_k_n_10(pretrained=False, **kwargs):
     """Branching ConvNN K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=10, device='mps')
+    model = B_Conv2d_ConvNN_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=10, device='mps')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -2115,10 +3077,10 @@ def branching_convnn_k_n_10(pretrained=False, **kwargs):
     return model
 
 @register_model
-def branching_convnn_spatial_k_n_100(pretrained=False, **kwargs):
+def b_conv2d_convnn_spatial_k_n_100(pretrained=False, **kwargs):
     """Branching ConvNN Spatial K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_Spatial_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device='mps')
+    model = B_Conv2d_ConvNN_Spatial_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device='mps')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -2129,10 +3091,10 @@ def branching_convnn_spatial_k_n_100(pretrained=False, **kwargs):
     return model
 
 @register_model
-def branching_convnn_spatial_k_n_10(pretrained=False, **kwargs):
+def b_conv2d_convnn_spatial_k_n_10(pretrained=False, **kwargs):
     """Branching ConvNN Spatial K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_Spatial_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, kernel_size=3, channel_ratio=(16, 16), num_classes=10, device='mps')
+    model = B_Conv2d_ConvNN_Spatial_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, kernel_size=3, channel_ratio=(16, 16), num_classes=10, device='mps')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -2143,10 +3105,10 @@ def branching_convnn_spatial_k_n_10(pretrained=False, **kwargs):
     return model
 
 @register_model
-def branching_convnn_attention_k_n_100(pretrained=False, **kwargs):
+def b_conv2d_convnn_attn_k_n_100(pretrained=False, **kwargs):
     """Branching ConvNN Attention K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_Attention_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device='mps')
+    model = B_Conv2d_ConvNN_Attn_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device='mps')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -2157,10 +3119,10 @@ def branching_convnn_attention_k_n_100(pretrained=False, **kwargs):
     return model
 
 @register_model
-def branching_convnn_attention_k_n_10(pretrained=False, **kwargs):
+def b_conv2d_convnn_attn_k_n_10(pretrained=False, **kwargs):
     """Branching ConvNN Attention K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_Attention_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=10, device='mps')
+    model = B_Conv2d_ConvNN_Attn_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=10, device='mps')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -2171,10 +3133,10 @@ def branching_convnn_attention_k_n_10(pretrained=False, **kwargs):
     return model
 
 @register_model
-def branching_convnn_attention_v_k_n_100(pretrained=False, **kwargs):
+def b_conv2d_convnn_attn_v_k_n_100(pretrained=False, **kwargs):
     """Branching ConvNN Attention K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_Attention_V_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device='mps')
+    model = B_Conv2d_ConvNN_Attn_V_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device='mps')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -2185,10 +3147,10 @@ def branching_convnn_attention_v_k_n_100(pretrained=False, **kwargs):
     return model
 
 @register_model
-def branching_convnn_attention_v_k_n_10(pretrained=False, **kwargs):
+def b_conv2d_convnn_attn_v_k_n_10(pretrained=False, **kwargs):
     """Branching ConvNN Attention K N Samples"""
     # Ensure this function now uses the updated CNN class
-    model = Branching_ConvNN_Attention_V_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=10, device='mps')
+    model = B_Conv2d_ConvNN_Attn_V_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16), num_classes=10, device='mps')
     
     # model.default_cfg = _cfg(
     #     input_size=(3, 32, 32),
@@ -2197,6 +3159,179 @@ def branching_convnn_attention_v_k_n_10(pretrained=False, **kwargs):
     #     num_classes=100
     # )
     return model
+
+
+@register_model
+def b_attention_convnn_k_all_100(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_K_All(in_ch=3, mid_ch=16, num_layers=2, K=9, num_heads=4, channel_ratio=(16, 16), num_classes=100, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_convnn_k_all_10(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_K_All(in_ch=3, mid_ch=16, num_layers=2, K=9, num_heads=4, channel_ratio=(16, 16), num_classes=10, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_convnn_k_n_100(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, num_heads=4, channel_ratio=(16, 16), num_classes=100, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_convnn_k_n_10(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, num_heads=4, channel_ratio=(16, 16), num_classes=10, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_convnn_spatial_k_n_100(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_Spatial_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, num_heads=4,  channel_ratio=(16, 16), num_classes=100, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_convnn_spatial_k_n_10(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_Spatial_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, num_heads=4,  channel_ratio=(16, 16), num_classes=10, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_convnn_attn_k_n_100(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_Attn_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, num_heads=4, channel_ratio=(16, 16), num_classes=100, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_convnn_attn_k_n_10(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_Attn_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, num_heads=4, channel_ratio=(16, 16), num_classes=10, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_convnn_attn_v_k_n_100(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_Attn_V_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, num_heads=4,  channel_ratio=(16, 16), num_classes=100, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_convnn_attn_v_k_n_10(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_Attn_V_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, num_heads=4, channel_ratio=(16, 16), num_classes=10, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_conv2d_100(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_Conv2d(in_ch=3, mid_ch=16, num_layers=2, kernel_size=3, num_heads=4, channel_ratio=(16, 16), num_classes=100, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_conv2d_10(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_Conv2d(in_ch=3, mid_ch=16, num_layers=2, kernel_size=3, num_heads=4, channel_ratio=(16, 16), num_classes=10, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+
+
+
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -2205,16 +3340,30 @@ def count_parameters(model):
 if __name__ == "__main__":
     # Quick test and parameter count comparison
     models = [
-        branching_convnn_k_all_100(),
-        branching_convnn_k_all_10(),
-        branching_convnn_k_n_100(),
-        branching_convnn_k_n_10(),
-        branching_convnn_spatial_k_n_100(),
-        branching_convnn_spatial_k_n_10(),
-        branching_convnn_attention_k_n_100(),
-        branching_convnn_attention_k_n_10(),
-        branching_convnn_attention_v_k_n_100(), 
-        branching_convnn_attention_v_k_n_10()
+        b_conv2d_convnn_k_all_100(), 
+        b_conv2d_convnn_k_n_100(), 
+        b_conv2d_convnn_spatial_k_n_100(),
+        b_conv2d_convnn_attn_k_n_100(),
+        b_conv2d_convnn_attn_v_k_n_100(),
+        b_attention_convnn_k_all_100(),
+        b_attention_convnn_k_n_100(),
+        b_attention_convnn_spatial_k_n_100(),
+        b_attention_convnn_attn_k_n_100(),
+        b_attention_convnn_attn_v_k_n_100(),
+        b_attention_conv2d_100(),
+        
+        b_conv2d_convnn_k_all_10(), 
+        b_conv2d_convnn_k_n_10(), 
+        b_conv2d_convnn_spatial_k_n_10(),
+        b_conv2d_convnn_attn_k_n_10(),
+        b_conv2d_convnn_attn_v_k_n_10(),
+        b_attention_convnn_k_all_10(),
+        b_attention_convnn_k_n_10(),
+        b_attention_convnn_spatial_k_n_10(),
+        b_attention_convnn_attn_k_n_10(),
+        b_attention_convnn_attn_v_k_n_10(),
+        b_attention_conv2d_10()
+        
     ]
     
     x = torch.randn(1, 3, 32, 32).to('mps')

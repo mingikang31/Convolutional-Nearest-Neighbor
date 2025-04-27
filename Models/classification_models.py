@@ -70,8 +70,8 @@ class ConvNN_2D_K_All(nn.Module):
                  num_classes=10, 
                  device="mps"):
         super(ConvNN_2D_K_All, self).__init__()
-        self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples="all")
-        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples="all")
+        self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all")
+        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all")
 
         self.flatten = nn.Flatten()
 
@@ -101,8 +101,8 @@ class ConvNN_2D_K_All(nn.Module):
 class ConvNN_2D_K_N(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, K=9, N=64, device="mps"):
         super(ConvNN_2D_K_N, self).__init__()
-        self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples=N)
-        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples=N)
+        self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N)
+        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N)
 
         self.flatten = nn.Flatten()
 
@@ -132,8 +132,8 @@ class ConvNN_2D_K_N(nn.Module):
 class ConvNN_2D_Spatial_K_N(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, K=9, N = 8, device="mps"):
         super(ConvNN_2D_Spatial_K_N, self).__init__()
-        self.conv1 = Conv2d_NN_spatial(in_ch, 16, K=K, stride=9, shuffle_pattern="NA", shuffle_scale=1, samples=N)
-        self.conv2 = Conv2d_NN_spatial(16, 32, K=K, stride=9, shuffle_pattern="NA", shuffle_scale=1, samples=N)
+        self.conv1 = Conv2d_NN_spatial(in_ch, 16, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N)
+        self.conv2 = Conv2d_NN_spatial(16, 32, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N)
 
         self.flatten = nn.Flatten()
 
@@ -164,8 +164,8 @@ class ConvNN_2D_Spatial_K_N(nn.Module):
 class ConvNN_2D_K_All_Location(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, K=9, device="mps"):
         super(ConvNN_2D_K_All_Location, self).__init__()
-        self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples="all", location_channels=True)
-        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples="all", location_channels=True)
+        self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", location_channels=True)
+        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", location_channels=True)
 
         self.flatten = nn.Flatten()
 
@@ -195,8 +195,8 @@ class ConvNN_2D_K_All_Location(nn.Module):
 class ConvNN_2D_K_N_Location(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, K=9, N = 64, device="mps"):
         super(ConvNN_2D_K_N_Location, self).__init__()
-        self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples=N, location_channels=True)
-        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples=N, location_channels=True)
+        self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
+        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
 
         self.flatten = nn.Flatten()
 
@@ -226,8 +226,8 @@ class ConvNN_2D_K_N_Location(nn.Module):
 class ConvNN_2D_Spatial_K_N_Location(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, K=9, N = 8, device="mps"):
         super(ConvNN_2D_Spatial_K_N_Location, self).__init__()
-        self.conv1 = Conv2d_NN_spatial(in_ch, 16, K=K, stride=9, shuffle_pattern="NA", shuffle_scale=1, samples=N, location_channels=True)
-        self.conv2 = Conv2d_NN_spatial(16, 32, K=K, stride=9, shuffle_pattern="NA", shuffle_scale=1, samples=N, location_channels=True)
+        self.conv1 = Conv2d_NN_spatial(in_ch, 16, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
+        self.conv2 = Conv2d_NN_spatial(16, 32, K=K, stride=9, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=True)
 
         self.flatten = nn.Flatten()
 
@@ -259,8 +259,8 @@ class ConvNN_2D_Spatial_K_N_Location(nn.Module):
 class ConvNN_2D_Attn_K_All(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, K=9, image_size=(32, 32), device="mps"):
         super(ConvNN_2D_Attn_K_All, self).__init__()
-        self.conv1 = Conv2d_NN_Attn(in_ch, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples="all", image_size=image_size)
-        self.conv2 = Conv2d_NN_Attn(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples="all", image_size=image_size)
+        self.conv1 = Conv2d_NN_Attn(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", image_size=image_size)
+        self.conv2 = Conv2d_NN_Attn(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", image_size=image_size)
 
         self.flatten = nn.Flatten()
 
@@ -291,8 +291,8 @@ class ConvNN_2D_Attn_K_All(nn.Module):
 class ConvNN_2D_Attn_K_N(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, K=9, N=64, image_size=(32, 32), device="mps"):
         super(ConvNN_2D_Attn_K_N, self).__init__()
-        self.conv1 = Conv2d_NN_Attn(in_ch, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples=N, image_size=image_size)
-        self.conv2 = Conv2d_NN_Attn(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples=N, image_size=image_size)
+        self.conv1 = Conv2d_NN_Attn(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size)
+        self.conv2 = Conv2d_NN_Attn(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size)
 
         self.flatten = nn.Flatten()
 
@@ -323,8 +323,8 @@ class ConvNN_2D_Attn_K_N(nn.Module):
 class ConvNN_2D_Attn_V_K_All(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, K=9, image_size=(32, 32), device="mps"):
         super(ConvNN_2D_Attn_V_K_All, self).__init__()
-        self.conv1 = Conv2d_NN_Attn_V(in_ch, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples="all", image_size=image_size)
-        self.conv2 = Conv2d_NN_Attn_V(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples="all", image_size=image_size)
+        self.conv1 = Conv2d_NN_Attn_V(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", image_size=image_size)
+        self.conv2 = Conv2d_NN_Attn_V(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples="all", image_size=image_size)
 
         self.flatten = nn.Flatten()
 
@@ -355,8 +355,8 @@ class ConvNN_2D_Attn_V_K_All(nn.Module):
 class ConvNN_2D_Attn_V_K_N(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, K=9, N=64, image_size=(32, 32), device="mps"):
         super(ConvNN_2D_Attn_V_K_N, self).__init__()
-        self.conv1 = Conv2d_NN_Attn_V(in_ch, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples=N, image_size=image_size)
-        self.conv2 = Conv2d_NN_Attn_V(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples=N, image_size=image_size)
+        self.conv1 = Conv2d_NN_Attn_V(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size)
+        self.conv2 = Conv2d_NN_Attn_V(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, image_size=image_size)
 
         self.flatten = nn.Flatten()
 
@@ -390,8 +390,8 @@ class Attention_2D(nn.Module):
         super(Attention_2D, self).__init__()
         self.num_heads = num_heads
         
-        self.conv1 = Attention2d(in_ch, 16, shuffle_pattern="NA", shuffle_scale=1, num_heads=self.num_heads)
-        self.conv2 = Attention2d(16, 32, shuffle_pattern="NA", shuffle_scale=1, num_heads=self.num_heads)
+        self.conv1 = Attention2d(in_ch, 16, shuffle_pattern="BA", shuffle_scale=2, num_heads=self.num_heads)
+        self.conv2 = Attention2d(16, 32, shuffle_pattern="BA", shuffle_scale=2, num_heads=self.num_heads)
 
         self.flatten = nn.Flatten()
 
@@ -424,7 +424,7 @@ class Local_Global_ConvNN_2D(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, kernel_size=3, K=9, N = "all", location_channels = False, device="mps"):
         super(Local_Global_ConvNN_2D, self).__init__()
         self.conv1 = nn.Conv2d(in_ch, 16, kernel_size=kernel_size, stride=1, padding=1)
-        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples=N, location_channels=location_channels)
+        self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=location_channels)
 
         self.flatten = nn.Flatten()
 
@@ -454,7 +454,7 @@ class Local_Global_ConvNN_2D(nn.Module):
 class Global_Local_ConvNN_2D(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, kernel_size=3, K=9, N = "all", location_channels = False, device="mps"):
         super(Global_Local_ConvNN_2D, self).__init__()
-        self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1, samples=N, location_channels=location_channels)
+        self.conv1 = Conv2d_NN(in_ch, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2, samples=N, location_channels=location_channels)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=kernel_size, stride=1, padding=1)
 
         self.flatten = nn.Flatten()
@@ -487,8 +487,8 @@ class Global_Local_ConvNN_2D(nn.Module):
 class B_Conv2d_ConvNN_K_All(nn.Module):
     def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, location_channels=False, device="mps"):
         super(B_Conv2d_ConvNN_K_All, self).__init__()
-        self.conv1 = Conv2d_ConvNN_Random_Branching(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, samples="all", shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)
-        self.conv2 = Conv2d_ConvNN_Random_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), kernel_size=kernel_size, K=K, samples="all", shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)    
+        self.conv1 = Conv2d_ConvNN_Random_Branching(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, samples="all", shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)
+        self.conv2 = Conv2d_ConvNN_Random_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), kernel_size=kernel_size, K=K, samples="all", shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)    
         
         self.flatten = nn.Flatten()
 
@@ -518,8 +518,8 @@ class B_Conv2d_ConvNN_K_All(nn.Module):
 class B_Conv2d_ConvNN_K_N(nn.Module):
     def __init__(self, in_ch=3,channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, N=64, location_channels=False, device="mps"):
         super(B_Conv2d_ConvNN_K_N, self).__init__()
-        self.conv1 = Conv2d_ConvNN_Random_Branching(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)
-        self.conv2 = Conv2d_ConvNN_Random_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)
+        self.conv1 = Conv2d_ConvNN_Random_Branching(in_ch, 16, channel_ratio=channel_ratio, kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)
+        self.conv2 = Conv2d_ConvNN_Random_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)
 
         self.flatten = nn.Flatten()
         
@@ -550,8 +550,8 @@ class B_Conv2d_ConvNN_Spatial_K_N(nn.Module):
     def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, N=8, location_channels=False, device="mps"):
         
         super(B_Conv2d_ConvNN_Spatial_K_N, self).__init__()
-        self.conv1 = Conv2d_ConvNN_Spatial_Branching(in_ch, 16, channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)
-        self.conv2 = Conv2d_ConvNN_Spatial_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)
+        self.conv1 = Conv2d_ConvNN_Spatial_Branching(in_ch, 16, channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)
+        self.conv2 = Conv2d_ConvNN_Spatial_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)
         
         self.flatten = nn.Flatten()
 
@@ -582,8 +582,8 @@ class B_Conv2d_ConvNN_Attn_K_N(nn.Module):
     def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, N=64, location_channels=False, image_size=(32, 32), device="mps"):
         
         super(B_Conv2d_ConvNN_Attn_K_N, self).__init__()
-        self.conv1 = Conv2d_ConvNN_Attn_Branching(in_ch, 16, channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels, image_size=image_size)
-        self.conv2 = Conv2d_ConvNN_Attn_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels, image_size=image_size)
+        self.conv1 = Conv2d_ConvNN_Attn_Branching(in_ch, 16, channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels, image_size=image_size)
+        self.conv2 = Conv2d_ConvNN_Attn_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels, image_size=image_size)
         
         self.flatten = nn.Flatten()
 
@@ -614,8 +614,8 @@ class B_Conv2d_ConvNN_Attn_V_K_N(nn.Module):
     def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, kernel_size=3, K=9, N=64, location_channels=False, image_size=(32, 32), device="mps"):
         
         super(B_Conv2d_ConvNN_Attn_V_K_N, self).__init__()
-        self.conv1 = Conv2d_ConvNN_Attn_V_Branching(in_ch, 16, channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels, image_size=image_size)
-        self.conv2 = Conv2d_ConvNN_Attn_V_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels, image_size=image_size)
+        self.conv1 = Conv2d_ConvNN_Attn_V_Branching(in_ch, 16, channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels, image_size=image_size)
+        self.conv2 = Conv2d_ConvNN_Attn_V_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels, image_size=image_size)
         
         self.flatten = nn.Flatten()
 
@@ -646,8 +646,8 @@ class B_Attention_ConvNN_K_All(nn.Module):
     def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, K=9, num_heads=4, location_channels = False, device="mps"):
         
         super(B_Attention_ConvNN_K_All, self).__init__()
-        self.conv1 = Attention_ConvNN_Random_Branching(in_ch, 16,  channel_ratio=channel_ratio, K=K, samples="all", shuffle_pattern="NA", shuffle_scale=1, num_heads=num_heads, location_channels=location_channels)
-        self.conv2 = Attention_ConvNN_Random_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), K=K, samples="all", shuffle_pattern="NA", shuffle_scale=1, num_heads=num_heads, location_channels=location_channels)
+        self.conv1 = Attention_ConvNN_Random_Branching(in_ch, 16,  channel_ratio=channel_ratio, K=K, samples="all", shuffle_pattern="BA", shuffle_scale=2, num_heads=num_heads, location_channels=location_channels)
+        self.conv2 = Attention_ConvNN_Random_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), K=K, samples="all", shuffle_pattern="BA", shuffle_scale=2, num_heads=num_heads, location_channels=location_channels)
         
         self.flatten = nn.Flatten()
 
@@ -678,8 +678,8 @@ class B_Attention_ConvNN_K_N(nn.Module):
     def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, K=9, N=64, num_heads=4, location_channels=False, device="mps"):
         
         super(B_Attention_ConvNN_K_N, self).__init__()
-        self.conv1 = Attention_ConvNN_Random_Branching(in_ch, 16,  channel_ratio=channel_ratio, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, num_heads=num_heads, location_channels=location_channels)
-        self.conv2 = Attention_ConvNN_Random_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, num_heads=num_heads, location_channels=location_channels)
+        self.conv1 = Attention_ConvNN_Random_Branching(in_ch, 16,  channel_ratio=channel_ratio, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, num_heads=num_heads, location_channels=location_channels)
+        self.conv2 = Attention_ConvNN_Random_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, num_heads=num_heads, location_channels=location_channels)
         
         self.flatten = nn.Flatten()
 
@@ -710,8 +710,8 @@ class B_Attention_ConvNN_Spatial_K_N(nn.Module):
     def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, K=9, N=8, num_heads=4, location_channels=False, device="mps"):
         
         super(B_Attention_ConvNN_Spatial_K_N, self).__init__()
-        self.conv1 = Attention_ConvNN_Spatial_Branching(in_ch, 16,  channel_ratio=channel_ratio, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, num_heads=num_heads, location_channels=location_channels)
-        self.conv2 = Attention_ConvNN_Spatial_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, num_heads=num_heads, location_channels=location_channels)
+        self.conv1 = Attention_ConvNN_Spatial_Branching(in_ch, 16,  channel_ratio=channel_ratio, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, num_heads=num_heads, location_channels=location_channels)
+        self.conv2 = Attention_ConvNN_Spatial_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, num_heads=num_heads, location_channels=location_channels)
         
         self.flatten = nn.Flatten()
 
@@ -742,8 +742,8 @@ class B_Attention_ConvNN_Attn_K_N(nn.Module):
     def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, K=9, N=64, num_heads=4, image_size=(32, 32), location_channels=False, device="mps"):
         
         super(B_Attention_ConvNN_Attn_K_N, self).__init__()
-        self.conv1 = Attention_ConvNN_Attn_Branching(in_ch, 16,  channel_ratio=channel_ratio, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, num_heads=num_heads, image_size=image_size, location_channels=location_channels)
-        self.conv2 = Attention_ConvNN_Attn_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, num_heads=num_heads, image_size=image_size, location_channels=location_channels)
+        self.conv1 = Attention_ConvNN_Attn_Branching(in_ch, 16,  channel_ratio=channel_ratio, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, num_heads=num_heads, image_size=image_size, location_channels=location_channels)
+        self.conv2 = Attention_ConvNN_Attn_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, num_heads=num_heads, image_size=image_size, location_channels=location_channels)
         
         self.flatten = nn.Flatten()
 
@@ -774,8 +774,8 @@ class B_Attention_ConvNN_Attn_V_K_N(nn.Module):
     def __init__(self, in_ch=3, channel_ratio=(16, 16), num_classes=10, K=9, N=64, num_heads=4, image_size=(32, 32), location_channels=False, device="mps"):
         
         super(B_Attention_ConvNN_Attn_V_K_N, self).__init__()
-        self.conv1 = Attention_ConvNN_Attn_V_Branching(in_ch, 16,  channel_ratio=channel_ratio, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, num_heads=num_heads, image_size=image_size, location_channels=location_channels)
-        self.conv2 = Attention_ConvNN_Attn_V_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, num_heads=num_heads, image_size=image_size, location_channels=location_channels)
+        self.conv1 = Attention_ConvNN_Attn_V_Branching(in_ch, 16,  channel_ratio=channel_ratio, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, num_heads=num_heads, image_size=image_size, location_channels=location_channels)
+        self.conv2 = Attention_ConvNN_Attn_V_Branching(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, num_heads=num_heads, image_size=image_size, location_channels=location_channels)
         
         self.flatten = nn.Flatten()
 
@@ -806,8 +806,8 @@ class B_Attention_Conv2d(nn.Module):
     def __init__(self, in_ch=3, num_classes=10, channel_ratio=(16, 16),kernel_size=3, num_heads=4, device="mps"):
         
         super(B_Attention_Conv2d, self).__init__()
-        self.conv1 = Attention_Conv2d_Branching(in_ch=in_ch, out_ch=16, channel_ratio=channel_ratio, kernel_size=kernel_size, num_heads=num_heads, shuffle_pattern="NA", shuffle_scale=1)
-        self.conv2 = Attention_Conv2d_Branching(in_ch=16, out_ch=32,  channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), kernel_size=kernel_size, num_heads=num_heads, shuffle_pattern="NA", shuffle_scale=1)
+        self.conv1 = Attention_Conv2d_Branching(in_ch=in_ch, out_ch=16, channel_ratio=channel_ratio, kernel_size=kernel_size, num_heads=num_heads, shuffle_pattern="BA", shuffle_scale=2)
+        self.conv2 = Attention_Conv2d_Branching(in_ch=16, out_ch=32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2), kernel_size=kernel_size, num_heads=num_heads, shuffle_pattern="BA", shuffle_scale=2)
         
         self.flatten = nn.Flatten()
 
@@ -889,8 +889,8 @@ class B_Attention_Conv2d(nn.Module):
 #     def __init__(self, in_ch=3, num_classes=10, K=9, device="mps"):
 #         super(ConvNN_2D_K_All_Location_Before, self).__init__()
         
-#         self.conv1 = Conv2d_NN(in_ch+2, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1,  samples="all")
-#         self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1,  samples="all")
+#         self.conv1 = Conv2d_NN(in_ch+2, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2,  samples="all")
+#         self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2,  samples="all")
 
 #         self.flatten = nn.Flatten()
 
@@ -937,8 +937,8 @@ class B_Attention_Conv2d(nn.Module):
 #     def __init__(self, in_ch=3, num_classes=10, K=9, N = 64, device="mps"):
 #         super(ConvNN_2D_K_N_Location_Before, self).__init__()
         
-#         self.conv1 = Conv2d_NN(in_ch+2, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1,  samples=N)
-#         self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1,  samples=N)
+#         self.conv1 = Conv2d_NN(in_ch+2, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2,  samples=N)
+#         self.conv2 = Conv2d_NN(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2,  samples=N)
 
 #         self.flatten = nn.Flatten()
 
@@ -985,8 +985,8 @@ class B_Attention_Conv2d(nn.Module):
 #     def __init__(self, in_ch=3, num_classes=10, K=9, N = 8, device="mps"):
 #         super(ConvNN_2D_Spatial_K_N_Location_Before, self).__init__()
         
-#         self.conv1 = Conv2d_NN_spatial(in_ch+2, 16, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1,  samples=N)
-#         self.conv2 = Conv2d_NN_spatial(16, 32, K=K, stride=K, shuffle_pattern="NA", shuffle_scale=1,  samples=N)
+#         self.conv1 = Conv2d_NN_spatial(in_ch+2, 16, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2,  samples=N)
+#         self.conv2 = Conv2d_NN_spatial(16, 32, K=K, stride=K, shuffle_pattern="BA", shuffle_scale=2,  samples=N)
 
 #         self.flatten = nn.Flatten()
 
@@ -1034,8 +1034,8 @@ class B_Attention_Conv2d(nn.Module):
         
 #         super(Branching_ConvNN_2D_K_All_Location_Before, self).__init__()
 #         self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch+2, 16, 
-#             channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples="all", shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)
-#         self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples="all", shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)
+#             channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples="all", shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)
+#         self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples="all", shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)
         
 #         self.flatten = nn.Flatten()
 
@@ -1082,8 +1082,8 @@ class B_Attention_Conv2d(nn.Module):
         
 #         super(Branching_ConvNN_2D_K_N_Location_Before, self).__init__()
 #         self.conv1 = ConvNN_CNN_Random_BranchingLayer(in_ch+2, 16, 
-#             channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)
-#         self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)
+#             channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)
+#         self.conv2 = ConvNN_CNN_Random_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)
         
 #         self.flatten = nn.Flatten()
 
@@ -1130,8 +1130,8 @@ class B_Attention_Conv2d(nn.Module):
         
 #         super(Branching_ConvNN_2D_Spatial_K_N_Location_Before, self).__init__()
 #         self.conv1 = ConvNN_CNN_Spatial_BranchingLayer(in_ch+2, 16, 
-#             channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)
-#         self.conv2 = ConvNN_CNN_Spatial_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="NA", shuffle_scale=1, location_channels=location_channels)
+#             channel_ratio=channel_ratio,kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)
+#         self.conv2 = ConvNN_CNN_Spatial_BranchingLayer(16, 32, channel_ratio=(channel_ratio[0] *2, channel_ratio[1]*2),kernel_size=kernel_size, K=K, samples=N, shuffle_pattern="BA", shuffle_scale=2, location_channels=location_channels)
         
 #         self.flatten = nn.Flatten()
 
