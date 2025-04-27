@@ -28,7 +28,7 @@ from Attention2d import Attention2d
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 
 
-class ConvNN_CNN_Random_BranchingLayer(nn.Module):
+class Conv2d_ConvNN_Random_Branching(nn.Module):
     def __init__(self, 
                  in_ch, 
                  out_ch, 
@@ -44,7 +44,7 @@ class ConvNN_CNN_Random_BranchingLayer(nn.Module):
         assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
-        super(ConvNN_CNN_Random_BranchingLayer, self).__init__()
+        super(Conv2d_ConvNN_Random_Branching, self).__init__()
         
         self.in_ch = in_ch 
         self.out_ch = out_ch    
@@ -78,6 +78,7 @@ class ConvNN_CNN_Random_BranchingLayer(nn.Module):
                           stride = self.K, 
                           samples = self.samples, 
                           shuffle_pattern=self.shuffle_pattern, 
+                          shuffle_scale=self.shuffle_scale,
                           location_channels = self.location_channels), 
                 nn.ReLU()
             )
@@ -103,14 +104,14 @@ class ConvNN_CNN_Random_BranchingLayer(nn.Module):
         reduce = self.reduce_channels(concat)
         return reduce
 
-class ConvNN_CNN_Spatial_BranchingLayer(nn.Module):
+class Conv2d_ConvNN_Spatial_Branching(nn.Module):
     def __init__(self, 
                  in_ch, 
                  out_ch, 
                  channel_ratio=(16, 16), 
                  kernel_size=3, 
                  K=9, 
-                 samples = 8, 
+                 samples=8, 
                  shuffle_pattern="NA", 
                  shuffle_scale=1, 
                  location_channels = False):
@@ -119,7 +120,7 @@ class ConvNN_CNN_Spatial_BranchingLayer(nn.Module):
         assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
-        super(ConvNN_CNN_Spatial_BranchingLayer, self).__init__()
+        super(Conv2d_ConvNN_Spatial_Branching, self).__init__()
         self.kernel_size = kernel_size
         
         self.in_ch = in_ch 
@@ -149,12 +150,12 @@ class ConvNN_CNN_Spatial_BranchingLayer(nn.Module):
             self.branch2 = nn.Sequential(
                 Conv2d_NN_spatial(self.in_ch, 
                                   self.channel_ratio[1], 
-                                  K = self.K, 
-                                  stride = self.K, 
-                                  samples = self.samples, 
-                                  shuffle_pattern= self.shuffle_pattern, 
-                                  location_channels = self.location_channels
-                                 ), 
+                                  K=self.K, 
+                                  stride=self.K, 
+                                  samples=self.samples, 
+                                  shuffle_pattern=self.shuffle_pattern, 
+                                  shuffle_scale=self.shuffle_scale,
+                                  location_channels=self.location_channels), 
                 nn.ReLU()
             )
 
@@ -179,7 +180,7 @@ class ConvNN_CNN_Spatial_BranchingLayer(nn.Module):
         reduce = self.reduce_channels(concat)
         return reduce
         
-class ConvNN_CNN_Attention_BranchingLayer(nn.Module):
+class Conv2d_ConvNN_Attn_Branching(nn.Module):
     def __init__(self, 
                  in_ch, 
                  out_ch, 
@@ -196,7 +197,7 @@ class ConvNN_CNN_Attention_BranchingLayer(nn.Module):
         assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
-        super(ConvNN_CNN_Attention_BranchingLayer, self).__init__()
+        super(Conv2d_ConvNN_Attn_Branching, self).__init__()
         
         self.in_ch = in_ch 
         self.out_ch = out_ch    
@@ -228,17 +229,17 @@ class ConvNN_CNN_Attention_BranchingLayer(nn.Module):
             self.branch2 = nn.Sequential(
                 Conv2d_NN_Attn(self.in_ch, 
                                self.channel_ratio[1], 
-                               K = self.K, 
-                               stride = self.K, 
-                               samples = self.samples, 
-                               image_size = self.image_size, 
-                               location_channels = self.location_channels), 
+                               K=self.K, 
+                               stride=self.K, 
+                               samples=self.samples, 
+                               shuffle_pattern=self.shuffle_pattern,
+                               shuffle_scale=self.shuffle_scale,    
+                               image_size=self.image_size, 
+                               location_channels=self.location_channels), 
                 nn.ReLU()
             )
         
-
         self.reduce_channels = nn.Conv2d(self.out_ch*2, self.out_ch, 1)
-
 
     def forward(self, x):
         
@@ -259,13 +260,23 @@ class ConvNN_CNN_Attention_BranchingLayer(nn.Module):
         reduce = self.reduce_channels(concat)
         return reduce
     
-class ConvNN_CNN_Attention_V_BranchingLayer(nn.Module):
-    def __init__(self, in_ch, out_ch, channel_ratio=(16, 16), kernel_size=3, K=9, samples = "all", shuffle_pattern = "NA", location_channels = False, image_size = (32, 32)):
+class Conv2d_ConvNN_Attn_V_Branching(nn.Module):
+    def __init__(self, 
+                 in_ch, 
+                 out_ch, 
+                 channel_ratio=(16, 16), 
+                 kernel_size=3, 
+                 K=9, 
+                 samples="all", 
+                 shuffle_pattern="NA",
+                 shuffle_scale=1,
+                 location_channels = False,
+                 image_size = (32, 32)):
         # Channel_ratio must add up to 2*out_ch
         assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
-        super(ConvNN_CNN_Attention_V_BranchingLayer, self).__init__()
+        super(Conv2d_ConvNN_Attn_V_Branching, self).__init__()
         
         self.in_ch = in_ch 
         self.out_ch = out_ch    
@@ -274,6 +285,8 @@ class ConvNN_CNN_Attention_V_BranchingLayer(nn.Module):
         self.K = K
         self.samples = samples
         self.shuffle_pattern = shuffle_pattern 
+        self.shuffle_scale = shuffle_scale
+        self.image_size = image_size
         self.location_channels = location_channels
         
         
@@ -295,15 +308,15 @@ class ConvNN_CNN_Attention_V_BranchingLayer(nn.Module):
                                  K = self.K, 
                                  stride = self.K, 
                                  samples = self.samples, 
+                                 shuffle_pattern=self.shuffle_pattern,
+                                 shuffle_scale=self.shuffle_scale,
                                  image_size = self.image_size, 
                                  location_channels = self.location_channels
                                 ), 
                 nn.ReLU()
             )
-        
 
         self.reduce_channels = nn.Conv2d(self.out_ch*2, self.out_ch, 1)
-
 
     def forward(self, x):
         
@@ -325,92 +338,33 @@ class ConvNN_CNN_Attention_V_BranchingLayer(nn.Module):
         return reduce
     
     
-class CNN_Attention_BranchingLayer(nn.Module):
-    def __init__(self, 
-                 in_ch, 
-                 out_ch, 
-                 kernel_size=3, 
-                 shuffle_pattern="NA", 
-                 shuffle_scale=1, 
-                 num_heads = 1, 
-                 location_channels=False):
-        # Channel_ratio must add up to 2*out_ch
-
-        super(CNN_Attention_BranchingLayer, self).__init__()
-        
-        self.in_ch = in_ch 
-        self.out_ch = out_ch    
-        self.kernel_size = kernel_size
-        
-        self.shuffle_scale = shuffle_scale
-        self.shuffle_pattern = shuffle_pattern 
-        
-        self.num_heads = num_heads 
-        
-        self.location_channels = location_channels
-    
-        self.branch1 = nn.Sequential(
-            nn.Conv2d(self.in_ch, 
-                      self.out_ch, 
-                      self.kernel_size, 
-                      stride=1, 
-                      padding=1
-                     ),
-            nn.ReLU()
-        )
-        
-        self.branch2 = nn.Sequential(
-            Attention2d(in_ch, 
-                        out_ch, 
-                        shuffle_pattern=self.shuffle_pattern, 
-                        shuffle_scale=self.shuffle_scale, 
-                        num_heads=self.num_heads, 
-                        location_channels=self.location_channels),
-            nn.ReLU()
-        )
-        
-        self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
-
-
-    def forward(self, x):
-        x1 = self.branch1(x)
-
-        x2 = self.branch2(x)
-        
-        concat = torch.cat([x1, x2], dim=1)
-        
-        reduce = self.reduce_channels(concat)
-        return reduce
-    
-'''EXAMPLE USAGE'''
-def example_usage():
-    '''Example Usage of ConvNN_CNN_Random_BranchingLayer and ConvNN_CNN_Spatial_BranchingLayer'''
-    ex = torch.rand(32, 3, 32, 32)
+if __name__ == "__main__":
+    ex = torch.randn(32, 3, 32, 32)
     print("Input: ", ex.shape)
     
-    convnn_cnn_random = ConvNN_CNN_Random_BranchingLayer(in_ch=3, out_ch=16, channel_ratio=(28, 4), kernel_size=3, K=3, samples=5, location_channels=True)
+    # Conv2d + ConvNN Random Branching 
+    conv2d_convnn_random_branching = Conv2d_ConvNN_Random_Branching(3, 16, channel_ratio=(16, 16), kernel_size=3, K=9, shuffle_pattern="NA", shuffle_scale=1, samples=64, location_channels=False)
+    output_random = conv2d_convnn_random_branching(ex)
+    print("Output Random Branching: ", output_random.shape)
     
-    output_random = convnn_cnn_random(ex)
-    print("Output Random Branching: ", output_random.shape) 
+    # Conv2d + ConvNN Spatial Branching
+    conv2d_convnn_spatial_branching = Conv2d_ConvNN_Spatial_Branching(3, 16, channel_ratio=(16, 16), kernel_size=3, K=9, samples=8, shuffle_pattern="NA", shuffle_scale=1, location_channels=False)
     
-    convnn_cnn_spatial = ConvNN_CNN_Spatial_BranchingLayer(in_ch=3, out_ch=16, channel_ratio=(28, 4), kernel_size=3, K=3, samples=5, location_channels=True)
-    
-    output_spatial = convnn_cnn_spatial(ex)
+    output_spatial = conv2d_convnn_spatial_branching(ex)
     print("Output Spatial Branching: ", output_spatial.shape)
     
-    convnn_cnn_attention = ConvNN_CNN_Attention_BranchingLayer(in_ch=3, out_ch=16, channel_ratio=(28, 4), kernel_size=3, K=3, samples=5, location_channels=True)
-    output_attention = convnn_cnn_attention(ex)
-    print("Output Attention Branching: ", output_attention.shape)
+    # Conv2d + ConvNN Attention Branching
+    conv2d_convnn_attn_branching = Conv2d_ConvNN_Attn_Branching(3, 16, channel_ratio=(16, 16), kernel_size=3, K=9, samples=64, shuffle_pattern="NA", shuffle_scale=1, location_channels=False)
+    output_attn = conv2d_convnn_attn_branching(ex)
+    print("Output Attention Branching: ", output_attn.shape)
     
-    convnn_cnn_attention_v = ConvNN_CNN_Attention_V_BranchingLayer(in_ch=3, out_ch=16, channel_ratio=(28, 4), kernel_size=3, K=3, samples=5, location_channels=True)
-    output_attention = convnn_cnn_attention_v(ex)
-    print("Output Attention V Branching: ", output_attention.shape)
+    # Conv2d + ConvNN Attention V Branching
+    conv2d_convnn_attn_v_branching = Conv2d_ConvNN_Attn_V_Branching(3, 16, channel_ratio=(16, 16), kernel_size=3, K=9, samples=64, shuffle_pattern="NA", shuffle_scale=1, location_channels=False)
+    output_attn_v = conv2d_convnn_attn_v_branching(ex)
+    print("Output Attention V Branching: ", output_attn_v.shape)
     
     
-    cnn_attention = CNN_Attention_BranchingLayer(in_ch=3, out_ch=16, kernel_size=3)
-    output_attention = cnn_attention(ex)
-    print("Output CNN Attention Branching: ", output_attention.shape)
     
-if __name__ == "__main__":
-    example_usage()
+    
+    
     
