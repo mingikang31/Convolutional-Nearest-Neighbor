@@ -416,10 +416,12 @@ class ConvNN_2D_Attn_V_K_N(nn.Module):
             
 ### Attention Models ### 
 class Attention_2D(nn.Module):
-    def __init__(self, in_ch=3, num_classes=10, K=9, device="mps"):
+    def __init__(self, in_ch=3, num_classes=10, num_heads=1, K=9, device="mps"):
         super(Attention_2D, self).__init__()
-        self.conv1 = Attention2d(in_ch, 16, shuffle_pattern="BA", shuffle_scale=2, num_heads=1)
-        self.conv2 = Attention2d(16, 32, shuffle_pattern="BA", shuffle_scale=2, num_heads=1)
+        self.num_heads = num_heads
+        
+        self.conv1 = Attention2d(in_ch, 16, shuffle_pattern="BA", shuffle_scale=2, num_heads=self.num_heads)
+        self.conv2 = Attention2d(16, 32, shuffle_pattern="BA", shuffle_scale=2, num_heads=self.num_heads)
 
         self.flatten = nn.Flatten()
 

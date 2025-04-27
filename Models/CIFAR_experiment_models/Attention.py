@@ -227,20 +227,27 @@ class PixelUnshuffle1D(nn.Module):
         return x 
 
 class Attention(nn.Module):
-    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, num_classes=100, device="mps"):
+    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, num_heads=1, num_classes=100, device="mps"):
         super(Attention, self).__init__()
         
         assert num_layers >= 2, "Number of layers must be at least 2"
         assert mid_ch >= 8, "Middle channels must be at least 8"
+
+
+        self.in_ch = in_ch
+        self.mid_ch = mid_ch 
+        self.num_layers = num_layers
+        self.num_heads = num_heads
+        self.num_classes = num_classes
         
         layers = []
         
         for i in range(num_layers):
             if i == 0:
-                layers.append(Attention2d(in_ch, mid_ch, shuffle_pattern='BA', shuffle_scale=2, num_heads=1))
+                layers.append(Attention2d(in_ch, mid_ch, shuffle_pattern='BA', shuffle_scale=2, num_heads=self.num_heads))
                 layers.append(nn.ReLU())
             else: 
-                layers.append(Attention2d(mid_ch, mid_ch, shuffle_pattern='BA', shuffle_scale=2, num_heads=1))                
+                layers.append(Attention2d(mid_ch, mid_ch, shuffle_pattern='BA', shuffle_scale=2, num_heads=self.num_heads))                
                 layers.append(nn.ReLU())
         
         self.features = nn.Sequential(*layers)
