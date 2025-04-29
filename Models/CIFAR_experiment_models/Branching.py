@@ -12,6 +12,7 @@ from torchsummary import summary
 
 '''Layer Modules for ConvNN, ConvNN_Spatial, ConvNN_Attn, PixelShuffle1D, PixelUnshuffle1D'''
 ### Convolutional Nearest Neighbors ###
+
 class Conv1d_NN(nn.Module): 
     """
     Convolution 1D Nearest Neighbor Layer
@@ -294,7 +295,7 @@ class Conv2d_NN(nn.Module):
             magnitude_type (str): Distance or Similarity.
         """
     
-        super().__init__()
+        super(Conv2d_NN, self).__init__()
         
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -400,7 +401,7 @@ class Conv2d_NN(nn.Module):
         xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
         self.coord_cache[cache_key] = xy_grid_normalized.to(device)
         
-        return xy_grid_normalized.to(device)
+        return xy_grid_normalized.to(device)    
 
 class Conv1d_NN_spatial(nn.Module): 
     """
@@ -424,11 +425,9 @@ class Conv1d_NN_spatial(nn.Module):
     def __init__(self, 
                  in_channels, 
                  out_channels, 
-                 K=3, 
-                 stride=3, 
-                 padding=0, 
-                 shuffle_pattern='N/A', 
-                 shuffle_scale=2, 
+                 K, 
+                 stride, 
+                 padding, 
                  magnitude_type='similarity'
                  ): 
         
@@ -446,29 +445,16 @@ class Conv1d_NN_spatial(nn.Module):
             magnitude_type (str): Distance or Similarity.
         """
         
-        super().__init__()
+        super(Conv1d_NN_spatial, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.K = K
         self.stride = stride 
-        self.padding = padding
-        self.shuffle_pattern = shuffle_pattern 
-        self.shuffle_scale = shuffle_scale
-        
+        self.padding = padding        
 
         self.magnitude_type = magnitude_type 
         self.maximum = True if self.magnitude_type == 'similarity' else False 
-        
-        # Unshuffle layer 
-        self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
-        
-        # Shuffle Layer 
-        self.shuffle_layer = PixelShuffle1D(upscale_factor=self.shuffle_scale)
-                
-        # Channels for Conv1d Layer
-        self.in_channels = in_channels * shuffle_scale if self.shuffle_pattern in ["BA", "B"] else in_channels
-        self.out_channels = out_channels * shuffle_scale if self.shuffle_pattern in ["BA", "A"] else out_channels
-
+    
         # Conv1d Layer 
         self.conv1d_layer = nn.Conv1d(in_channels=self.in_channels, 
                                       out_channels=self.out_channels, 
@@ -476,33 +462,19 @@ class Conv1d_NN_spatial(nn.Module):
                                       stride=self.stride, 
                                       padding=self.padding)
 
-        self.relu = nn.ReLU()
-
     def forward(self, x, y, indices): 
-
-        # Unshuffle Layer 
-        if self.shuffle_pattern in ["B", "BA"]:
-            x1 = self.unshuffle_layer(x)
-        else:
-            x1 = x
             
         if self.magnitude_type == 'distance':
-            matrix_magnitude = self.calculate_distance_matrix_N(x1, y)
+            matrix_magnitude = self.calculate_distance_matrix_N(x, y)
         elif self.magnitude_type == 'similarity':
-            matrix_magnitude = self.calculate_similarity_matrix_N(x1, y)        
+            matrix_magnitude = self.calculate_similarity_matrix_N(x, y)        
         
-        prime = self.prime_vmap_2d_N(x1, matrix_magnitude, self.K, indices, self.maximum)
+        prime = self.prime_vmap_2d_N(x, matrix_magnitude, self.K, indices, self.maximum)
         
         # Conv1d Layer
         x2 = self.conv1d_layer(prime)
-                
-        # Shuffle Layer
-        if self.shuffle_pattern in ["A", "BA"]:
-            x3 = self.shuffle_layer(x2)
-        else:
-            x3 = x2
         
-        return x3
+        return x2
     
     
     ### N Samples ### 
@@ -562,7 +534,8 @@ class Conv2d_NN_spatial(nn.Module):
    def __init__(self, 
                 in_channels, 
                 out_channels,
-                K=3, stride=3, 
+                K=3, 
+                stride=3, 
                 padding=0, 
                 shuffle_pattern="BA", 
                 shuffle_scale=2, 
@@ -573,7 +546,7 @@ class Conv2d_NN_spatial(nn.Module):
                 ): 
       
       
-      super().__init__()
+      super(Conv2d_NN_spatial, self).__init__()
       self.in_channels = in_channels
       self.out_channels = out_channels
       self.K = K
@@ -600,27 +573,21 @@ class Conv2d_NN_spatial(nn.Module):
          else:
             self.in_channels_1d = self.in_channels
             self.out_channels_1d = self.out_channels
-      
+            
+      self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
+      self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
       
       self.Conv1d_NN_spatial = Conv1d_NN_spatial(in_channels=self.in_channels_1d,
                                                    out_channels=self.out_channels_1d,
                                                    K=self.K,
                                                    stride=self.stride,
                                                    padding=self.padding,
-                                                   shuffle_pattern="NA",
-                                                   shuffle_scale=1,
                                                    magnitude_type=self.magnitude_type
                                                    )
                                  
-      
       self.flatten = nn.Flatten(start_dim=2)      
       
-      self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
-      self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
-      
       self.pointwise_conv = nn.Conv2d(self.out_channels + 2, self.out_channels, kernel_size=1)
-
-      
       
    def forward(self, x): 
       
@@ -655,10 +622,10 @@ class Conv2d_NN_spatial(nn.Module):
       
       x_sample = self.flatten(x1[:, :, x_grid, y_grid])
       
-      # input matrix
+      # Input Matrix
       x2 = self.flatten(x1)
       
-      x3 = self.Conv1d_NN_spatial(x2, x_sample, flat_indices)
+      x3 = self.Conv1d_NN_spatial(x2, x_sample, flat_indices.to(x.device))
       
       unflatten = nn.Unflatten(dim=2, unflattened_size=x1.shape[2:])
       x4 = unflatten(x3)
@@ -1091,6 +1058,343 @@ class Conv2d_NN_Attn(nn.Module):
         xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
         return xy_grid_normalized.to(device)
 
+class Conv1d_NN_Attn_spatial(nn.Module):
+    """
+    Convolutional 1D Nearest Neighbors Attention Layer 
+    """
+    
+    def __init__(self, 
+                in_channels, 
+                out_channels, 
+                K, 
+                stride, 
+                padding, 
+                samples, 
+                magnitude_type='similarity', 
+                num_tokens = 224
+                ): 
+        
+        """
+        Initializes the Conv1d_NN module.
+        
+        Parameters:
+            in_channels (int): Number of input channels.
+            out_channels (int): Number of output channels.
+            K (int): Number of Nearest Neighbors for consideration.
+            stride (int): Stride size.
+            padding (int): Padding size.
+            shuffle_pattern (str): Shuffle pattern: "B", "A", "BA".
+            shuffle_scale (int): Shuffle scale factor.
+            samples (int/str): Number of samples to consider.
+            magnitude_type (str): Distance or Similarity.
+        """
+        
+        super(Conv1d_NN_Attn_spatial, self).__init__()
+    
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.K = K
+        self.stride = stride 
+        self.padding = padding
+        self.samples = int(samples) 
+        self.magnitude_type = magnitude_type 
+        self.maximum = True if self.magnitude_type == 'similarity' else False
+        
+        self.num_tokens = num_tokens        
+        
+        # Conv1d Layer 
+        self.conv1d_layer = Conv1d(in_channels=self.in_channels, 
+                                    out_channels=self.out_channels, 
+                                    kernel_size=self.K, 
+                                    stride=self.stride, 
+                                    padding=self.padding)
+        
+        # Linear Layer for Query, Key, Value
+        self.w_q = nn.Linear(self.samples, self.samples, bias=False)
+        self.w_k = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
+        self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
+
+    def forward(self, x, y, indices): 
+        # Q, K, V 
+        q = self.w_q(y)
+        k = self.w_k(x)
+        v = self.w_v(x)
+        
+        if self.magnitude_type == 'distance':
+            matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True)
+        elif self.magnitude_type == 'similarity':
+            matrix_magnitude = self._calculate_similarity_matrix_N(k, q)
+                    
+        prime = self._prime_N(v, matrix_magnitude, self.K, indices, self.maximum)
+                
+        # Conv1d Layer
+        x2 = self.conv1d_layer(prime)
+        
+        return x2
+        
+
+    def _calculate_similarity_matrix(self, K, Q):
+        k_norm = F.normalize(K, p=2, dim=1)
+        q_norm = F.normalize(Q, p=2, dim=1)
+        similarity_matrix = torch.bmm(k_norm.transpose(2, 1), q_norm)  # [B, N, M]
+        similarity_matrix = torch.clamp(similarity_matrix, min=0)  # remove negative values
+        return similarity_matrix
+    
+    def _calculate_similarity_matrix_N(self, K, Q):
+        k_norm = F.normalize(K, p=2, dim=1)
+        q_norm = F.normalize(Q, p=2, dim=1)
+        similarity_matrix = torch.bmm(k_norm.transpose(2, 1), q_norm)  # [B, N, M]
+        similarity_matrix = torch.clamp(similarity_matrix, min=0)  # remove negative values
+        return similarity_matrix
+        
+
+    def _calculate_distance_matrix(self, K, Q, sqrt=False):
+        norm_squared_K = torch.sum(K**2, dim=1, keepdim=True) 
+        norm_squared_Q = torch.sum(Q**2, dim=1, keepdim=True) 
+        
+        dot_product = torch.bmm(K.transpose(2, 1), Q)  
+        
+        # Broadcasting: [B, 1, N] + [B, M, 1] - 2*[B, N, M]
+        dist_matrix = norm_squared_K + norm_squared_Q.transpose(2, 1) - 2 * dot_product
+        
+        dist_matrix = torch.clamp(dist_matrix, min=0)  # remove negative values
+        
+        if sqrt:
+            dist_matrix = torch.sqrt(dist_matrix)
+        
+        return dist_matrix
+
+    def _calculate_distance_matrix_N(self, K, Q, sqrt=False):
+        norm_squared_K = torch.sum(K**2, dim=1, keepdim=True).permute(0, 2, 1)
+        norm_squared_Q = torch.sum(Q**2, dim=1, keepdim=True).transpose(2, 1).permute(0, 2, 1)
+        
+        dot_product = torch.bmm(K.transpose(2, 1), Q)  
+        
+        # Broadcasting: [B, 1, N] + [B, M, 1] - 2*[B, N, M]
+        dist_matrix = norm_squared_K + norm_squared_Q - 2 * dot_product
+        
+        dist_matrix = torch.clamp(dist_matrix, min=0)  # remove negative values
+        
+        if sqrt:
+            dist_matrix = torch.sqrt(dist_matrix)
+        
+        return dist_matrix
+
+    def _prime(self, v, qk, K, maximum):
+        b, c, t = v.shape 
+        
+        _, topk_indices = torch.topk(qk, k=K, dim=-1, largest = maximum)
+        
+        topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)
+        
+        v_expanded = v.unsqueeze(-1).expand(b, c, t, K)
+        
+        prime = torch.gather(v_expanded, dim=2, index=topk_indices_exp)
+        
+        prime = prime.reshape(b, c, -1)
+
+        return prime
+        
+            
+            
+    def _prime_N(self, v, qk, K, rand_idx, maximum):
+        b, c, t = v.shape
+
+        # Get top-(K-1) indices from the magnitude matrix; shape: [b, t, K-1]
+        _, topk_indices = torch.topk(qk, k=K - 1, dim=2, largest=maximum)
+        tk = topk_indices.shape[-1]
+        assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
+
+        # Map indices from the sampled space to the full token indices using rand_idx.
+        # mapped_tensor will have shape: [b, t, K-1]
+        mapped_tensor = rand_idx[topk_indices]
+
+        # Create self indices for each token; shape: [1, t, 1] then expand to [b, t, 1]
+        token_indices = torch.arange(t, device=v.device).view(1, t, 1).expand(b, t, 1)
+
+        # Concatenate self index with neighbor indices to form final indices; shape: [b, t, K]
+        final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
+
+        # Expand final_indices to include the channel dimension; result shape: [b, c, t, K]
+        indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
+
+        # Expand matrix to shape [b, c, t, 1] and then to [b, c, t, K] (ensuring contiguous memory)
+        v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
+
+        # Gather neighbor features along the token dimension (dim=2)
+        prime = torch.gather(v_expanded, dim=2, index=indices_expanded)  # shape: [b, c, t, K]
+
+        # Flatten the token and neighbor dimensions into one: [b, c, t*K]
+        prime = prime.reshape(b, c, -1)
+        return prime
+    
+class Conv2d_NN_Attn_spatial(nn.Module): 
+    """
+    Convolution 2D Nearest Neighbor Layer for Convolutional Neural Networks.
+     - Location Channels : add coordinates -> unshuffle -> flatten -> ConvNN -> unflatten -> shuffle -> remove coordinate 
+    
+    Attributes: 
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels.
+        K (int): Number of Nearest Neighbors for consideration.
+        stride (int): Stride size.
+        padding (int): Padding size.
+        shuffle_pattern (str): Shuffle pattern.
+        shuffle_scale (int): Shuffle scale factor.
+        samples (int/str): Number of samples to consider.
+        magnitude_type (str): Distance or Similarity.
+        
+    Notes:
+        - K must be same as stride. K == stride.
+    """
+    
+    def __init__(self, 
+                in_channels, 
+                out_channels, 
+                K=3,
+                stride=3, 
+                padding=0, 
+                shuffle_pattern="BA", 
+                shuffle_scale=2, 
+                samples=3, 
+                magnitude_type="similarity",
+                location_channels=False, 
+                image_size=(32, 32)
+                ): 
+        
+        """
+        Initializes the Conv2d_NN module.
+        
+        Parameters:
+            in_channels (int): Number of input channels.
+            out_channels (int): Number of output channels.
+            K (int): Number of Nearest Neighbors for consideration.
+            stride (int): Stride size.
+            padding (int): Padding size.
+            shuffle_pattern (str): Shuffle pattern: "B", "A", "BA".
+            shuffle_scale (int): Shuffle scale factor.
+            samples (int/str): Number of samples to consider.
+            magnitude_type (str): Distance or Similarity.
+        """
+        
+        super(Conv2d_NN_Attn_spatial, self).__init__()
+        
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.K = K
+        self.stride = stride
+        self.padding = padding
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        self.samples = int(samples)
+        self.magnitude_type = magnitude_type
+        self.location_channels = location_channels
+        self.image_size = image_size
+
+        if (self.shuffle_pattern in ["B", "BA"]):
+            if self.location_channels: 
+                self.in_channels_1d = (self.in_channels + 2) * (self.shuffle_scale**2)
+                self.out_channels_1d = (self.out_channels + 2) * (self.shuffle_scale **2)
+            else:
+                self.in_channels_1d = self.in_channels * (self.shuffle_scale**2)
+                self.out_channels_1d = self.out_channels * (self.shuffle_scale **2)
+
+        else: 
+            if self.location_channels: 
+                self.in_channels_1d = self.in_channels + 2
+                self.out_channels_1d = self.out_channels + 2
+            else:
+                self.in_channels_1d = self.in_channels
+                self.out_channels_1d = self.out_channels
+
+
+
+        self.num_tokens = int((image_size[0] * image_size[1]) / (self.shuffle_scale**2))
+
+        self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
+        self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
+        
+        self.Conv1d_NN_Attn_spatial = Conv1d_NN_Attn_spatial(in_channels=self.in_channels_1d,
+                                    out_channels=self.out_channels_1d,
+                                    K=self.K,
+                                    stride=self.stride,
+                                    padding=self.padding,
+                                    samples=self.samples**2,
+                                    magnitude_type=self.magnitude_type, 
+                                    num_tokens=self.num_tokens
+                                    )
+
+        self.flatten = nn.Flatten(start_dim=2)
+        
+        self.pointwise_conv = nn.Conv2d(self.out_channels + 2, self.out_channels, kernel_size=1)
+        
+        
+    def forward(self, x): 
+        if self.shuffle_pattern in ["B", "BA"]:
+            if self.location_channels: 
+                x_coordinates = self.coordinate_channels(x.shape, device=x.device)
+                x = torch.cat((x, x_coordinates), dim=1)
+                x1 = self.unshuffle_layer(x)
+            else: 
+                x1 = self.unshuffle_layer(x)
+            
+        else: 
+            if self.location_channels:
+                x_coordinates = self.coordinate_channels(x.shape, device=x.device)
+                x1 = torch.cat((x, x_coordinates), dim=1)
+            else: 
+                x1 = x
+                
+        # x sample_matrix 
+        x_ind = torch.round(torch.linspace(0 + self.padding, x1.shape[2] - self.padding - 1, self.samples)).to(torch.int)
+        y_ind = torch.round(torch.linspace(0 + self.padding, x1.shape[3] - self.padding - 1, self.samples)).to(torch.int)
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_idx_flat = x_grid.flatten()
+        y_idx_flat = y_grid.flatten()
+        
+        width = x1.shape[2]
+        # flat indices for indexing -> similar to random sampling for ConvNN
+        flat_indices = x_idx_flat * width + y_idx_flat
+        
+        x_sample = self.flatten(x1[:, :, x_grid, y_grid])
+        
+        # Input Matrix
+        x2 = self.flatten(x1)
+
+        x3 = self.Conv1d_NN_Attn_spatial(x2, x_sample, flat_indices.to(x.device))  
+
+        unflatten = nn.Unflatten(dim=2, unflattened_size=x1.shape[2:])
+        x4 = unflatten(x3)
+
+        if self.shuffle_pattern in ["A", "BA"]:
+            if self.location_channels:
+                x4 = self.shuffle_layer(x4)
+                x5 = self.pointwise_conv(x4) ## Added Pointwise Conv to reduce channels added for spatial coordinates
+            else:
+                x5 = self.shuffle_layer(x4)
+        else: 
+            if self.location_channels:
+                x5 = self.pointwise_conv(x4) ## Added Pointwise Conv to reduce channels added for spatial coordinates
+            else: 
+                x5 = x4
+
+        return x5
+    
+    def coordinate_channels(self, tensor_shape, device):
+        x_ind = torch.arange(0, tensor_shape[2])
+        y_ind = torch.arange(0, tensor_shape[3])
+        
+        x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+        
+        x_grid = x_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        y_grid = y_grid.float().unsqueeze(0).expand(tensor_shape[0], -1, -1).unsqueeze(1)
+        
+        xy_grid = torch.cat((x_grid, y_grid), dim=1)
+        xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
+        return xy_grid_normalized.to(device)
+
 class Conv1d_NN_Attn_V(nn.Module):
     """
     Convolutional 1D Nearest Neighbors Attention Layer 
@@ -1484,8 +1788,7 @@ class Conv2d_NN_Attn_V(nn.Module):
         xy_grid = torch.cat((x_grid, y_grid), dim=1)
         xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
         return xy_grid_normalized.to(device)
-
-### Attention Layers 
+    
 class Attention1d(nn.Module):
     def __init__(self, 
                  in_channels, 
@@ -1535,9 +1838,9 @@ class Attention2d(nn.Module):
     def __init__(self, 
                  in_channels,
                  out_channels,
-                 shuffle_pattern='N/A',
-                 shuffle_scale=1,
-                 num_heads=1,
+                 shuffle_pattern='BA',
+                 shuffle_scale=2,
+                 num_heads=4,
                  location_channels=False,
                  ): 
         super(Attention2d, self).__init__()
@@ -1626,7 +1929,6 @@ class Attention2d(nn.Module):
         xy_grid_normalized = F.normalize(xy_grid, p=2, dim=1)
         return xy_grid_normalized.to(device)
 
-### Pixel Shuffle and Unshuffle Layers ###
 class PixelShuffle1D(nn.Module): 
     """
     1D Pixel Shuffle Layer for Convolutional Neural Networks.
@@ -1662,7 +1964,7 @@ class PixelShuffle1D(nn.Module):
         x = torch.reshape(x, (batch_size, output_channel_len, output_token_len)).contiguous()
         
         return x 
-
+   
 class PixelUnshuffle1D(nn.Module):  
     """
     1D Pixel Unshuffle Layer for Convolutional Neural Networks.
@@ -1701,7 +2003,7 @@ class PixelUnshuffle1D(nn.Module):
         x = torch.reshape(x, (batch_size, output_channel_len, output_token_len)).contiguous()
         
         return x 
-
+    
 ### Convolutional Nearest Neighbors - Branching Layers ###
 
 class Conv2d_ConvNN_Random_Branching(nn.Module):
@@ -1936,6 +2238,86 @@ class Conv2d_ConvNN_Attn_Branching(nn.Module):
         reduce = self.reduce_channels(concat)
         return reduce
     
+class Conv2d_ConvNN_Attn_Spatial_Branching(nn.Module):
+    def __init__(self, 
+                 in_ch, 
+                 out_ch, 
+                 channel_ratio=(16, 16), 
+                 kernel_size=3, 
+                 K=9, 
+                 samples=8, 
+                 shuffle_pattern="BA", 
+                 shuffle_scale=2, 
+                 location_channels=False, 
+                 image_size=(32, 32)):
+        
+        # Channel_ratio must add up to 2*out_ch
+        assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
+        assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
+        
+        super(Conv2d_ConvNN_Attn_Spatial_Branching, self).__init__()
+        
+        self.in_ch = in_ch 
+        self.out_ch = out_ch    
+        self.channel_ratio = channel_ratio
+        self.kernel_size = kernel_size
+        self.K = K
+        self.samples = samples
+        
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        
+        self.location_channels = location_channels
+        
+        self.image_size = image_size 
+        
+        
+        if self.channel_ratio[0] != 0:
+            self.branch1 = nn.Sequential(
+                nn.Conv2d(self.in_ch, 
+                          self.channel_ratio[0], 
+                          self.kernel_size, 
+                          stride=1, 
+                          padding=1
+                         ),
+                nn.ReLU()
+            )
+        
+        if self.channel_ratio[1] != 0:
+            self.branch2 = nn.Sequential(
+                Conv2d_NN_Attn_spatial(self.in_ch, 
+                               self.channel_ratio[1], 
+                               K=self.K, 
+                               stride=self.K, 
+                               samples=self.samples, 
+                               shuffle_pattern=self.shuffle_pattern,
+                               shuffle_scale=self.shuffle_scale,    
+                               image_size=self.image_size, 
+                               location_channels=self.location_channels), 
+                nn.ReLU()
+            )
+        
+        self.reduce_channels = nn.Conv2d(self.out_ch*2, self.out_ch, 1)
+
+    def forward(self, x):
+        
+        if self.channel_ratio[0] != 0:
+            x1 = self.branch1(x)
+        
+        if self.channel_ratio[1] != 0:
+            x2 = self.branch2(x)
+        
+        if self.channel_ratio[0] == 0:
+            concat = x2
+        elif self.channel_ratio[1] == 0:
+            concat = x1
+        else:
+        
+            concat = torch.cat([x1, x2], dim=1)
+        
+        reduce = self.reduce_channels(concat)
+        return reduce
+
 class Conv2d_ConvNN_Attn_V_Branching(nn.Module):
     def __init__(self, 
                  in_ch, 
@@ -2021,7 +2403,7 @@ class Attention_ConvNN_Random_Branching(nn.Module):
                  K=9, 
                  shuffle_pattern="BA",
                  shuffle_scale=2,
-                 num_heads=1, 
+                 num_heads=4, 
                  samples = "all", 
                  location_channels = False):
         
@@ -2099,7 +2481,7 @@ class Attention_ConvNN_Spatial_Branching(nn.Module):
                  samples = 8, 
                  shuffle_pattern="BA",  
                  shuffle_scale=2,    
-                 num_heads=1,   
+                 num_heads=4,   
                  location_channels = False):
         
         # Channel_ratio must add up to 2*out_ch
@@ -2175,7 +2557,7 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
                  samples="all", 
                  shuffle_pattern="BA", 
                  shuffle_scale=2, 
-                 num_heads=1, 
+                 num_heads=4, 
                  location_channels = False, 
                  image_size=(32, 32)):
         
@@ -2246,6 +2628,89 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
         
         reduce = self.reduce_channels(concat)
         return reduce
+    
+class Attention_ConvNN_Attn_Spatial_Branching(nn.Module):
+    def __init__(self, 
+                 in_ch, 
+                 out_ch, 
+                 channel_ratio=(16, 16), 
+                 kernel_size=3, 
+                 K=9, 
+                 samples=8, 
+                 shuffle_pattern="BA", 
+                 shuffle_scale=2, 
+                 num_heads=4, 
+                 location_channels = False, 
+                 image_size=(32, 32)):
+        
+        # Channel_ratio must add up to 2*out_ch
+        assert sum(channel_ratio) == 2*out_ch, "Channel ratio must add up to 2*output channels"
+        assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
+        
+        super(Attention_ConvNN_Attn_Spatial_Branching, self).__init__()
+        
+        self.in_ch = in_ch 
+        self.out_ch = out_ch    
+        self.channel_ratio = channel_ratio
+        self.kernel_size = kernel_size
+        self.K = K
+        self.samples = samples
+        
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        self.num_heads = num_heads
+        self.image_size = image_size
+        
+        self.location_channels = location_channels
+        
+        
+        if self.channel_ratio[0] != 0:
+            self.branch1 = nn.Sequential(
+                Attention2d(in_channels=self.in_ch, 
+                            out_channels=self.channel_ratio[0], 
+                            shuffle_pattern=self.shuffle_pattern,
+                            shuffle_scale=self.shuffle_scale,
+                            num_heads=self.num_heads,
+                            location_channels=self.location_channels),
+                nn.ReLU()
+            )
+            
+        
+        if self.channel_ratio[1] != 0:
+            self.branch2 = nn.Sequential(
+                Conv2d_NN_Attn_spatial(self.in_ch, 
+                               self.channel_ratio[1], 
+                               K=self.K, 
+                               stride=self.K, 
+                               samples=self.samples, 
+                               shuffle_pattern=self.shuffle_pattern,
+                               shuffle_scale=self.shuffle_scale,
+                               image_size=self.image_size, 
+                               location_channels=self.location_channels), 
+                nn.ReLU()
+            )
+
+        self.reduce_channels = nn.Conv2d(out_ch*2, out_ch, 1)
+
+    def forward(self, x):
+        
+        if self.channel_ratio[0] != 0:
+            x1 = self.branch1(x)
+        
+        if self.channel_ratio[1] != 0:
+            x2 = self.branch2(x)
+        
+        if self.channel_ratio[0] == 0:
+            concat = x2
+        elif self.channel_ratio[1] == 0:
+            concat = x1
+        else:
+        
+            concat = torch.cat([x1, x2], dim=1)
+        
+        reduce = self.reduce_channels(concat)
+        return reduce
+
     
 class Attention_ConvNN_Attn_V_Branching(nn.Module):
     def __init__(self, 
@@ -2619,6 +3084,63 @@ class B_Conv2d_ConvNN_Attn_K_N(nn.Module):
             # Move model back to its original device
             self.to(original_device)
 
+class B_Conv2d_ConvNN_Attn_Spatial_K_N(nn.Module):
+    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, kernel_size=3, channel_ratio=(16, 16),num_classes=100, device="mps"):
+        super(B_Conv2d_ConvNN_Attn_Spatial_K_N, self).__init__()
+        
+        assert num_layers >= 2, "Number of layers must be at least 2"
+        assert mid_ch >= 8, "Middle channels must be at least 8"
+        
+        layers = []
+        
+        for i in range(num_layers):
+            if i == 0:
+                layers.append(Conv2d_ConvNN_Attn_Spatial_Branching(in_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+            else: 
+                layers.append(Conv2d_ConvNN_Attn_Spatial_Branching(mid_ch, mid_ch, K=K, samples=N, channel_ratio=channel_ratio, kernel_size=kernel_size))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+
+        self.features = nn.Sequential(*layers)
+
+        self.flatten = nn.Flatten()
+        
+        flattened_size = mid_ch * 32 * 32
+        
+        # Adjusted classifier size
+        self.classifier = nn.Sequential(
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.Linear(flattened_size, num_classes), # Increased intermediate size
+        )
+
+        self.device = device
+        self.to(self.device)
+        self.name = "B_Conv2d_ConvNN_Attn_Spatial_K_N" 
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.flatten(x)
+        x = self.classifier(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        # Ensure the model is on CPU for torchsummary if it causes issues with MPS
+        original_device = next(self.parameters()).device
+        try:
+            self.to("cpu")
+            print(f"--- Summary for {self.name} ---")
+            # torchsummary expects batch dimension, but input_size doesn't include it
+            summary(self, input_size=input_size, device="cpu") 
+        except Exception as e:
+            print(f"Could not generate summary: {e}")
+        finally:
+            # Move model back to its original device
+            self.to(original_device)
+
 class B_Conv2d_ConvNN_Attn_V_K_N(nn.Module):
     def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, kernel_size=3, channel_ratio=(16, 16),num_classes=100, device="mps"):
         super(B_Conv2d_ConvNN_Attn_V_K_N, self).__init__()
@@ -2903,6 +3425,63 @@ class B_Attention_ConvNN_Attn_K_N(nn.Module):
         finally:
             # Move model back to its original device
             self.to(original_device)
+            
+class B_Attention_ConvNN_Attn_Spatial_K_N(nn.Module):
+    def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, num_heads=4, channel_ratio=(16, 16),num_classes=100, device="mps"):
+        super(B_Attention_ConvNN_Attn_Spatial_K_N, self).__init__()
+        
+        assert num_layers >= 2, "Number of layers must be at least 2"
+        assert mid_ch >= 8, "Middle channels must be at least 8"
+        
+        layers = []
+        
+        for i in range(num_layers):
+            if i == 0:
+                layers.append(Attention_ConvNN_Attn_Spatial_Branching(in_ch, mid_ch, K=K, samples=N, num_heads=num_heads, channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+            else: 
+                layers.append(Attention_ConvNN_Attn_Spatial_Branching(mid_ch, mid_ch, K=K, samples=N, num_heads=num_heads, channel_ratio=channel_ratio))
+                # layers.append(nn.BatchNorm2d(mid_ch)) 
+                layers.append(nn.ReLU())
+
+        self.features = nn.Sequential(*layers)
+
+        self.flatten = nn.Flatten()
+        
+        flattened_size = mid_ch * 32 * 32
+        
+        # Adjusted classifier size
+        self.classifier = nn.Sequential(
+            nn.ReLU(),
+            # nn.Dropout(0.5),
+            nn.Linear(flattened_size, num_classes), # Increased intermediate size
+        )
+
+        self.device = device
+        self.to(self.device)
+        self.name = "B_Attention_ConvNN_Attn_Spatial_K_N" # Renamed for clarity
+
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.flatten(x)
+        x = self.classifier(x)
+        return x
+    
+    def summary(self, input_size = (3, 32, 32)): 
+        # Ensure the model is on CPU for torchsummary if it causes issues with MPS
+        original_device = next(self.parameters()).device
+        try:
+            self.to("cpu")
+            print(f"--- Summary for {self.name} ---")
+            # torchsummary expects batch dimension, but input_size doesn't include it
+            summary(self, input_size=input_size, device="cpu") 
+        except Exception as e:
+            print(f"Could not generate summary: {e}")
+        finally:
+            # Move model back to its original device
+            self.to(original_device)
 
 class B_Attention_ConvNN_Attn_V_K_N(nn.Module):
     def __init__(self, in_ch=3, mid_ch=16, num_layers=2, K=9, N=64, num_heads=4, channel_ratio=(16, 16),num_classes=100, device="mps"):
@@ -3133,6 +3712,34 @@ def b_conv2d_convnn_attn_k_n_10(pretrained=False, **kwargs):
     return model
 
 @register_model
+def b_conv2d_convnn_attn_spatial_k_n_100(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Conv2d_ConvNN_Attn_Spatial_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, kernel_size=3, channel_ratio=(16, 16), num_classes=100, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_conv2d_convnn_attn_spatial_k_n_10(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Conv2d_ConvNN_Attn_Spatial_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, kernel_size=3, channel_ratio=(16, 16), num_classes=10, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
 def b_conv2d_convnn_attn_v_k_n_100(pretrained=False, **kwargs):
     """Branching ConvNN Attention K N Samples"""
     # Ensure this function now uses the updated CNN class
@@ -3274,6 +3881,34 @@ def b_attention_convnn_attn_k_n_10(pretrained=False, **kwargs):
     return model
 
 @register_model
+def b_attention_convnn_attn_spatial_k_n_100(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_Attn_Spatial_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, num_heads=4, channel_ratio=(16, 16), num_classes=100, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
+def b_attention_convnn_attn_spatial_k_n_10(pretrained=False, **kwargs):
+    """Branching ConvNN Attention K N Samples"""
+    # Ensure this function now uses the updated CNN class
+    model = B_Attention_ConvNN_Attn_Spatial_K_N(in_ch=3, mid_ch=16, num_layers=2, K=9, N=8, num_heads=4, channel_ratio=(16, 16), num_classes=10, device='mps')
+    
+    # model.default_cfg = _cfg(
+    #     input_size=(3, 32, 32),
+    #     mean=(0.5071, 0.4867, 0.4408),
+    #     std=(0.2675, 0.2565, 0.2761),
+    #     num_classes=100
+    # )
+    return model
+
+@register_model
 def b_attention_convnn_attn_v_k_n_100(pretrained=False, **kwargs):
     """Branching ConvNN Attention K N Samples"""
     # Ensure this function now uses the updated CNN class
@@ -3340,11 +3975,13 @@ if __name__ == "__main__":
         b_conv2d_convnn_k_n_100(), 
         b_conv2d_convnn_spatial_k_n_100(),
         b_conv2d_convnn_attn_k_n_100(),
+        b_conv2d_convnn_attn_spatial_k_n_100(),
         b_conv2d_convnn_attn_v_k_n_100(),
         b_attention_convnn_k_all_100(),
         b_attention_convnn_k_n_100(),
         b_attention_convnn_spatial_k_n_100(),
         b_attention_convnn_attn_k_n_100(),
+        b_attention_convnn_attn_spatial_k_n_100(),
         b_attention_convnn_attn_v_k_n_100(),
         b_attention_conv2d_100(),
         
@@ -3352,11 +3989,13 @@ if __name__ == "__main__":
         b_conv2d_convnn_k_n_10(), 
         b_conv2d_convnn_spatial_k_n_10(),
         b_conv2d_convnn_attn_k_n_10(),
+        b_conv2d_convnn_attn_spatial_k_n_10(), 
         b_conv2d_convnn_attn_v_k_n_10(),
         b_attention_convnn_k_all_10(),
         b_attention_convnn_k_n_10(),
         b_attention_convnn_spatial_k_n_10(),
         b_attention_convnn_attn_k_n_10(),
+        b_attention_convnn_attn_spatial_k_n_10(), 
         b_attention_convnn_attn_v_k_n_10(),
         b_attention_conv2d_10()
         

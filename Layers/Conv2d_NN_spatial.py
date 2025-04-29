@@ -14,7 +14,8 @@ class Conv2d_NN_spatial(nn.Module):
    def __init__(self, 
                 in_channels, 
                 out_channels,
-                K=3, stride=3, 
+                K=3, 
+                stride=3, 
                 padding=0, 
                 shuffle_pattern="BA", 
                 shuffle_scale=2, 
@@ -25,7 +26,7 @@ class Conv2d_NN_spatial(nn.Module):
                 ): 
       
       
-      super().__init__()
+      super(Conv2d_NN_spatial, self).__init__()
       self.in_channels = in_channels
       self.out_channels = out_channels
       self.K = K
@@ -52,27 +53,21 @@ class Conv2d_NN_spatial(nn.Module):
          else:
             self.in_channels_1d = self.in_channels
             self.out_channels_1d = self.out_channels
-      
+            
+      self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
+      self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
       
       self.Conv1d_NN_spatial = Conv1d_NN_spatial(in_channels=self.in_channels_1d,
                                                    out_channels=self.out_channels_1d,
                                                    K=self.K,
                                                    stride=self.stride,
                                                    padding=self.padding,
-                                                   shuffle_pattern="NA",
-                                                   shuffle_scale=1,
                                                    magnitude_type=self.magnitude_type
                                                    )
                                  
-      
       self.flatten = nn.Flatten(start_dim=2)      
       
-      self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
-      self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
-      
       self.pointwise_conv = nn.Conv2d(self.out_channels + 2, self.out_channels, kernel_size=1)
-
-      
       
    def forward(self, x): 
       
@@ -107,10 +102,10 @@ class Conv2d_NN_spatial(nn.Module):
       
       x_sample = self.flatten(x1[:, :, x_grid, y_grid])
       
-      # input matrix
+      # Input Matrix
       x2 = self.flatten(x1)
       
-      x3 = self.Conv1d_NN_spatial(x2, x_sample, flat_indices)
+      x3 = self.Conv1d_NN_spatial(x2, x_sample, flat_indices.to(x.device))
       
       unflatten = nn.Unflatten(dim=2, unflattened_size=x1.shape[2:])
       x4 = unflatten(x3)
@@ -146,7 +141,7 @@ class Conv2d_NN_spatial(nn.Module):
 if __name__ == "__main__":
    x = torch.rand(32, 3, 32, 32)
 
-   conv2d_nn_spatial = Conv2d_NN_spatial(in_channels=3, out_channels=8, K=3, stride=3, padding=0, shuffle_pattern="BA", shuffle_scale=2, samples=5, sample_padding= 3, magnitude_type="similarity", location_channels=True)
+   conv2d_nn_spatial = Conv2d_NN_spatial(in_channels=3, out_channels=8, K=3, stride=3, padding=0, samples=5, sample_padding= 3, magnitude_type="similarity", location_channels=True)
    output = conv2d_nn_spatial(x)
    
    print("Input shape:", x.shape) # Should be (32, 3, 32, 32)

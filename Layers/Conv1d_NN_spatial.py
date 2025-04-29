@@ -1,4 +1,5 @@
 '''Convolution 1D Spatially Located Nearest Neighbor Layer'''
+### THIS IS NOT A STANDALONE LAYER. IT IS A COMPONENT OF THE CONV2D_NN_SPATIAL LAYER.
 
 '''
 Features: 
@@ -36,11 +37,9 @@ class Conv1d_NN_spatial(nn.Module):
     def __init__(self, 
                  in_channels, 
                  out_channels, 
-                 K=3, 
-                 stride=3, 
-                 padding=0, 
-                 shuffle_pattern='N/A', 
-                 shuffle_scale=2, 
+                 K, 
+                 stride, 
+                 padding, 
                  magnitude_type='similarity'
                  ): 
         
@@ -58,29 +57,16 @@ class Conv1d_NN_spatial(nn.Module):
             magnitude_type (str): Distance or Similarity.
         """
         
-        super().__init__()
+        super(Conv1d_NN_spatial, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.K = K
         self.stride = stride 
-        self.padding = padding
-        self.shuffle_pattern = shuffle_pattern 
-        self.shuffle_scale = shuffle_scale
-        
+        self.padding = padding        
 
         self.magnitude_type = magnitude_type 
         self.maximum = True if self.magnitude_type == 'similarity' else False 
-        
-        # Unshuffle layer 
-        self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
-        
-        # Shuffle Layer 
-        self.shuffle_layer = PixelShuffle1D(upscale_factor=self.shuffle_scale)
-                
-        # Channels for Conv1d Layer
-        self.in_channels = in_channels * shuffle_scale if self.shuffle_pattern in ["BA", "B"] else in_channels
-        self.out_channels = out_channels * shuffle_scale if self.shuffle_pattern in ["BA", "A"] else out_channels
-
+    
         # Conv1d Layer 
         self.conv1d_layer = nn.Conv1d(in_channels=self.in_channels, 
                                       out_channels=self.out_channels, 
@@ -88,33 +74,19 @@ class Conv1d_NN_spatial(nn.Module):
                                       stride=self.stride, 
                                       padding=self.padding)
 
-        self.relu = nn.ReLU()
-
     def forward(self, x, y, indices): 
-
-        # Unshuffle Layer 
-        if self.shuffle_pattern in ["B", "BA"]:
-            x1 = self.unshuffle_layer(x)
-        else:
-            x1 = x
             
         if self.magnitude_type == 'distance':
-            matrix_magnitude = self.calculate_distance_matrix_N(x1, y)
+            matrix_magnitude = self.calculate_distance_matrix_N(x, y)
         elif self.magnitude_type == 'similarity':
-            matrix_magnitude = self.calculate_similarity_matrix_N(x1, y)        
+            matrix_magnitude = self.calculate_similarity_matrix_N(x, y)        
         
-        prime = self.prime_vmap_2d_N(x1, matrix_magnitude, self.K, indices, self.maximum)
+        prime = self.prime_vmap_2d_N(x, matrix_magnitude, self.K, indices, self.maximum)
         
         # Conv1d Layer
         x2 = self.conv1d_layer(prime)
-                
-        # Shuffle Layer
-        if self.shuffle_pattern in ["A", "BA"]:
-            x3 = self.shuffle_layer(x2)
-        else:
-            x3 = x2
         
-        return x3
+        return x2
     
     
     ### N Samples ### 
