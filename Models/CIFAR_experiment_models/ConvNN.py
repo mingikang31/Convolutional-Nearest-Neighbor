@@ -1257,6 +1257,7 @@ class Conv2d_NN_Attn_spatial(nn.Module):
                 shuffle_pattern="BA", 
                 shuffle_scale=2, 
                 samples=3, 
+                samples_padding=0,
                 magnitude_type="similarity",
                 location_channels=False, 
                 image_size=(32, 32)

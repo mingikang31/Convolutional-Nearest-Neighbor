@@ -6,7 +6,6 @@ from torchvision.datasets.cifar import CIFAR10
 from torch.utils.data import DataLoader
 import numpy as np 
 
-
 class PatchEmbedding(nn.Module): 
     def __init__(self, d_model, img_size, patch_size, n_channels=3): 
         super(PatchEmbedding, self).__init__()

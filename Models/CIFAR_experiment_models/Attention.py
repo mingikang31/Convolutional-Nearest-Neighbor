@@ -60,9 +60,9 @@ class Attention2d(nn.Module):
     def __init__(self, 
                  in_channels,
                  out_channels,
-                 shuffle_pattern='N/A',
-                 shuffle_scale=1,
-                 num_heads=1,
+                 shuffle_pattern='BA',
+                 shuffle_scale=2,
+                 num_heads=4,
                  location_channels=False,
                  ): 
         super(Attention2d, self).__init__()
