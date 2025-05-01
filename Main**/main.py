@@ -4,8 +4,6 @@ import argparse
 from pathlib import Path
 import os 
 
-
-
 # Datasets 
 from dataset import ImageNet, CIFAR10, CIFAR100, MNIST
 from train_eval import Train_Eval
@@ -13,6 +11,8 @@ from train_eval import Train_Eval
 # Models 
 from models import ClassificationModel 
 
+# Utilities 
+from utils import write_to_file, set_seed
 
 
 def args_parser():
@@ -40,8 +40,7 @@ def args_parser():
     # Arguments for Data 
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", "MNIST"], help="Dataset to use for training and evaluation")
     parser.add_argument("--data_path", type=str, default="./Data", help="Path to the dataset")
-    parser.add_argument("--input_size", type=int, default=32, help="Input size for the model")
-    
+        
     # Training Arguments
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size for training and evaluation")
     parser.add_argument("--num_epochs", type=int, default=100, help="Number of epochs for training")
@@ -52,12 +51,10 @@ def args_parser():
     parser.add_argument("--device", type=str, default="cuda", choices=["cpu", "cuda", "mps"], help="Device to use for training and evaluation")
     parser.add_argument('--seed', default=0, type=int)
     
-    
-
     # Output Arguments 
     parser.add_argument("--output_dir", type=str, default="./Output/ConvNN", help="Directory to save the output files")
     
-    
+    return parser
 ### Come back to this later 
 def check_args(args):
     # Check the arguments based on the model 
@@ -82,23 +79,33 @@ def main(args):
     if args.dataset == "cifar10":
         dataset = CIFAR10(args)
         args.num_classes = dataset.num_classes 
-        args.input_size = dataset.img_size 
+        args.img_size = dataset.img_size 
     elif args.dataset == "cifar100":
         dataset = CIFAR100(args)
         args.num_classes = dataset.num_classes 
-        args.input_size = dataset.img_size 
+        args.img_size = dataset.img_size 
     elif args.dataset == "MNIST":
         dataset = MNIST(args)
         args.num_classes = dataset.num_classes 
-        args.input_size = dataset.img_size 
+        args.img_size = dataset.img_size 
     else:
         raise ValueError("Dataset not supported")
     
     
     # Model 
-    
     model = ClassificationModel(args)
     print(f"Model: {model.name}")
+    
+    # Parameters
+    total_params, trainable_params = model.parameter_count()
+    print(f"Total Parameters: {total_params}")
+    print(f"Trainable Parameters: {trainable_params}")
+    args.total_params = total_params
+    args.trainable_params = trainable_params
+    
+    # Set the seed for reproducibility
+    set_seed(args.seed)
+    
     
     # Training Modules 
     train_eval_results = Train_Eval(args, 
@@ -108,9 +115,9 @@ def main(args):
                                 )
     
     # Storing Results in output directory 
-    
-    
-
+    write_to_file(os.path.join(args.output_dir, "args.txt"), args)
+    write_to_file(os.path.join(args.output_dir, "model.txt"), model)
+    write_to_file(os.path.join(args.output_dir, "train_eval_results.txt"), train_eval_results)
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", parents=[args_parser()])
@@ -118,4 +125,3 @@ if __name__ == '__main__':
 
     main(args)
     
-

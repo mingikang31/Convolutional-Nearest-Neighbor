@@ -495,8 +495,8 @@ class Conv2d_NN_Attn(nn.Module):
         
         return xy_grid_normalized.to(device)   
 
-"""(4) Conv2d_NN_Attn_spatial"""
-class Conv2d_NN_Attn_spatial(nn.Module): 
+"""(4) Conv2d_NN_Attn_Spatial"""
+class Conv2d_NN_Attn_Spatial(nn.Module): 
     """
     Convolution 2D Nearest Neighbor Layer for Convolutional Neural Networks.
      - Location Channels : add coordinates -> unshuffle -> flatten -> ConvNN -> unflatten -> shuffle -> remove coordinate 
@@ -553,7 +553,7 @@ class Conv2d_NN_Attn_spatial(nn.Module):
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'" 
         assert isinstance(image_size, tuple) and len(image_size) == 2, "Error: image_size must be a tuple of (height, width)"
         
-        super(Conv2d_NN_Attn_spatial, self).__init__()
+        super(Conv2d_NN_Attn_Spatial, self).__init__()
         
         # Initialize parameters
         self.in_channels = in_channels
@@ -890,7 +890,7 @@ class Attention2d(nn.Module):
         # 1D Attention Layer
         self.Attention1d = Attention1d(in_channels=self.in_channels_1d,
                                         out_channels=self.out_channels_1d,
-                                        shuffle_pattern="N/A",
+                                        shuffle_pattern="NA",
                                         shuffle_scale=1,
                                         num_heads=self.num_heads
                                         )
@@ -920,7 +920,7 @@ class Attention2d(nn.Module):
                 x1 = x
                 
         x2 = self.flatten(x1)
-        x3 = self.attention1d(x2)
+        x3 = self.Attention1d(x2)
 
         unflatten = nn.Unflatten(dim=2, unflattened_size=x1.shape[2:])
         x4 = unflatten(x3)
@@ -1001,7 +1001,8 @@ class Conv2d_ConvNN_Branching(nn.Module):
                           self.channel_ratio[0], 
                           self.kernel_size, 
                           stride=1, 
-                          padding=1),
+                          padding=(self.kernel_size - 1) // 2 if self.kernel_size % 2 == 1 else self.kernel_size // 2
+                          ),
                 nn.ReLU()
             )
         
@@ -1013,6 +1014,7 @@ class Conv2d_ConvNN_Branching(nn.Module):
                           K = self.K, 
                           stride = self.K, 
                           samples = self.samples, 
+                          padding=0,
                           shuffle_pattern=self.shuffle_pattern, 
                           shuffle_scale=self.shuffle_scale,
                           magnitude_type=self.magnitude_type,
@@ -1084,7 +1086,7 @@ class Conv2d_ConvNN_Spatial_Branching(nn.Module):
                           self.channel_ratio[0], 
                           self.kernel_size, 
                           stride=1, 
-                          padding=1
+                          padding=(self.kernel_size - 1) // 2 if self.kernel_size % 2 == 1 else self.kernel_size // 2
                          ),
                 nn.ReLU()
             )
@@ -1096,6 +1098,7 @@ class Conv2d_ConvNN_Spatial_Branching(nn.Module):
                                   self.channel_ratio[1], 
                                   K=self.K, 
                                   stride=self.K, 
+                                  padding=0,
                                   samples=self.samples, 
                                   shuffle_pattern=self.shuffle_pattern, 
                                   shuffle_scale=self.shuffle_scale,
@@ -1138,7 +1141,8 @@ class Conv2d_ConvNN_Attn_Branching(nn.Module):
                  shuffle_scale, 
                  samples, 
                  image_size,
-                 magnitude_type,                  location_channels
+                 magnitude_type,                  
+                 location_channels
                 ):
         super(Conv2d_ConvNN_Attn_Branching, self).__init__()
 
@@ -1172,7 +1176,7 @@ class Conv2d_ConvNN_Attn_Branching(nn.Module):
                           self.channel_ratio[0], 
                           self.kernel_size, 
                           stride=1, 
-                          padding=1
+                          padding=(self.kernel_size - 1) // 2 if self.kernel_size % 2 == 1 else self.kernel_size // 2
                          ),
                 nn.ReLU()
             )
@@ -1184,6 +1188,7 @@ class Conv2d_ConvNN_Attn_Branching(nn.Module):
                                self.channel_ratio[1], 
                                K=self.K, 
                                stride=self.K, 
+                               padding=0,
                                samples=self.samples, 
                                shuffle_pattern=self.shuffle_pattern,
                                shuffle_scale=self.shuffle_scale,    
@@ -1224,13 +1229,13 @@ class Conv2d_ConvNN_Attn_Spatial_Branching(nn.Module):
                  shuffle_scale,
                  samples, 
                  image_size, 
-                 matrix_magnitude, 
+                 magnitude_type, 
                  location_channels, 
                  ):
         super(Conv2d_ConvNN_Attn_Spatial_Branching, self).__init__()
         ### Assertions ###
         assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
-        assert matrix_magnitude in ["distance", "similarity"], "Error: matrix_magnitude must be one of ['distance', 'similarity']"
+        assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(image_size, tuple) and len(image_size) == 2, "Error: image_size must be a tuple of (height, width)"
         assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
@@ -1248,7 +1253,7 @@ class Conv2d_ConvNN_Attn_Spatial_Branching(nn.Module):
         self.samples = samples
         self.image_size = image_size 
         
-        self.matrix_magnitude = matrix_magnitude
+        self.magnitude_type = magnitude_type
         self.location_channels = location_channels
         
         # Branch1 - Conv2d    
@@ -1258,7 +1263,7 @@ class Conv2d_ConvNN_Attn_Spatial_Branching(nn.Module):
                           self.channel_ratio[0], 
                           self.kernel_size, 
                           stride=1, 
-                          padding=1
+                          padding=(self.kernel_size - 1) // 2 if self.kernel_size % 2 == 1 else self.kernel_size // 2
                          ),
                 nn.ReLU()
             )
@@ -1266,15 +1271,16 @@ class Conv2d_ConvNN_Attn_Spatial_Branching(nn.Module):
         # Branch2 - ConvNN_Attn_Spatial
         if self.channel_ratio[1] != 0:
             self.branch2 = nn.Sequential(
-                Conv2d_NN_Attn_spatial(self.in_ch, 
+                Conv2d_NN_Attn_Spatial(self.in_ch, 
                                self.channel_ratio[1], 
                                K=self.K, 
                                stride=self.K, 
+                               padding=0,
                                samples=self.samples, 
                                shuffle_pattern=self.shuffle_pattern,
                                shuffle_scale=self.shuffle_scale,    
                                image_size=self.image_size, 
-                               matrix_magnitude=self.matrix_magnitude,
+                               magnitude_type=self.magnitude_type,
                                location_channels=self.location_channels), 
                 nn.ReLU()
             )
@@ -1308,14 +1314,14 @@ class Conv2d_ConvNN_Attn_V_Branching(nn.Module):
                  shuffle_scale,
                  samples, 
                  image_size,
-                 matrix_magnitude,
+                 magnitude_type,
                  location_channels,
                 ):
         super(Conv2d_ConvNN_Attn_V_Branching, self).__init__()
         ### Assertions ###
         assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
         assert isinstance(image_size, tuple) and len(image_size) == 2, "Error: image_size must be a tuple of (height, width)"
-        assert matrix_magnitude in ["distance", "similarity"], "Error: matrix_magnitude must be one of ['distance', 'similarity']"
+        assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"        
         assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
@@ -1332,7 +1338,7 @@ class Conv2d_ConvNN_Attn_V_Branching(nn.Module):
         self.samples = samples
         self.image_size = image_size
         
-        self.matrix_magnitude = matrix_magnitude
+        self.magnitude_type = magnitude_type
         self.location_channels = location_channels
         
         # Branch1 - Conv2d
@@ -1342,7 +1348,7 @@ class Conv2d_ConvNN_Attn_V_Branching(nn.Module):
                           self.channel_ratio[0], 
                           self.kernel_size, 
                           stride=1, 
-                          padding=1
+                          padding=(self.kernel_size - 1) // 2 if self.kernel_size % 2 == 1 else self.kernel_size // 2
                          ),
                 nn.ReLU()
             )
@@ -1354,11 +1360,12 @@ class Conv2d_ConvNN_Attn_V_Branching(nn.Module):
                                  self.channel_ratio[1], 
                                  K = self.K, 
                                  stride = self.K, 
+                                 padding=0,
                                  samples = self.samples, 
                                  shuffle_pattern=self.shuffle_pattern,
                                  shuffle_scale=self.shuffle_scale,
                                  image_size = self.image_size, 
-                                 matrix_magnitude=self.matrix_magnitude,
+                                 magnitude_type=self.magnitude_type,
                                  location_channels = self.location_channels
                                 ), 
                 nn.ReLU()
@@ -1392,13 +1399,13 @@ class Attention_ConvNN_Branching(nn.Module):
                  shuffle_pattern,
                  shuffle_scale,
                  samples, 
-                 matrix_magnitude,
+                 magnitude_type,
                  location_channels):
         super(Attention_ConvNN_Branching, self).__init__()
 
         ### Assertions ### 
         assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
-        assert matrix_magnitude in ["distance", "similarity"], "Error: matrix_magnitude must be one of ['distance', 'similarity']"
+        assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(num_heads, int) and num_heads > 0, "Error: num_heads must be a positive integer"
         assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
@@ -1415,7 +1422,7 @@ class Attention_ConvNN_Branching(nn.Module):
         self.shuffle_scale = shuffle_scale
         self.samples = samples
         
-        self.matrix_magnitude = matrix_magnitude
+        self.magnitude_type = magnitude_type
         self.location_channels = location_channels
         
         # Branch1 - Attention2d
@@ -1437,10 +1444,11 @@ class Attention_ConvNN_Branching(nn.Module):
                           self.channel_ratio[1], 
                           K=self.K, 
                           stride=self.K, 
+                          padding=0,
                           samples=self.samples, 
                           shuffle_pattern=self.shuffle_pattern,
                           shuffle_scale=self.shuffle_scale,
-                          matrix_magnitude=self.matrix_magnitude,
+                          magnitude_type=self.magnitude_type,
                           location_channels=self.location_channels), 
                 nn.ReLU()
             )
@@ -1473,13 +1481,13 @@ class Attention_ConvNN_Spatial_Branching(nn.Module):
                  shuffle_pattern,  
                  shuffle_scale,  
                  samples,
-                 matrix_magnitude,
+                 magnitude_type,
                  location_channels):
         super(Attention_ConvNN_Spatial_Branching, self).__init__()
         
         ### Assertions ###
         assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
-        assert matrix_magnitude in ["distance", "similarity"], "Error: matrix_magnitude must be one of ['distance', 'similarity']"
+        assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(num_heads, int) and num_heads > 0, "Error: num_heads must be a positive integer"
         assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
@@ -1496,7 +1504,7 @@ class Attention_ConvNN_Spatial_Branching(nn.Module):
         self.shuffle_scale = shuffle_scale
         self.samples = samples
         
-        self.matrix_magnitude = matrix_magnitude
+        self.magnitude_type = magnitude_type
         self.location_channels = location_channels
         
         # Branch1 - Attention2d
@@ -1518,10 +1526,11 @@ class Attention_ConvNN_Spatial_Branching(nn.Module):
                                   out_channels=channel_ratio[1], 
                                   K=self.K, 
                                   stride=self.K, 
+                                  padding=0,
                                   samples=self.samples, 
                                   shuffle_pattern=self.shuffle_pattern,
                                   shuffle_scale=self.shuffle_scale,
-                                  matrix_magnitude=self.matrix_magnitude,
+                                  magnitude_type=self.magnitude_type,
                                   location_channels=self.location_channels), 
                 nn.ReLU()
             )
@@ -1550,20 +1559,19 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
                  out_channels, 
                  channel_ratio, 
                  num_heads, 
-                 kernel_size, 
                  K, 
                  shuffle_pattern, 
                  shuffle_scale, 
                  samples, 
                  image_size,
-                 matrix_magnitude,
+                 magnitude_type,
                  location_channels):
         
         super(Attention_ConvNN_Attn_Branching, self).__init__()
 
         ### Assertions ### 
         assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
-        assert matrix_magnitude in ["distance", "similarity"], "Error: matrix_magnitude must be one of ['distance', 'similarity']"
+        assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(num_heads, int) and num_heads > 0, "Error: num_heads must be a positive integer"
         assert isinstance(image_size, tuple) and len(image_size) == 2, "Error: image_size must be a tuple of (height, width)"
@@ -1575,7 +1583,6 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
         self.out_channels = out_channels    
         self.channel_ratio = channel_ratio
         self.num_heads = num_heads
-        self.kernel_size = kernel_size
         self.K = K
         
         self.shuffle_pattern = shuffle_pattern
@@ -1583,7 +1590,7 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
         self.samples = samples
         self.image_size = image_size
         
-        self.matrix_magnitude = matrix_magnitude
+        self.magnitude_type = magnitude_type
         self.location_channels = location_channels
         
         # Branch1 - Attention2d
@@ -1605,11 +1612,12 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
                                self.channel_ratio[1], 
                                K=self.K, 
                                stride=self.K, 
+                               padding=0,
                                shuffle_pattern=self.shuffle_pattern,
                                shuffle_scale=self.shuffle_scale,
                                samples=self.samples, 
                                image_size=self.image_size, 
-                               matrix_magnitude=self.matrix_magnitude,
+                               magnitude_type=self.magnitude_type,
                                location_channels=self.location_channels), 
                 nn.ReLU()
             )
@@ -1638,20 +1646,19 @@ class Attention_ConvNN_Attn_Spatial_Branching(nn.Module):
                  out_channels, 
                  channel_ratio, 
                  num_heads,
-                 kernel_size, 
                  K, 
                  shuffle_pattern, 
                  shuffle_scale, 
                  samples, 
                  image_size,
-                 matrix_magnitude,
+                 magnitude_type,
                  location_channels):
         
         super(Attention_ConvNN_Attn_Spatial_Branching, self).__init__()
         
         ### Assertions ###
         assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
-        assert matrix_magnitude in ["distance", "similarity"], "Error: matrix_magnitude must be one of ['distance', 'similarity']"
+        assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(num_heads, int) and num_heads > 0, "Error: num_heads must be a positive integer"
         assert isinstance(image_size, tuple) and len(image_size) == 2, "Error: image_size must be a tuple of (height, width)"
@@ -1662,7 +1669,6 @@ class Attention_ConvNN_Attn_Spatial_Branching(nn.Module):
         self.in_channels = in_channels 
         self.out_channels = out_channels    
         self.channel_ratio = channel_ratio
-        self.kernel_size = kernel_size
         self.K = K
         self.samples = samples
         
@@ -1671,7 +1677,7 @@ class Attention_ConvNN_Attn_Spatial_Branching(nn.Module):
         self.num_heads = num_heads
         self.image_size = image_size
         
-        self.matrix_magnitude = matrix_magnitude
+        self.magnitude_type = magnitude_type
         self.location_channels = location_channels
         
         # Branch1 - Attention2d
@@ -1689,15 +1695,16 @@ class Attention_ConvNN_Attn_Spatial_Branching(nn.Module):
         # Branch2 - ConvNN_Attn_Spatial
         if self.channel_ratio[1] != 0:
             self.branch2 = nn.Sequential(
-                Conv2d_NN_Attn_spatial(self.in_channels, 
+                Conv2d_NN_Attn_Spatial(self.in_channels, 
                                self.channel_ratio[1], 
                                K=self.K, 
                                stride=self.K, 
+                               padding=0,
                                shuffle_pattern=self.shuffle_pattern,
                                shuffle_scale=self.shuffle_scale,
                                samples=self.samples, 
                                image_size=self.image_size, 
-                               matrix_magnitude=self.matrix_magnitude,
+                               magnitude_type=self.magnitude_type,
                                location_channels=self.location_channels), 
                 nn.ReLU()
             )
@@ -1726,7 +1733,6 @@ class Attention_ConvNN_Attn_V_Branching(nn.Module):
                     out_channels, 
                     channel_ratio, 
                     num_heads, 
-                    kernel_size, 
                     K, 
                     shuffle_pattern, 
                     shuffle_scale,
@@ -1750,7 +1756,6 @@ class Attention_ConvNN_Attn_V_Branching(nn.Module):
         self.out_channels = out_channels    
         self.channel_ratio = channel_ratio
         self.num_heads = num_heads
-        self.kernel_size = kernel_size
         self.K = K
         
         self.shuffle_pattern = shuffle_pattern
@@ -1779,6 +1784,7 @@ class Attention_ConvNN_Attn_V_Branching(nn.Module):
                                self.channel_ratio[1], 
                                K=self.K, 
                                stride=self.K, 
+                               padding=0,
                                shuffle_pattern=self.shuffle_pattern,
                                shuffle_scale=self.shuffle_scale,
                                samples=self.samples, 
@@ -1857,7 +1863,7 @@ class Attention_Conv2d_Branching(nn.Module):
                           self.channel_ratio[1], 
                           self.kernel_size, 
                           stride=1, 
-                          padding=1
+                          padding=(self.kernel_size - 1) // 2 if self.kernel_size % 2 == 1 else self.kernel_size // 2
                          ),
                 nn.ReLU()
             )
