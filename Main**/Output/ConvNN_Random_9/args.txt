@@ -1,0 +1,25 @@
+model: Conv2d
+num_layers: 2
+hidden_dim: 8
+k_kernel: 5
+sampling: Random
+num_samples: 16
+num_heads: 4
+shuffle_pattern: BA
+shuffle_scale: 2
+magnitude_type: similarity
+location_channels: False
+dataset: cifar10
+data_path: ./Data
+batch_size: 16
+num_epochs: 3
+lr: 0.001
+criterion: CrossEntropy
+opt: adamw
+device: mps
+seed: 0
+output_dir: ./Output/ConvNN_Random_9
+num_classes: 10
+img_size: (3, 32, 32)
+total_params: 84146
+trainable_params: 84146
