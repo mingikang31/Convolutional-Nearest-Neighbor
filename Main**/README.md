@@ -36,7 +36,7 @@ pip install torch torchvision
 To train and evaluate ConvNN on CIFAR100 for 100 epochs run, use this command: 
 
 ```Shell 
-python main.py --model ConvNN --num_layers 2 --hidden_dim 8 --k_kernel 5 --sampling Random --num_samples 16 --shuffle_pattern BA --shuffle_scale 2 --batch_size 16 --output_dir ./Output/ConvNN --device mps --num_epochs 100 -lr 0.0001 --dataset CIFAR100
+python main.py --model ConvNN --num_layers 2 --hidden_dim 8 --k_kernel 5 --sampling Random --num_samples 16 --shuffle_pattern BA --shuffle_scale 2 --batch_size 16 --output_dir ./Output/ConvNN --device mps --num_epochs 100 --lr 0.0001 --dataset CIFAR100
 ```
 
 ## License

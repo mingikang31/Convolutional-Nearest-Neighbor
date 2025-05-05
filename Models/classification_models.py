@@ -1270,35 +1270,36 @@ def classification_check():
     # Models
     models = [CNN(), 
               
-                ConvNN_2D_K_All(), 
-                ConvNN_2D_K_N(), ConvNN_2D_Spatial_K_N(),
-                ConvNN_2D_K_All_Location(), ConvNN_2D_K_N_Location(), 
-                ConvNN_2D_Spatial_K_N_Location(),
+                ConvNN_2D_K_All(shuffle_pattern="NA", shuffle_scale=1), 
+                ConvNN_2D_K_N(shuffle_pattern="NA", shuffle_scale=1), ConvNN_2D_Spatial_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                ConvNN_2D_K_All_Location(shuffle_pattern="NA", shuffle_scale=1), 
+                ConvNN_2D_K_N_Location(shuffle_pattern="NA", shuffle_scale=1), 
+                ConvNN_2D_Spatial_K_N_Location(shuffle_pattern="NA", shuffle_scale=1),
 
-                ConvNN_2D_Attn_K_All(), 
-                ConvNN_2D_Attn_K_N(), 
-                ConvNN_2D_Attn_Spatial_K_N(),
-                ConvNN_2D_Attn_V_K_All(),
-                ConvNN_2D_Attn_V_K_N(),
+                ConvNN_2D_Attn_K_All(shuffle_pattern="NA", shuffle_scale=1), 
+                ConvNN_2D_Attn_K_N(shuffle_pattern="NA", shuffle_scale=1), 
+                ConvNN_2D_Attn_Spatial_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                ConvNN_2D_Attn_V_K_All(shuffle_pattern="NA", shuffle_scale=1),
+                ConvNN_2D_Attn_V_K_N(shuffle_pattern="NA", shuffle_scale=1),
 
-                Attention_2D(),
+                Attention_2D(shuffle_pattern="NA", shuffle_scale=1),
 
                 Local_Global_ConvNN_2D(), 
                 Global_Local_ConvNN_2D(), 
 
-                B_Conv2d_ConvNN_K_All(),
-                B_Conv2d_ConvNN_K_N(),
-                B_Conv2d_ConvNN_Spatial_K_N(),
-                B_Conv2d_ConvNN_Attn_K_N(),
-                B_Conv2d_ConvNN_Attn_Spatial_K_N(),
-                B_Conv2d_ConvNN_Attn_V_K_N(),
-                B_Attention_ConvNN_K_All(),
-                B_Attention_ConvNN_K_N(),
-                B_Attention_ConvNN_Spatial_K_N(),
-                B_Attention_ConvNN_Attn_K_N(),
-                B_Attention_ConvNN_Attn_Spatial_K_N(),
-                B_Attention_ConvNN_Attn_V_K_N(),
-                B_Attention_Conv2d(),
+                B_Conv2d_ConvNN_K_All(shuffle_pattern="NA", shuffle_scale=1),
+                B_Conv2d_ConvNN_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                B_Conv2d_ConvNN_Spatial_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                B_Conv2d_ConvNN_Attn_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                B_Conv2d_ConvNN_Attn_Spatial_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                B_Conv2d_ConvNN_Attn_V_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                B_Attention_ConvNN_K_All(shuffle_pattern="NA", shuffle_scale=1),
+                B_Attention_ConvNN_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                B_Attention_ConvNN_Spatial_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                B_Attention_ConvNN_Attn_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                B_Attention_ConvNN_Attn_Spatial_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                B_Attention_ConvNN_Attn_V_K_N(shuffle_pattern="NA", shuffle_scale=1),
+                B_Attention_Conv2d(shuffle_pattern="NA", shuffle_scale=1),
                 
 
 
@@ -1315,9 +1316,9 @@ def classification_check():
     for model in models:
         try:
             ex_out = model(ex)
-            print(f"{model.name}'s output Shape: {ex_out.shape}\n")
+            # print(f"{model.name}'s output Shape: {ex_out.shape}\n")
             
-            # print(f"{model.name}'s Number of Parameters: {count_parameters(model)}\n")
+            print(f"{model.name}'s Number of Parameters: {count_parameters(model)}\n")
             
             # print(model.summary())
         except Exception as e:
