@@ -5,6 +5,8 @@ Layers/__pycache__
 Testing/data/*
 
 Playground/data/*
+Data/* 
+Data
 
 .env
 
