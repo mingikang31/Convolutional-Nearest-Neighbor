@@ -9,9 +9,7 @@ from dataset import ImageNet, CIFAR10, CIFAR100
 from train_eval import Train_Eval
 
 # Models 
-from simple import SimpleModel 
 from vgg import VGG
-from vit import ViT
 
 # Utilities 
 from utils import write_to_file, set_seed
@@ -21,23 +19,11 @@ def args_parser():
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", add_help=False) 
     
     # Model Arguments
-    parser.add_argument("--model", type=str, default="Simple", choices=["Simple", "VGG", "ViT"], help="Model to use for training and evaluation")
-    parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention", "Conv1d"], help="Model to use for training and evaluation")
-    parser.add_argument("--num_layers", type=int, default=4, help="Number of layers in the model")   
-    parser.add_argument("--hidden_dim", type=int, default=16, help="Hidden dimension for the model")
+    parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], help="Model to use for training and evaluation")
     
     # Additional Layer Arguments
-    parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN")
-    parser.add_argument("--kernel_size", type=int, default=3, help="Kernel Size for Conv2d or Conv1d (in ViT)")        
     parser.add_argument("--sampling", type=str, default="All", choices=["All", "Random", "Spatial"], help="Sampling method for ConvNN Models")
-    parser.add_argument("--num_samples", type=str, default="64", help="Number of samples for ConvNN Models")
-    
-    
-    parser.add_argument("--num_heads", type=int, default=4, help="Number of heads for Attention Models")
-    parser.add_argument("--num_patches", type=int, default=4, help="Number of patches for Attention Models")
-    parser.add_argument("--patch_size", type=int, default=16, help="Patch size for Attention Models")
-    parser.add_argument("--d_model", type=int, default=9, help="Dimensionality of the model for Attention Models")
-    
+        
     
     
     parser.add_argument("--shuffle_pattern", type=str, default="BA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")

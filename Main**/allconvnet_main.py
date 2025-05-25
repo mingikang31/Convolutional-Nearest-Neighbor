@@ -9,9 +9,7 @@ from dataset import ImageNet, CIFAR10, CIFAR100
 from train_eval import Train_Eval
 
 # Models 
-from simple import SimpleModel 
-from vgg import VGG
-from vit import ViT
+from allconvnet import AllConvNet 
 
 # Utilities 
 from utils import write_to_file, set_seed
@@ -21,23 +19,20 @@ def args_parser():
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", add_help=False) 
     
     # Model Arguments
-    parser.add_argument("--model", type=str, default="Simple", choices=["Simple", "VGG", "ViT"], help="Model to use for training and evaluation")
-    parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention", "Conv1d"], help="Model to use for training and evaluation")
-    parser.add_argument("--num_layers", type=int, default=4, help="Number of layers in the model")   
-    parser.add_argument("--hidden_dim", type=int, default=16, help="Hidden dimension for the model")
+    parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], help="Type of Convolution or Attention layer to use")
+    parser.add_argument("--num_layers", type=int, default=5, help="Number of layers.")   
+    parser.add_argument("--channels", nargs='+', type=int, default=[32, 64, 128, 256, 512], help="Channel sizes for each layer.")
     
     # Additional Layer Arguments
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN")
-    parser.add_argument("--kernel_size", type=int, default=3, help="Kernel Size for Conv2d or Conv1d (in ViT)")        
-    parser.add_argument("--sampling", type=str, default="All", choices=["All", "Random", "Spatial"], help="Sampling method for ConvNN Models")
-    parser.add_argument("--num_samples", type=str, default="64", help="Number of samples for ConvNN Models")
+    parser.add_argument("--kernel_size", type=int, default=3, help="Kernel Size for Conv2d")        
+    parser.add_argument("--sampling", type=str, default=None, choices=["All", "Random", "Spatial"], help="Sampling method for ConvNN Models")
+    parser.add_argument("--num_samples", type=int, default=0, help="Number of samples for ConvNN Models")
     
     
     parser.add_argument("--num_heads", type=int, default=4, help="Number of heads for Attention Models")
-    parser.add_argument("--num_patches", type=int, default=4, help="Number of patches for Attention Models")
-    parser.add_argument("--patch_size", type=int, default=16, help="Patch size for Attention Models")
-    parser.add_argument("--d_model", type=int, default=9, help="Dimensionality of the model for Attention Models")
     
+    # parser.add_argument("--d_model", type=int, default=9, help="Dimensionality of the model for Attention Models") # might not use (check again)
     
     
     parser.add_argument("--shuffle_pattern", type=str, default="BA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")
@@ -45,13 +40,6 @@ def args_parser():
     parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
     parser.add_argument("--location_channels", action="store_true", help="Use location channels for ConvNN Models")
     parser.set_defaults(location_channels=False)
-    
-    
-    
-    
-    
-    parser.add_argument("--dropout", type=float, default=0.5, help="Dropout rate for the model")
-    
     
     # Arguments for Data 
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", 'imagenet'], help="Dataset to use for training and evaluation")
@@ -84,7 +72,7 @@ def args_parser():
     parser.add_argument('--seed', default=0, type=int)
     
     # Output Arguments 
-    parser.add_argument("--output_dir", type=str, default="./Output/ConvNN", help="Directory to save the output files")
+    parser.add_argument("--output_dir", type=str, default="./Output/Simple/ConvNN", help="Directory to save the output files")
     
     return parser
 
@@ -92,41 +80,16 @@ def check_args(args):
     # Check the arguments based on the model 
     print("Checking arguments based on the model...")    
     
+    assert args.layer in ["Conv2d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], f"Model {args.layer} not supported"
+    assert args.dataset in ["cifar10", "cifar100", 'imagenet'], f"Dataset {args.dataset} not supported"
+    assert args.criterion in ["CrossEntropy", "MSE"], f"Criterion {args.criterion} not supported"
+    assert args.optimizer in ['adam', 'sgd', 'adamw'], f"Optimizer {args.optimizer} not supported"
+    assert args.scheduler in ['step', 'cosine', 'plateau'], f"Scheduler {args.scheduler} not supported"
+    
+    assert args.num_layers == len(args.channels), f"Number of layers {args.num_layers} does not match the number of channels {len(args.channels)}"
+        
     if args.sampling == "All": # only for Conv2d_NN, Conv2d_NN_Attn
-        args.num_samples = "all"
-    
-    if args.model == "ViT": 
-        if args.layer not in ["Attention", "Conv1d", "ConvNN", "ConvNN_Attn"]: 
-            raise ValueError("ViT model only supports Attention, Conv1d, ConvNN, and ConvNN_Attn layers")
-    
-    if args.model == "VGG" or args.model == "Simple":
-        if args.layer in ["Conv1d"]: 
-            raise ValueError("VGG and Simple models do not support {args.layer} layer")
-        
-        
-    if args.model == "ViT":
-        args.hidden_dim = 0     
-        
-        
-    if args.model == "VGG":
-        args.num_heads = 4
-        args.K = 9 
-        args.kernel_size = 3
-        args.hidden_dim = 0
-        args.num_samples = "Relative"
-        args.num_patches = 0 
-        args.patch_size = 0
-        args.d_model = 0
-    
-    if args.model == "Simple":
-        args.num_patches = 0
-        args.patch_size = 0
-        args.d_model = 0
-        
-
-    
-    
-    
+        args.num_samples = 0
     
     return args
     
@@ -155,22 +118,12 @@ def main(args):
     else:
         raise ValueError("Dataset not supported")
     
-    # Change input size for VGG and ViT
-    if args.model in ["VGG", "ViT"] and args.img_size != (3, 224, 224):
-        args.resize = True
-        dataset.upscale_dataset()
+
     
     
     # Model 
-    if args.model == "Simple":
-        model = SimpleModel(args)
-        print(f"Model: {model.name}")
-    elif args.model == "VGG":
-        model = VGG(args)
-        print(f"Model: {model.name}")
-    elif args.model == "ViT":
-        model = ViT(args)
-        print(f"Model: {model.name}")
+    model = AllConvNet(args)
+    print(f"Model: {model.name}")
     
     # Parameters
     total_params, trainable_params = model.parameter_count()

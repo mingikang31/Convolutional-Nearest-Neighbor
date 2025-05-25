@@ -89,11 +89,14 @@ class MultiHeadAttention(nn.Module):
     
     def forward(self, x, mask=None):
         q = self.split_head(self.W_q(x)) # (B, num_heads, seq_length, d_k)
+        print("\nmultattn: q: ", q.shape)
         k = self.split_head(self.W_k(x))
         v = self.split_head(self.W_v(x))
         
         attn_output, _ = self.scaled_dot_product_attention(q, k, v, mask) # (B, num_heads, seq_length, d_k)
+        print("multattn: attn_output: ", attn_output.shape)
         output = self.W_o(self.combine_heads(attn_output)) # (B, seq_length, d_model)
+        print("multattn: output: ", output.shape)
         return output
     
 class TransformerEncoder(nn.Module): 
@@ -118,6 +121,8 @@ class TransformerEncoder(nn.Module):
         
     def forward(self, x): 
         # Multi-Head Attention
+        print("In transformerencoder: before attention: ", x.shape)
+        
         attn_output = self.attention(x)
         x = self.norm1(x + attn_output)
         
@@ -168,9 +173,13 @@ class VisionTransformer(nn.Module):
         
     def forward(self, x):
         x = self.patch_embedding(x)
+        print("after patch embedding: ", x.shape)
         x = self.positional_encoding(x)
+        print("after positional encoding: ", x.shape)
         x = self.transformer_encoder(x)
+        print("after transformer encoder: ", x.shape)
         x = self.classifier(x[:, 0]) # Taking the CLS token for classification
+        print("after classifier: ", x.shape)
         return x       
     
     # after patch embedding:  torch.Size([128, 4, 9])
@@ -183,31 +192,15 @@ class VisionTransformer(nn.Module):
 if __name__ == "__main__":
     d_model = 9
     n_classes = 10
-    img_size = (32,32)
+    img_size = (224,224)
     patch_size = (16,16)
     n_channels = 3
     n_heads = 3
-    n_layers = 3
+    n_layers = 1
     batch_size = 128
     epochs = 5
     alpha = 0.005
     
-    
-    # MNIST Dataset 
-    transform = T.Compose([
-        T.Resize(img_size),
-        T.ToTensor()
-    ])
-
-    train_set = CIFAR10(
-        root="./../datasets", train=True, download=True, transform=transform
-    )
-    test_set = CIFAR10(
-        root="./../datasets", train=False, download=True, transform=transform
-    )
-
-    train_loader = DataLoader(train_set, shuffle=True, batch_size=batch_size)
-    test_loader = DataLoader(test_set, shuffle=False, batch_size=batch_size)
     
     # Training the Model
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -223,39 +216,7 @@ if __name__ == "__main__":
                     n_layers
                 ).to(device)
 
-    optimizer = AdamW(transformer.parameters(), lr=alpha)
-    criterion = nn.CrossEntropyLoss()
-
-    for epoch in range(epochs):
-
-        training_loss = 0.0
-        for i, data in enumerate(train_loader, 0):
-            inputs, labels = data
-            inputs, labels = inputs.to(device), labels.to(device)
-
-            optimizer.zero_grad()
-
-            outputs = transformer(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            training_loss += loss.item()
-
-        print(f'Epoch {epoch + 1}/{epochs} loss: {training_loss  / len(train_loader) :.3f}')
-        
-    # Testing the Model 
-    transformer.eval()
-    correct = 0
-    total = 0
+    ex = torch.randn(batch_size, n_channels, img_size[0], img_size[1]).to(device)
+    print("Input shape: ", ex.shape)
+    print("Output shape: ", transformer(ex).shape)
     
-    with torch.no_grad(): 
-        for data in test_loader:
-            images, labels = data
-            images, labels = images.to(device), labels.to(device)
-            
-            outputs = transformer(images)
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-    print(f'Accuracy of the network on the test images: {100 * correct / total:.2f} %')

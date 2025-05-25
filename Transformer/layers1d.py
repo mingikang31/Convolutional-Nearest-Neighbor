@@ -449,8 +449,7 @@ class Conv1d_NN_Attn(nn.Module):
         self.w_q = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
         self.w_k = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
         self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
-        self.w_o = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
-        
+
     def forward(self, x): 
         # Consider all samples 
         if self.samples == 'all': 
@@ -482,8 +481,7 @@ class Conv1d_NN_Attn(nn.Module):
             else:
                 x3 = x2
             
-            x4 = self.w_o(x3)
-            return x4
+            return x3
         
         # Consider N samples
         else: 
@@ -526,8 +524,7 @@ class Conv1d_NN_Attn(nn.Module):
             else:
                 x3 = x2
             
-            x4 = self.w_o(x3)
-            return x4
+            return x3
 
     def _calculate_similarity_matrix(self, K, Q):
         k_norm = F.normalize(K, p=2, dim=1)
