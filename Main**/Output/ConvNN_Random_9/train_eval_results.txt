@@ -1,5 +1,0 @@
-[Epoch 1] Time: 11.4947s, Loss: 1.40043873 | Accuracy: Top1: 56.7300%, Top5: 94.6800%
-[Epoch 2] Time: 11.4732s, Loss: 1.16019967 | Accuracy: Top1: 57.5000%, Top5: 95.0500%
-[Epoch 3] Time: 11.3802s, Loss: 1.04311262 | Accuracy: Top1: 57.5800%, Top5: 94.1700%
-
-Average Epoch Time: 11.4494s

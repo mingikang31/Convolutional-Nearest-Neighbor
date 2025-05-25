@@ -12,9 +12,6 @@ import torch.nn.functional as F
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 
 class CovNNAttention(nn.Module):
-    """
-    Convolutional 1D Nearest Neighbors Attention Layer 
-    """
     def __init__(self, 
                 in_channels, 
                 out_channels, 

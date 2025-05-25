@@ -301,7 +301,7 @@ class AllConvNet(nn.Module):
         )
         
         self.to(self.device)
-        self.name = f"{self.model}_{self.layer}"
+        self.name = f"{self.model} {self.layer}"
 
         
     def forward(self, x): 

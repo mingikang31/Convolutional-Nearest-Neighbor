@@ -61,7 +61,6 @@ def Train_Eval(args,
     max_epoch = 0
     
     for epoch in range(args.num_epochs):
-    # for epoch in tqdm(range(args.num_epochs), desc=f"Epoch {epoch+1}/{args.num_epochs}"):
         # Model Training
         model.train() 
         running_loss = 0.0 

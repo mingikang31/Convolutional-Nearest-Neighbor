@@ -90,7 +90,10 @@ def check_args(args):
         
     if args.sampling == "All": # only for Conv2d_NN, Conv2d_NN_Attn
         args.num_samples = 0
-    
+    if args.num_samples == 0:
+        args.sampling = "All"
+
+    args.resize = False
     return args
     
     
@@ -153,4 +156,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args)
-    
+
+# python allconvnet_main.py --layer Conv2d --num_layers 3 --channels 8 16 32 --dataset cifar10 --num_epochs 10 --device cuda --output_dir ./Output/Simple/Conv2d 
+
+# python allconvnet_main.py --layer Conv2d/ConvNN --num_layers 3 --channels 8 16 32 --sampling Spatial --num_samples 8 --dataset cifar10 --num_epochs 10 --device cuda --output_dir ./Output/Simple/Conv2d_ConvNN_Spatial

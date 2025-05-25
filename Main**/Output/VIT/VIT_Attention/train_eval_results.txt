@@ -1,0 +1,13 @@
+[Epoch 1] Time: 58.2690s, Loss: 2.00114455 | Accuracy: Top1: 32.2253%, Top5: 85.4299%
+[Epoch 2] Time: 58.0073s, Loss: 1.78702862 | Accuracy: Top1: 35.0717%, Top5: 87.3507%
+[Epoch 3] Time: 57.7723s, Loss: 1.70665656 | Accuracy: Top1: 37.4602%, Top5: 88.7838%
+[Epoch 4] Time: 57.8823s, Loss: 1.65939726 | Accuracy: Top1: 39.0924%, Top5: 89.4904%
+[Epoch 5] Time: 57.7314s, Loss: 1.62511769 | Accuracy: Top1: 42.0681%, Top5: 90.5056%
+[Epoch 6] Time: 57.4395s, Loss: 1.60185668 | Accuracy: Top1: 42.3069%, Top5: 90.4359%
+[Epoch 7] Time: 57.7299s, Loss: 1.57775136 | Accuracy: Top1: 43.8993%, Top5: 90.8838%
+[Epoch 8] Time: 57.7390s, Loss: 1.55985364 | Accuracy: Top1: 44.3173%, Top5: 91.2520%
+[Epoch 9] Time: 57.6923s, Loss: 1.54276513 | Accuracy: Top1: 45.4618%, Top5: 91.8193%
+[Epoch 10] Time: 57.7312s, Loss: 1.52760642 | Accuracy: Top1: 44.7253%, Top5: 91.5406%
+
+Average Epoch Time: 57.7994s
+Max Accuracy: 45.4618% at Epoch 9

@@ -33,7 +33,7 @@ def args_parser():
     
     # Additional Layer Arguments for ConvNN
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN Layer")
-    parser.add_argument("--num_samples", type=int, default=-1, help="Number of samples for ConvNN Layer, -1 for all samples")
+    parser.add_argument("--num_samples", type=int, default=0, help="Number of samples for ConvNN Layer, -1 for all samples")
     parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
 
     
@@ -76,12 +76,13 @@ def args_parser():
     return parser
     
 def main(args):
-
+    
     
     # Check if the output directory exists, if not create it
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
-    
+
+    args.resize = True
     # Dataset 
     if args.dataset == "cifar10":
         dataset = CIFAR10(args)
@@ -98,8 +99,6 @@ def main(args):
     else:
         raise ValueError("Dataset not supported")
     
-    args.resize = True # Change input size from 32x32 to 224x224 for CIFAR
-    # Change input size for VGG and ViT
     
     model = ViT(args)
     print(f"Model: {model.name}")
@@ -132,4 +131,4 @@ if __name__ == '__main__':
 
     main(args)
     
-    
+# python vit_main.py 

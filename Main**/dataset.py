@@ -46,7 +46,7 @@ class CIFAR100(datasets.CIFAR100):
         
         if args.resize: 
             self.upscale_transform = transforms.Compose([
-                ResizeDataset(target_size=(224, 224), ),
+                transforms.Resize((224, 224)),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.5071, 0.4867, 0.4408], std=[0.2675, 0.2565, 0.2761])
             ])
@@ -64,7 +64,8 @@ class CIFAR100(datasets.CIFAR100):
         self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False)
         
         self.num_classes = 100
-    
+        self.upscale_dataset()
+
     
     def upscale_dataset(self):  
         if self.upscale_transform:
@@ -105,7 +106,7 @@ class CIFAR10(datasets.CIFAR10):
         
         if args.resize:
             self.upscale_transform = transforms.Compose([
-                ResizeDataset(target_size=(224, 224), ),
+                transforms.Resize((224, 224)),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
             ])
@@ -122,6 +123,8 @@ class CIFAR10(datasets.CIFAR10):
         self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False)
         
         self.num_classes = 10 
+
+        self.upscale_dataset()
       
     def upscale_dataset(self):
         if self.upscale_transform:
@@ -180,27 +183,3 @@ class MNIST(datasets.MNIST):
         plt.imshow(img, cmap='gray')
         plt.show()
         
-# Resize and normalize the image from 32x32 to 224x224
-def resize_preserve(image, target_size=(224, 224), background_color=(0, 0, 0)): 
-    # Resize Ratio 
-    width_ratio = target_size[0] / image.size[0]
-    height_ratio = target_size[1] / image.size[1]
-    ratio = min(width_ratio, height_ratio)
-    new_size = (int(image.size[0] * ratio), int(image.size[1] * ratio))
-    
-    # Resize the image 
-    image = image.resize(new_size, Image.ANTIALIAS)
-    new_image = Image.new("RGB", target_size, background_color)
-    
-    new_image.paste(image, ((target_size[0] - new_size[0]) // 2, (target_size[1] - new_size[1]) // 2))
-    
-    return new_image 
-
-class ResizeDataset():
-    def __init__(self, target_size=(224, 224), background_color=(0, 0, 0)):
-        self.target_size = target_size
-        self.background_color = background_color
-
-    def __call__(self, image):
-        return resize_preserve(image, self.target_size, self.background_color)
-    
