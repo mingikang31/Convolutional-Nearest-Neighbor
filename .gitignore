@@ -15,7 +15,9 @@ Data
 .editorconfig
 *.editorconfig
 
+tempCodeRunnerFile.python
 *tempCodeRunnerFile.py
+*/tempCodeRunnerFile.python
 
 .gitignore
 

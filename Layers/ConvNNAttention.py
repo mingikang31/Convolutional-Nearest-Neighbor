@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F 
 from pixelshuffle import PixelShuffle1D, PixelUnshuffle1D
 
-class CovNNAttention(nn.Module):
+class ConvNNAttention(nn.Module):
     def __init__(self, 
                 in_channels, 
                 out_channels, 
@@ -39,7 +39,7 @@ class CovNNAttention(nn.Module):
             samples (int/str): Number of samples to consider.
             magnitude_type (str): Distance or Similarity.
         """
-        super(CovNNAttention, self).__init__()
+        super(ConvNNAttention, self).__init__()
     
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -311,7 +311,7 @@ class CovNNAttention(nn.Module):
 if __name__ == "__main__":
     x = torch.randn(64, 6, 128)
 
-    convnnattention = CovNNAttention(in_channels=6,
+    convnnattention = ConvNNAttention(in_channels=6,
                                     out_channels=6,
                                     K=3,
                                     num_heads=3,

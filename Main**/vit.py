@@ -152,6 +152,8 @@ class TransformerEncoder(nn.Module):
             self.attention = MultiHeadAttention(d_model, num_heads, dropout)
         elif args.layer == "ConvNN": 
             self.attention = MultiHeadConvNN(d_model, num_heads, args.K, args.num_samples, args.magnitude_type)
+        elif args.layer == "ConvNNAttention": 
+            self.attention = MultiHeadConvNNAttention(d_model, num_heads, args.K, args.num_samples, args.magnitude_type)
         
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
@@ -405,98 +407,51 @@ class MultiHeadConvNN(nn.Module):
         prime = prime.reshape(b, c, -1)
         return prime
 
-class CovNNAttention(nn.Module):
-    def __init__(self, 
-                in_channels, 
-                out_channels, 
-                num_heads, 
-                K, 
-                stride, 
-                padding, 
-                shuffle_pattern, 
-                shuffle_scale, 
-                samples, 
-                magnitude_type, 
-                num_tokens,
-                ): 
-        """
-        Initializes the Conv1d_NN module.
+class MultiHeadConvNNAttention(nn.Module):
+    def __init__(self, d_model, num_heads, K, samples, magnitude_type, seq_length=197):
+        super(MultiHeadConvNNAttention, self).__init__() 
         
-        Parameters:
-            in_channels (int): Number of input channels.
-            out_channels (int): Number of output channels.
-            K (int): Number of Nearest Neighbors for consideration.
-            stride (int): Stride size.
-            padding (int): Padding size.
-            shuffle_pattern (str): Shuffle pattern: "B", "A", "BA".
-            shuffle_scale (int): Shuffle scale factor.
-            samples (int/str): Number of samples to consider.
-            magnitude_type (str): Distance or Similarity.
-        """
-        super(CovNNAttention, self).__init__()
-    
-        self.in_channels = in_channels
-        self.out_channels = out_channels
+        assert d_model % num_heads == 0, "d_model must be divisible by num_heads"   
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
         
         self.K = K
-        self.stride = stride 
-        self.padding = padding
-        self.shuffle_pattern = shuffle_pattern 
-        self.shuffle_scale = shuffle_scale
-        self.samples = int(samples) if samples != 'all' else samples 
-        self.magnitude_type = magnitude_type 
+        self.samples = int(samples) if samples != 0 else None
+        self.magnitude_type = magnitude_type
         self.maximum = True if self.magnitude_type == 'similarity' else False
-        self.num_tokens =  int(num_tokens / self.shuffle_scale) if self.shuffle_pattern in ["B", "BA"] else num_tokens        
+        self.seq_length = seq_length
         
-        # Unshuffle layer 
-        self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
+        # Linear projections for query, key, value
+        self.W_q = nn.Linear(self.seq_length, self.seq_length)
+        self.W_k = nn.Linear(self.seq_length, self.seq_length)
+        self.W_v = nn.Linear(self.seq_length, self.seq_length)
+        self.W_o = nn.Linear(self.seq_length, self.seq_length)
         
-        # Shuffle Layer 
-        self.shuffle_layer = PixelShuffle1D(upscale_factor=self.shuffle_scale)        
+        self.in_channels = d_model // num_heads
+        self.out_channels = d_model // num_heads
+        self.kernel_size = K
+        self.stride = K
+        self.padding = 0 
         
-        # Channels for Conv1d Layer
-        self.in_channels = in_channels * shuffle_scale if self.shuffle_pattern in ["BA", "B"] else in_channels
-        self.out_channels = out_channels * shuffle_scale if self.shuffle_pattern in ["BA", "A"] else out_channels
+        self.conv = nn.Conv1d(
+            in_channels=self.in_channels,
+            out_channels=self.out_channels,
+            kernel_size=self.kernel_size,
+            stride=self.stride,
+            padding=self.padding,
+        )
 
-        # Attention
-        assert in_channels % num_heads == 0, "Error: in_channels must be divisible by num_heads."
-        self.d_model = self.in_channels
-        self.num_heads = num_heads
-        self.d_k = self.d_model // num_heads
-        
-        # Linear Layer for Query, Key, Value, Out
-        self.w_q = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
-        self.w_k = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
-        self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
-        self.w_o = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
-        
-        # 
-        self.batch_size = 1
-        self.seq_length = 1
-
-        self.in_channels = int(self.in_channels // num_heads)
-        self.out_channels = int(self.out_channels // num_heads)
-        assert self.in_channels == self.out_channels, "Error: in_channels and out_channels must be equal after dividing by num_heads."
-        
-        # Conv1d Layer 
-        self.conv1d_layer = nn.Conv1d(in_channels=self.in_channels, 
-                                    out_channels=self.out_channels, 
-                                    kernel_size=self.K, 
-                                    stride=self.stride, 
-                                    padding=self.padding)
-
-        
-    def split_head(self, x): 
-        batch_size, seq_length, d_model = x.shape
+    def split_head(self, x):
+        batch_size, d_model, seq_length = x.size()
         self.batch_size = batch_size
         self.seq_length = seq_length
-        return x.view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2)
+        return x.view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2) # (B, num_heads, seq_length, d_k)
     
-    def combine_heads(self, x):
+    def combine_heads(self, x): 
         batch_size, _, seq_length, d_k = x.size()
-        
-        return x.transpose(1, 2).contiguous().view(batch_size, seq_length, -1)
-        
+        return x.transpose(1, 2).contiguous().view(batch_size, self.d_model, seq_length) 
+    
     def batch_split(self, x): 
         x = x.reshape(self.batch_size, -1, self.d_k, self.seq_length)
         return x.permute(0, 1, 3, 2).contiguous()
@@ -505,70 +460,35 @@ class CovNNAttention(nn.Module):
         batch_size, _, seq_length, d_k = x.size()
         x = x.permute(0, 1, 3, 2).contiguous() 
         return x.view(-1, self.d_k, seq_length)
-        
-    def forward(self, x): 
-        # Consider all samples 
-        if self.samples == 'all': 
-            # Unshuffle Layer 
-            if self.shuffle_pattern in ["B", "BA"]:
-                x1 = self.unshuffle_layer(x)
-            else:
-                x1 = x
-            
-            # Q, K, V 
-            q = self.w_q(x1).permute(0, 2, 1)
-            k = self.w_k(x1).permute(0, 2, 1)
-            v = self.w_v(x1).permute(0, 2, 1)
 
-            # Split Heads then combine batch
-            q = self.batch_combine(self.split_head(q))
-            k = self.batch_combine(self.split_head(k))
-            v = self.batch_combine(self.split_head(v))
-           
+    def forward(self, x):
+        if self.samples is None: # All Samples 
+            x = x.permute(0, 2, 1) 
+        
+            q = self.batch_combine(self.split_head(self.W_q(x)))
+            k = self.batch_combine(self.split_head(self.W_k(x)))
+            v = self.batch_combine(self.split_head(self.W_v(x)))
+       
             # Calculate Distance/Similarity Matrix + Prime Vmap 2D
             if self.magnitude_type == 'distance': 
                 matrix_magnitude = self._calculate_distance_matrix(k, q, sqrt=True)
             elif self.magnitude_type == 'similarity':
                 matrix_magnitude = self._calculate_similarity_matrix(k, q)
                 
-            prime_2d = self._prime(v, matrix_magnitude, self.K, self.maximum) 
+            prime = self._prime(v, matrix_magnitude, self.K, self.maximum) 
+            x = self.conv(prime)  
             
-            # Conv1d Layer
-            x2 = self.conv1d_layer(prime_2d)
-            
-            # Split batch then combine heads
-            x2 = self.combine_heads(self.batch_split(x2))
-
-            x2 = self.w_o(x2.permute(0, 2, 1))
-            
-            # Shuffle Layer 
-            if self.shuffle_pattern in ["A", "BA"]:
-                x3 = self.shuffle_layer(x2)
-            else:
-                x3 = x2
-            
-            return x3
+            x = self.W_o(self.combine_heads(self.batch_split(x))).permute(0, 2, 1)
+            return x
+        else: # Random Samples  
+            x = x.permute(0, 2, 1) 
         
-        # Consider N samples
-        else: 
-            # Unshuffle Layer 
-            if self.shuffle_pattern in ["B", "BA"]:
-                x1 = self.unshuffle_layer(x)
-            else:
-                x1 = x
-                
-            # Q, K, V 
-            q = self.w_q(x1).permute(0, 2, 1)
-            k = self.w_k(x1).permute(0, 2, 1)
-            v = self.w_v(x1).permute(0, 2, 1)
+            q = self.batch_combine(self.split_head(self.W_q(x)))
+            k = self.batch_combine(self.split_head(self.W_k(x)))
+            v = self.batch_combine(self.split_head(self.W_v(x)))
 
-            # Split Heads then combine batch
-            q = self.batch_combine(self.split_head(q))
-            k = self.batch_combine(self.split_head(k))
-            v = self.batch_combine(self.split_head(v))
-            
             # Calculate Distance/Similarity Matrix + Prime       
-            rand_idx = torch.randperm(x1.shape[2], device=x1.device)[:self.samples]
+            rand_idx = torch.randperm(q.shape[2], device=q.device)[:self.samples]
             
             q_sample = q[:, :, rand_idx]
             
@@ -577,32 +497,23 @@ class CovNNAttention(nn.Module):
             elif self.magnitude_type == 'similarity':
                 matrix_magnitude = self._calculate_similarity_matrix_N(k, q_sample)
                 
-            range_idx = torch.arange(len(rand_idx), device=x1.device)
+            range_idx = torch.arange(len(rand_idx), device=q.device)
                 
         
             if self.magnitude_type == 'distance':
                 matrix_magnitude[:, rand_idx, range_idx] = float('inf') 
             elif self.magnitude_type == 'similarity':
                 matrix_magnitude[:, rand_idx, range_idx] = float('-inf')
-                
+            
             
             prime = self._prime_N(v, matrix_magnitude, self.K, rand_idx, self.maximum)
             
-            x2 = self.conv1d_layer(prime)
+            # Conv1d Layer
+            x = self.conv(prime)  
             
-            # Split batch then combine heads
-            x2 = self.combine_heads(self.batch_split(x2))
-
-            x2 = self.w_o(x2.permute(0, 2, 1))
-            
-            # Shuffle Layer 
-            if self.shuffle_pattern in ["A", "BA"]:
-                x3 = self.shuffle_layer(x2)
-            else:
-                x3 = x2
-            
-            return x3
-        
+            x = self.W_o(self.combine_heads(self.batch_split(x))).permute(0, 2, 1)
+            return x
+    
 
     def _calculate_similarity_matrix(self, K, Q):
         k_norm = F.normalize(K, p=2, dim=1)
@@ -618,7 +529,6 @@ class CovNNAttention(nn.Module):
         similarity_matrix = torch.clamp(similarity_matrix, min=0)  # remove negative values
         return similarity_matrix
         
-
     def _calculate_distance_matrix(self, K, Q, sqrt=False):
         norm_squared_K = torch.sum(K**2, dim=1, keepdim=True) 
         norm_squared_Q = torch.sum(Q**2, dim=1, keepdim=True) 
@@ -665,9 +575,7 @@ class CovNNAttention(nn.Module):
         prime = prime.reshape(b, c, -1)
 
         return prime
-        
-            
-            
+              
     def _prime_N(self, v, qk, K, rand_idx, maximum):
         b, c, t = v.shape
 
@@ -698,7 +606,8 @@ class CovNNAttention(nn.Module):
         # Flatten the token and neighbor dimensions into one: [b, c, t*K]
         prime = prime.reshape(b, c, -1)
         return prime
-
+    
+    
 if __name__ == "__main__":
     import torch
     from types import SimpleNamespace
@@ -715,7 +624,7 @@ if __name__ == "__main__":
         K = 3,                          # For nearest neighbor operations
         dropout = 0.1,                  # Dropout rate
         attention_dropout = 0.1,        # Attention dropout
-        samples = 64,                   # Sampling parameter for ConvNN
+        num_samples = 64,                   # Sampling parameter for ConvNN
         magnitude_type = "similarity",  # Or "distance"
         shuffle_pattern = "NA",         # Default pattern
         shuffle_scale = 1,              # Default scale
@@ -752,8 +661,22 @@ if __name__ == "__main__":
     
     output_convnn = model_convnn(x)
     
-    print(f"Output shape: {output_convnn.shape}")
+    print(f"Output shape: {output_convnn.shape}\n")
+    
+    
+    print("ConvNNAttention")
+    args.layer = "ConvNNAttention"
+    model_convnnattention = ViT(args)
+    total_params, trainable_params = model_convnnattention.parameter_count()
+    print(f"Total parameters: {total_params:,}")
+    print(f"Trainable parameters: {trainable_params:,}")
+    
+    output = model_convnnattention(x)
+    
+    print(f"Output shape: {output.shape}")
 
 # python vit_main.py --layer Attention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_Attention
 
 # python vit_main.py --layer ConvNN --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNN
+
+#TODO#### python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNNAttention
