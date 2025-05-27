@@ -5,16 +5,9 @@ import torch
 import torch.nn as nn 
 import torch.nn.functional as F
 from torchsummary import summary 
-
 import numpy as np 
 
-# ConvNN Layers
-from layers1d import (
-    Conv1d_NN, 
-    Conv1d_NN_Attn, 
-    PixelShuffle1D, 
-    PixelUnshuffle1D
-)
+
 
 from typing import cast, Union
 
@@ -154,6 +147,11 @@ class TransformerEncoder(nn.Module):
             self.attention = MultiHeadConvNN(d_model, num_heads, args.K, args.num_samples, args.magnitude_type)
         elif args.layer == "ConvNNAttention": 
             self.attention = MultiHeadConvNNAttention(d_model, num_heads, args.K, args.num_samples, args.magnitude_type)
+        elif args.layer == "Conv1dAttention":
+            self.attention = MultiHeadConv1dAttention(d_model, num_heads, args.kernel_size)
+        elif args.layer == "Conv1d":
+            self.attention = MultiHeadConv1d(d_model, num_heads, args.kernel_size)
+        
         
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
@@ -221,9 +219,9 @@ class MultiHeadAttention(nn.Module):
         output = self.W_o(self.combine_heads(attn_output)) # (B, seq_length, d_model)
         return output
 
-class MultiHeadConvNN(nn.Module):
+class MultiHeadConvNNAttention(nn.Module):
     def __init__(self, d_model, num_heads, K, samples, magnitude_type):
-        super(MultiHeadConvNN, self).__init__()
+        super(MultiHeadConvNNAttention, self).__init__()
         assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
         self.d_model = d_model
         self.num_heads = num_heads
@@ -297,7 +295,8 @@ class MultiHeadConvNN(nn.Module):
             q = self.batch_combine(self.split_head(self.W_q(x)))
             k = self.batch_combine(self.split_head(self.W_k(x)))
             v = self.batch_combine(self.split_head(self.W_v(x)))
-            
+            print("q shape: ", q.shape)      
+
             # Calculate Distance/Similarity Matrix + Prime       
             rand_idx = torch.randperm(q.shape[2], device=q.device)[:self.samples]
             
@@ -407,9 +406,9 @@ class MultiHeadConvNN(nn.Module):
         prime = prime.reshape(b, c, -1)
         return prime
 
-class MultiHeadConvNNAttention(nn.Module):
+class MultiHeadConvNN(nn.Module):
     def __init__(self, d_model, num_heads, K, samples, magnitude_type, seq_length=197):
-        super(MultiHeadConvNNAttention, self).__init__() 
+        super(MultiHeadConvNN, self).__init__() 
         
         assert d_model % num_heads == 0, "d_model must be divisible by num_heads"   
         self.d_model = d_model
@@ -487,7 +486,8 @@ class MultiHeadConvNNAttention(nn.Module):
             k = self.batch_combine(self.split_head(self.W_k(x)))
             v = self.batch_combine(self.split_head(self.W_v(x)))
 
-            # Calculate Distance/Similarity Matrix + Prime       
+            # Calculate Distance/Similarity Matrix + Prime 
+            print("q shape: ", q.shape)      
             rand_idx = torch.randperm(q.shape[2], device=q.device)[:self.samples]
             
             q_sample = q[:, :, rand_idx]
@@ -608,6 +608,112 @@ class MultiHeadConvNNAttention(nn.Module):
         return prime
     
     
+    
+class MultiHeadConv1dAttention(nn.Module):
+    def __init__(self, d_model, num_heads, kernel_size): 
+        super(MultiHeadConv1dAttention, self).__init__()
+    
+        assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
+        
+        self.kernel_size = kernel_size
+        self.stride = 1
+        self.padding = (self.kernel_size - 1) // 2
+        
+        self.W_x = nn.Linear(d_model, d_model)
+        self.W_o = nn.Linear(d_model, d_model)
+
+        self.in_channels = d_model // num_heads
+        self.out_channels = d_model // num_heads
+        self.conv = nn.Conv1d(
+            in_channels=self.in_channels,
+            out_channels=self.out_channels,
+            kernel_size=self.kernel_size,
+            stride=self.stride,
+            padding=self.padding, 
+        )
+        
+    def split_head(self, x): 
+        batch_size, seq_length, d_model = x.size()
+        self.batch_size = batch_size
+        self.seq_length = seq_length
+        return x.view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2) # (B, num_heads, seq_length, d_k)
+        
+    def combine_heads(self, x): 
+        batch_size, _, seq_length, d_k = x.size()
+        return x.transpose(1, 2).contiguous().view(batch_size, seq_length, self.d_model) 
+    
+    def batch_split(self, x): 
+        x = x.reshape(self.batch_size, -1, self.d_k, self.seq_length)
+        return x.permute(0, 1, 3, 2).contiguous()
+        
+    def batch_combine(self, x): 
+        batch_size, _, seq_length, d_k = x.size()
+        x = x.permute(0, 1, 3, 2).contiguous() 
+        return x.view(-1, self.d_k, seq_length)       
+    
+    def forward(self, x):
+        x = self.batch_combine(self.split_head(self.W_x(x)))
+        x = self.conv(x) 
+        x = self.W_o(self.combine_heads(self.batch_split(x.permute(0, 2, 1))))
+        return x
+        
+
+class MultiHeadConv1d(nn.Module):
+    def __init__(self, d_model, num_heads, kernel_size, seq_length=197):
+        super(MultiHeadConv1d, self).__init__()
+        
+        assert d_model % num_heads == 0, "d_model must be divisible by num_heads"
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.d_k = d_model // num_heads
+        
+        self.kernel_size = kernel_size
+        self.stride = 1 
+        self.padding = (self.kernel_size - 1) // 2
+        self.seq_length = seq_length
+        
+        self.W_x = nn.Linear(self.seq_length, self.seq_length)
+        self.W_o = nn.Linear(self.seq_length, self.seq_length)
+        
+        self.in_channels = d_model // num_heads
+        self.out_channels = d_model // num_heads
+        self.conv = nn.Conv1d(
+            in_channels=self.in_channels,
+            out_channels=self.out_channels,
+            kernel_size=self.kernel_size,
+            stride=self.stride,
+            padding=self.padding, 
+        )
+    
+    def split_head(self, x):
+        batch_size, d_model, seq_length = x.size()
+        self.batch_size = batch_size
+        self.seq_length = seq_length
+        return x.view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2) # (B, num_heads, seq_length, d_k)
+    
+    def combine_heads(self, x): 
+        batch_size, _, seq_length, d_k = x.size()
+        return x.transpose(1, 2).contiguous().view(batch_size, self.d_model, seq_length) 
+    
+    def batch_split(self, x): 
+        x = x.reshape(self.batch_size, -1, self.d_k, self.seq_length)
+        return x.permute(0, 1, 3, 2).contiguous()
+        
+    def batch_combine(self, x): 
+        batch_size, _, seq_length, d_k = x.size()
+        x = x.permute(0, 1, 3, 2).contiguous() 
+        return x.view(-1, self.d_k, seq_length)
+
+    def forward(self, x):    
+        x = x.permute(0, 2, 1)  # Change shape to (B, seq_length, d_model)
+        x = self.batch_combine(self.split_head(self.W_x(x)))
+        x = self.conv(x) 
+        x = self.W_o(self.combine_heads(self.batch_split(x))).permute(0, 2, 1)
+        return x
+    
 if __name__ == "__main__":
     import torch
     from types import SimpleNamespace
@@ -621,10 +727,11 @@ if __name__ == "__main__":
         num_heads = 8,                    # 8 attention heads
         d_model = 512,                  # Hidden dimension
         num_classes = 100,              # CIFAR-100 classes
-        K = 3,                          # For nearest neighbor operations
+        K = 9,                          # For nearest neighbor operations
+        kernel_size = 9,                # Kernel size for ConvNN
         dropout = 0.1,                  # Dropout rate
         attention_dropout = 0.1,        # Attention dropout
-        num_samples = 64,                   # Sampling parameter for ConvNN
+        num_samples = 32,                   # Sampling parameter for ConvNN
         magnitude_type = "similarity",  # Or "distance"
         shuffle_pattern = "NA",         # Default pattern
         shuffle_scale = 1,              # Default scale
@@ -654,29 +761,47 @@ if __name__ == "__main__":
     
     print("ConvNN")
     args.layer = "ConvNN"
-    model_convnn = ViT(args)
-    total_params, trainable_params = model_convnn.parameter_count()
+    model = ViT(args)
+    total_params, trainable_params = model.parameter_count()
     print(f"Total parameters: {total_params:,}")
     print(f"Trainable parameters: {trainable_params:,}")
     
-    output_convnn = model_convnn(x)
+    output_convnn = model(x)
     
     print(f"Output shape: {output_convnn.shape}\n")
     
     
     print("ConvNNAttention")
     args.layer = "ConvNNAttention"
-    model_convnnattention = ViT(args)
-    total_params, trainable_params = model_convnnattention.parameter_count()
+    model = ViT(args)
+    total_params, trainable_params = model.parameter_count()
     print(f"Total parameters: {total_params:,}")
     print(f"Trainable parameters: {trainable_params:,}")
     
-    output = model_convnnattention(x)
+    output = model(x)
+    
+    print(f"Output shape: {output.shape}\n")
+    
+
+    print("Conv1d")
+    args.layer = "Conv1d"
+    model = ViT(args)
+    total_params, trainable_params = model.parameter_count()
+    print(f"Total parameters: {total_params:,}")
+    print(f"Trainable parameters: {trainable_params:,}")
+    
+    output = model(x)
+    
+    print(f"Output shape: {output.shape}\n")
+    
+    
+    print("Conv1dAttention")
+    args.layer = "Conv1dAttention"
+    model = ViT(args)
+    total_params, trainable_params = model.parameter_count()
+    print(f"Total parameters: {total_params:,}")
+    print(f"Trainable parameters: {trainable_params:,}")
+    
+    output = model(x)
     
     print(f"Output shape: {output.shape}")
-
-# python vit_main.py --layer Attention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_Attention
-
-# python vit_main.py --layer ConvNN --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNN
-
-#TODO#### python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNNAttention

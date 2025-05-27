@@ -33,6 +33,7 @@ def args_parser():
     
     # Additional Layer Arguments for ConvNN
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN Layer")
+    parser.add_argument("--kernel_size", type=int, default=9, help="Kernel size for Conv1d Layer")
     parser.add_argument("--num_samples", type=int, default=0, help="Number of samples for ConvNN Layer, -1 for all samples")
     parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
 
@@ -130,5 +131,21 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args)
-    
-# python vit_main.py 
+
+# python vit_main.py --layer Attention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_Attention
+
+# python vit_main.py --layer ConvNN --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNN
+
+# python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNNAttention
+
+### TODO 
+
+# python vit_main.py --layer Conv1d --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_Conv1d
+
+
+# python vit_main.py --layer Conv1dAttention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_Conv1dAttention
+
+
+# python vit_main.py --layer ConvNN --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --num_samples 32 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNN_Random
+
+# python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --num_samples 32 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNNAttention_Random
