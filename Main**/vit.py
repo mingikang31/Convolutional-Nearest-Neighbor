@@ -147,10 +147,11 @@ class TransformerEncoder(nn.Module):
             self.attention = MultiHeadConvNN(d_model, num_heads, args.K, args.num_samples, args.magnitude_type)
         elif args.layer == "ConvNNAttention": 
             self.attention = MultiHeadConvNNAttention(d_model, num_heads, args.K, args.num_samples, args.magnitude_type)
-        elif args.layer == "Conv1dAttention":
-            self.attention = MultiHeadConv1dAttention(d_model, num_heads, args.kernel_size)
         elif args.layer == "Conv1d":
             self.attention = MultiHeadConv1d(d_model, num_heads, args.kernel_size)
+        elif args.layer == "Conv1dAttention":
+            self.attention = MultiHeadConv1dAttention(d_model, num_heads, args.kernel_size)
+
         
         
         self.norm1 = nn.LayerNorm(d_model)
@@ -295,7 +296,6 @@ class MultiHeadConvNNAttention(nn.Module):
             q = self.batch_combine(self.split_head(self.W_q(x)))
             k = self.batch_combine(self.split_head(self.W_k(x)))
             v = self.batch_combine(self.split_head(self.W_v(x)))
-            print("q shape: ", q.shape)      
 
             # Calculate Distance/Similarity Matrix + Prime       
             rand_idx = torch.randperm(q.shape[2], device=q.device)[:self.samples]
@@ -487,7 +487,6 @@ class MultiHeadConvNN(nn.Module):
             v = self.batch_combine(self.split_head(self.W_v(x)))
 
             # Calculate Distance/Similarity Matrix + Prime 
-            print("q shape: ", q.shape)      
             rand_idx = torch.randperm(q.shape[2], device=q.device)[:self.samples]
             
             q_sample = q[:, :, rand_idx]
