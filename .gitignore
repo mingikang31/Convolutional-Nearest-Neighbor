@@ -1,11 +1,11 @@
 .vscode
 __pycache__
-<<<<<<< HEAD
 .DS_Store
-=======
 __pycache__/*
 Layers/__pycache__
 Testing/data/*
+
+.DS_Store
 
 Playground/data/*
 Data/* 
@@ -203,4 +203,3 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
->>>>>>> 57552f498208f6f65fda97824d2de81bed0148ab
