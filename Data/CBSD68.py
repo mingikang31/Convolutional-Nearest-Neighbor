@@ -10,8 +10,6 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import random
 
-
-
 from sklearn.model_selection import train_test_split
 
 from torch.utils.data import DataLoader, Dataset

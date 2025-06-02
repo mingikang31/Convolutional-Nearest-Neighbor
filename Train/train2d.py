@@ -7,8 +7,6 @@ import torch.optim as optim
 import time 
 # import wandb
 
-
-
 ### Classification functions ###
 def train_model(model, 
                 train_loader, 
