@@ -1,534 +1,207 @@
-# ConvNN: Convolutional Nearest Neighbor for Neural Networks
+# Convolutional Nearest Neighbor (ConvNN) with AllConvNet and Vision Transformer Architectures 
 
-### Christenfeld Summer Research Fellowship - Mingi Kang & Jeova Farias 
-### Bowdoin Summer Research 2024 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+## Grants & Funding
+- **Christenfeld Summer Research Fellowship**, Bowdoin College
+- **Google AI 2024 Funding**, Last Mile Fund
+- **NYC Stem Funding**, Last Mile Fund
 
-![DETR](https://cdn.prod.website-files.com/614c82ed388d53640613982e/646371e3bdc5ca90dee5331b_convolutional-neural-network%20(1).webp)
-
-*Picture is from SuperAnnotate: Convolutional Neural Networks: 1998-2023 Overview
-
+**Project periods:** Summer 2024, Spring 2025, Summer 2025
 
 ## Overview 
-ConvNN introduces a novel convolution technique for computer vision, focusing on the relationships between center pixels and their nearest neighbors, rather than just adjacent pixels. This approach aims to improve classification accuracy by considering a broader context within images.
+Traditional convolutions only see a fixed grid of adjacent pixels. **ConvNN**: 
+- Finds the _K_-nearest neighbors of each token (pixel or feature vector). 
+- Aggregates their values by distance- or similarity-based weightings. 
+- Captures long-range dependencies and relationships between pixels.
+- Is drop-in compatible with both AllConvNet and Vision Transformer architectures.
 
 ### Key Concepts
-- **Nearest Neighbor Convolution**: Replaces traditional pixel adjacency with the closest K-nearest pixels, offering a new way to analyze image data.
-- **Flexibility**: ConvNN is adaptable to both 1D and 2D data, and can be easily integrated into existing neural networks using custom PyTorch modules.
+- **AllConvNet Architecture**: A fully convolutional network that can incorporate various layer types including traditional Conv2d, ConvNN, and Attention layers.
+- **Vision Transformer (ViT)**: Transformer-based architecture with patch embeddings that can utilize ConvNN layers for enhanced feature extraction.
+- **Layer Flexibility**: Supports single layer types or branching layer types (e.g., Conv2d/ConvNN, ConvNNAttention).
+- **Attention Integration**: Can combine attention mechanisms with convolutional nearest neighbor layers for enhanced feature extraction.
 
-### Implementation
-ConvNN layers are implemented using the `torch.nn.Module` class:
-- **Conv1dNN**: Handles 1D convolution with nearest neighbors.
-- **Conv2dNN**: Applies nearest neighbor convolution in 2D.
-- **Spatial Variants**: Includes spatial considerations for both 1D and 2D layers.
-- **Pixel Shuffle Layers**: Custom layers for pixel shuffling and unshuffling in 1D.
+### Implementation 
+Two main architectures are supported:
 
-A [Colab Notebook]() is available for hands-on experimentation.
+**AllConvNet Layers:**
+- **Conv2d**: Traditional 2D convolution layers
+- **ConvNN**: Nearest neighbor convolution layers
+- **ConvNN_Attn**: ConvNN with attention mechanisms
+- **Attention**: Pure attention layers
+- **Branching Combination**: Branching layer types (e.g., Conv2d/ConvNN, Attention/ConvNN)
 
+**ViT Layers:**
+- **MultiHeadAttention**: Standard transformer multi-head attention
+- **MultiHeadConvNNAttention**: 1D nearest neighbor convolution with linear projection on feature vectors
+- **MultiHeadConvNN**: 1D nearest Neighbor convolution with linear projects on sequences
+- **MultiHeadConv1dAttention**: Traditional 1D convolution with linear projection on feature vectors
+- **MultiHeadConv1d**: Traditional 1D convolution with linear projection on sequences
 
-### Usage Example
-```Python 
-Conv2d_NN(in_channels, out_channels, K, stride, padding, shuffle_pattern, shuffle_scale, samples, magnitude_type)
+## Installation
+```Shell 
+git clone https://github.com/mingikang31/Convolutional-Nearest-Neighbor.git
 ```
-- **K**: The number of nearest neighbors to consider. 
-- **K** and **stride** must be the same value. 
-- **shuffle_pattern** can be `'N/A', 'B', 'A',` or `'BA'` (Not Applicable, Before, After, Before + After).
-- **samples** can be `'all'` or an integer value representing the number of samples you would like to consider. 
-- **magnitude_type** can be `'distance'` or `'similarity'`. 
+Then, Install required dependencies:
+- torch, torchvision, torchsummary, numpy, matplotlib, tqdm, Pillow
+```Shell
+pip install -r requirements.txt
+```
 
-# Classification Testing
-**Model/Training Information** 
-- **Batch Size**: 64
-- **Epochs**: 10
-- **Loss Function**: `'nn.CrossEntropyLoss()'`
-- **Ex.** K = 8 (8 Nearest Neighbors)
+## Training & Evaluation 
 
-We have tested various models for each dataset to compare their performance. 
+### AllConvNet Examples
 
-## I. MNIST Classification
-<table>
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Model</th>
-      <th>Parameters</th>
-      <th>Ave Epoch Time</th>
-      <th>Accuracy</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>Conv2dNN (all samples)</td>
-      <td>189,590</td>
-      <td>48.885s</td>
-      <td>94.74%</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>Conv2dNN N samples (10 samples)</td>
-      <td>189,590</td>
-      <td>50.306s</td>
-      <td>95.73%</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>Conv2dNN Spatial (9 samples)</td>
-      <td>158,885</td>
-      <td>87.828s</td>
-      <td>11.35%</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>CNN Model 1</td>
-      <td>99,140</td>
-      <td>6.481s</td>
-      <td>98.45%</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>CNN Model 2</td>
-      <td>716,706</td>
-      <td>8.348s</td>
-      <td>99.26%</td>
-    </tr>
-  </tbody>
-</table>
+Basic ConvNN training on CIFAR-10:
+```Shell 
+python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 8 16 32 --K 9 --sampling Spatial --num_samples 64 --batch_size 64 --output_dir ./Output/AllConvNet/ConvNN --device cuda --num_epochs 10 --dataset cifar10
+```
 
+Hybrid Conv2d/ConvNN layers:
+```Shell
+python allconvnet_main.py --layer Conv2d/ConvNN --num_layers 3 --channels 8 16 32 --sampling Spatial --num_samples 8 --dataset cifar10 --num_epochs 10 --device cuda --output_dir ./Output/AllConvNet/Conv2d_ConvNN_Spatial
+```
 
-## II. Fashion MNIST Classification
-<table>
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Model</th>
-      <th>Parameters</th>
-      <th>Ave Epoch Time</th>
-      <th>Accuracy</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>Conv2dNN (all samples)</td>
-      <td>189,590</td>
-      <td>45.583</td>
-      <td>86.95%</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>Conv2dNN N samples (10 samples)</td>
-      <td>189,590</td>
-      <td>49.318s</td>
-      <td>86.53%</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>Conv2dNN Spatial (9 samples)</td>
-      <td>158,885</td>
-      <td>90.273s</td>
-      <td>16.17%</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>CNN Model 1</td>
-      <td>99,140</td>
-      <td>6.509s</td>
-      <td>90.58%</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>CNN Model 2</td>
-      <td>716,706</td>
-      <td>8.378s</td>
-      <td>91.88%</td>
-    </tr>
-  </tbody>
-</table>
+### Vision Transformer Examples
 
+Standard ViT with attention:
+```Shell
+python vit_main.py --layer Attention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_Attention
+```
 
+ViT with ConvNN layers:
+```Shell
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --K 9 --num_samples 32 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNN
+```
 
-## III. CIFAR10 Classification
-<table>
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Model</th>
-      <th>Parameters</th>
-      <th>Ave Epoch Time</th>
-      <th>Accuracy</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>Conv2dNN (all samples)</td>
-      <td>238,870</td>
-      <td>44.336s</td>
-      <td>54.06%</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>Conv2dNN N samples (10 samples)</td>
-      <td>238,870</td>
-      <td>55.509s</td>
-      <td>57.15%</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>Conv2dNN Spatial (9 samples)</td>
-      <td>206,965</td>
-      <td>107.976s</td>
-      <td>20.93%</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>CNN Model 1</td>
-      <td>137,630</td>
-      <td>7.608s</td>
-      <td>59.35%</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>CNN Model 2</td>
-      <td>999,458</td>
-      <td>11.745s</td>
-      <td>71.41%</td>
-    </tr>
-  </tbody>
-</table>
+ViT with ConvNN and Attention combined:
+```Shell
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --K 9 --num_samples 32 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNNAttention
+```
 
-MNIST, Fashion MNIST, CIFAR10 training/testing Classification file can be found in this [Notebook](https://github.com/mkang817415/Convolutional-Nearest-Neighbor/blob/main/Notebooks/2D/classification.ipynb).
+## Command-Line Interface 
 
+### AllConvNet (`allconvnet_main.py`)
+Run `python allconvnet_main.py --help` to see all available options.
 
-# Denoising Testing
-### Model/Training Information
-- **Batch Size**: 64
-- **Epochs**: 10
-- **Loss Function**: `nn.MSELoss()`
-- **Evaluation Metric**: PSNR (Peak Signal-to-Noise Ratio)
-- **Ex.** K = 8 (8 Number of Neighbors)
+#### Model & Layer Configuration
+| Flag                 | Default       | Choices                   | Description                                  |
+| -------------------- | ------------- | ------------------------- | -------------------------------------------- |
+| `--layer`            | `ConvNN`      | `Conv2d`, `ConvNN`, `ConvNN_Attn`, `Attention`, `Conv2d/ConvNN`, `Conv2d/ConvNN_Attn`, `Attention/ConvNN`, `Attention/ConvNN_Attn`, `Conv2d/Attention` | Which convolution/attention layer to use |
+| `--num_layers`       | `5`           | _integer_                 | Number of sequential layers                  |
+| `--channels`         | `[32,64,128,256,512]` | _list of integers_    | Channel sizes for each layer                 |
+| `--kernel_size`      | `3`           | _integer_                 | Kernel size for Conv2d layers               |
 
-We have tested various models for each dataset to compare their performance. 
+### Vision Transformer (`vit_main.py`)
+Run `python vit_main.py --help` to see all available options.
 
-## I. MNIST Denoising
-<table>
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Model</th>
-      <th>Parameters</th>
-      <th>Ave Epoch Time</th>
-      <th>Ave Loss</th>
-      <th>Ave PSNR</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>Conv2dNN (all samples)</td>
-      <td>35,344</td>
-      <td>63.513s</td>
-      <td>0.018</td>
-      <td>17.489</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>Conv2dNN N samples (10 samples)</td>
-      <td>35,344</td>
-      <td>70.132s</td>
-      <td>0.013</td>
-      <td>18.814</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>Conv2dNN Spatial (9 samples)</td>
-      <td>2,236</td>
-      <td>140.166s</td>
-      <td>0.097</td>
-      <td>10.191</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>CNN Model 1</td>
-      <td>2,511</td>
-      <td>8.102s</td>
-      <td>0.005</td>
-      <td>22.828</td>
-    </tr>
+#### Model & Layer Configuration
+| Flag                 | Default       | Choices                   | Description                                  |
+| -------------------- | ------------- | ------------------------- | -------------------------------------------- |
+| `--layer`            | `Attention`   | `Attention`, `ConvNN`, `ConvNNAttention`, `Conv1d`, `Conv1dAttention` | Layer type for ViT transformer blocks |
+| `--patch_size`       | `16`          | _integer_                 | Patch size for input images                 |
+| `--num_layers`       | `8`           | _integer_                 | Number of transformer layers                |
+| `--num_heads`        | `4`           | _integer_                 | Number of attention heads                   |
+| `--d_model`          | `512`         | _integer_                 | Model dimension                             |
+| `--dropout`          | `0.1`         | _float_                   | General dropout rate                        |
+| `--attention_dropout`| `0.1`         | _float_                   | Attention-specific dropout rate             |
 
-  </tbody>
-</table>
+### ConvNN-Specific Parameters (Both Architectures)
+| Flag                 | Default       | Choices                   | Description                                  |
+| -------------------- | ------------- | ------------------------- | -------------------------------------------- |
+| `--K`                | `9`           | _integer_                 | Number of nearest neighbors                  |
+| `--sampling`         | `None`/`All`  | `All`, `Random`, `Spatial`| How to select neighbors (AllConvNet only)   |
+| `--num_samples`      | `0`           | _integer_                 | Max samples per query (0 means all)         |
+| `--kernel_size`      | `3`           | _integer_                 | Kernel size for Conv layers                 |
+| `--magnitude_type`   | `similarity`  | `similarity`, `distance`  | Weighting type                               |
+| `--shuffle_pattern`  | `BA`          | `BA`, `NA`                | Before-After vs no shuffle (AllConvNet only)|
+| `--shuffle_scale`    | `2`           | _integer_                 | Pixel unshuffle factor (AllConvNet only)    |
+| `--location_channels`| _flag_        |                           | Append XY coordinates (AllConvNet only)     |
 
+### Data & Training (Both Architectures)
+| Flag                 | Default        | Choices                   | Description                                  |
+| -------------------- | -------------- | ------------------------- | -------------------------------------------- |
+| `--dataset`          | `cifar10`      | `cifar10`, `cifar100`, `imagenet`| Dataset for training and evaluation   |
+| `--data_path`        | `./Data`       | _string_                  | Path to the dataset                          |
+| `--batch_size`       | `64`           | _integer_                 | Batch size for training                      |
+| `--num_epochs`       | `100`          | _integer_                 | Number of epochs for training                |
+| `--use_amp`          | _flag_         |                           | Enable mixed-precision (FP16)                |
+| `--clip_grad_norm`   | `None`         | _float_                   | Maximum gradient norm (if any)               |
 
-## II. Fashion MNIST Denoising
-<table>
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Model</th>
-      <th>Parameters</th>
-      <th>Ave Epoch Time</th>
-      <th>Ave Loss</th>
-      <th>Ave PSNR</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>Conv2dNN (all samples)</td>
-      <td>35,344</td>
-      <td>63.953s</td>
-      <td>0.583</td>
-      <td>2.354</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>Conv2dNN N samples (10 samples)</td>
-      <td>35,344</td>
-      <td>66.094s</td>
-      <td>0.628</td>
-      <td>2.020</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>Conv2dNN Spatial (9 samples)</td>
-      <td>2,236</td>
-      <td>123.934s</td>
-      <td>0.679</td>
-      <td>1.684</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>CNN Model 1</td>
-      <td>2,511</td>
-      <td>8.469s</td>
-      <td>0.074</td>
-      <td>11.329</td>
-    </tr>
-  </tbody>
-</table>
+### Optimization & Learning Rate (Both Architectures)
+| Flag                 | Default        | Choices                     | Description                                  |
+| -------------------- | -------------- | --------------------------- | -------------------------------------------- |
+| `--criterion`        | `CrossEntropy` | `CrossEntropy`, `MSE`       | Loss function                                |
+| `--optimizer`        | `adamw`        | `adam`, `sgd`, `adamw`      | Optimizer                                    |
+| `--momentum`         | `0.9`          | _float_                     | Only for SGD                                 |  
+| `--weight_decay`     | `1e-6`         | _float_                     | L2 regularization                            |
+| `--lr`               | `1e-3`         | _float_                     | Base learning rate                           |
+| `--scheduler`        | `step`         | `step`, `cosine`, `plateau` | LR schedule type                             |
+| `--lr_step`          | `20`           | _integer_                   | Step scheduler step size                     |
+| `--lr_gamma`         | `0.1`          | _float_                     | Step scheduler decay factor                  |
 
-## III. CIFAR10 Denoising
-<table>
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Model</th>
-      <th>Parameters</th>
-      <th>Ave Epoch Time</th>
-      <th>Ave Loss</th>
-      <th>Ave PSNR</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>Conv2dNN (all samples)</td>
-      <td>41,792</td>
-      <td>65.307s</td>
-      <td>0.937</td>
-      <td>0.293</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>Conv2dNN N samples (10 samples)</td>
-      <td>41,792</td>
-      <td>83.208s</td>
-      <td>1.438</td>
-      <td>1.465</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>Conv2dNN Spatial (9 samples)</td>
-      <td>2,638</td>
-      <td>149.808s</td>
-      <td>1.438</td>
-      <td>-1.572</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>CNN Model 1</td>
-      <td>2,963</td>
-      <td>10.016s</td>
-      <td>0.498</td>
-      <td>3.043</td>
-    </tr>
+### Device & Reproduction (Both Architectures)
+| Flag                 | Default        | Choices                     | Description                                  |
+| -------------------- | -------------- | --------------------------- | -------------------------------------------- |
+| `--device`           | `cuda`         | `cuda`, `mps`, `cpu`        | Device for training inference                |
+| `--seed`             | `0`            | _integer_                   | Random seed for reproducibility              |
+| `--output_dir`       | Architecture-specific | _path_               | Path to save output                          |  
 
-  </tbody>
-</table>
+## Project Structure 
+```Shell
+.
+├── layers1d.py           # 1D layers for ViT and AllConvNet
+├── layers2d.py           # 2D layers for AllConvNet
+├── dataset.py            # CIFAR-10/100 & ImageNet wrappers
+├── train_eval.py         # Training & evaluation loop
+├── allconvnet.py         # AllConvNet architecture implementation
+├── allconvnet_main.py    # CLI entrypoint for AllConvNet
+├── vit.py                # Vision Transformer implementation
+├── vit_main.py           # CLI entrypoint for ViT
+├── utils.py              # I/O, logging, seed setup
+├── README.md             # ← you are here
+└── LICENSE               # MIT License
+```
 
-MNIST, Fashion MNIST, CIFAR10 training/testing Denosing results can be found in this [Noteboook](https://github.com/mkang817415/Convolutional-Nearest-Neighbor/blob/main/Notebooks/2D/denoising.ipynb).
+## Architecture Comparison
 
+| Feature | AllConvNet | Vision Transformer |
+|---------|------------|-------------------|
+| **Input Processing** | Direct pixel-level convolution | Patch-based tokenization |
+| **Layer Types** | Conv2d, ConvNN, Attention, Hybrids | Attention, ConvNN, Conv1d, Hybrids |
+| **Spatial Processing** | 2D spatial operations | 1D sequence of patches |
+| **Configuration** | Channel-based depth control | Transformer block depth |
+| **Best For** | Image-level feature extraction | Global context modeling |
 
-# K Testing
-### Model/Training Information
-- **Batch Size**: 64
-- **Epochs**: 10
-- **Loss Function**: `nn.CrossEntropyLoss()`
-- **Ex.** K = 8 (8 neighbors)
+## Example Workflows
 
-We are testing and evaluating the impact of the number of neighbors in **Convolution Nearest Neighbors**. For instance, if K = 10, we consider the 10 most similar pixels to the center pixel. The models we used for these tests consider all samples.
+### Comparing Architectures
+```Shell
+# AllConvNet with ConvNN
+python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 64 128 --dataset cifar10 --output_dir ./Output/AllConvNet/ConvNN
 
+# ViT with ConvNN
+python vit_main.py --layer ConvNN --num_layers 3 --d_model 128 --dataset cifar10 --output_dir ./Output/ViT/ConvNN
+```
 
-## I. MNIST Classification K Test
-<table>
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Model</th>
-      <th>Parameters</th>
-      <th>Ave Epoch Time</th>
-      <th>Accuracy</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>Conv2dNN K=3</td>
-      <td>169,190</td>
-      <td>39.489s</td>
-      <td>94.96%</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>Conv2dNN K=5</td>
-      <td>177,350</td>
-      <td>42.009s</td>
-      <td>94.89%</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>Conv2dNN K=7</td>
-      <td>185,510</td>
-      <td>47.788s</td>
-      <td>94.81%</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>Conv2dNN K=9</td>
-      <td>193,670</td>
-      <td>47.788s</td>
-      <td>94.61%</td>
-    </tr>
-  </tbody>
-</table>
+### Ablation Studies
+```Shell
+# Pure attention (ViT)
+python vit_main.py --layer Attention --num_layers 6 --num_heads 8 --d_model 256
 
+# ConvNN + Attention (ViT)
+python vit_main.py --layer ConvNNAttention --num_layers 6 --num_heads 8 --d_model 256 --K 16
 
-## II. Fashion MNIST Classification K Test
-<table>
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Model</th>
-      <th>Parameters</th>
-      <th>Ave Epoch Time</th>
-      <th>Accuracy</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>Conv2dNN K=3</td>
-      <td>169,190</td>
-      <td>37.415s</td>
-      <td>87.15%</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>Conv2dNN K=5</td>
-      <td>177,350</td>
-      <td>40.225s</td>
-      <td>87.87%</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>Conv2dNN K=7</td>
-      <td>185,510</td>
-      <td>43.213s</td>
-      <td>87.98%</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>Conv2dNN K=9</td>
-      <td>193,670</td>
-      <td>47.199s</td>
-      <td>87.12%</td>
-    </tr>
-  </tbody>
-</table>
+# Hybrid Conv2d/ConvNN (AllConvNet)
+python allconvnet_main.py --layer Conv2d/ConvNN --channels 64 128 256 --sampling Random --num_samples 32
+```
 
-
-## III. CIFAR10 Classification K Test
-<table>
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>Model</th>
-      <th>Parameters</th>
-      <th>Ave Epoch Time</th>
-      <th>Accuracy</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>Conv2dNN K=3</td>
-      <td>217,670</td>
-      <td>38.885s</td>
-      <td>54.98%</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>Conv2dNN K=5</td>
-      <td>226,150</td>
-      <td>39.271s</td>
-      <td>53.83%</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>Conv2dNN K=7</td>
-      <td>234,630</td>
-      <td>41.470s</td>
-      <td>54.05%</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>Conv2dNN K=9</td>
-      <td>243,110</td>
-      <td>97.124s</td>
-      <td>54.16%</td>
-    </tr>
-  </tbody>
-</table>
-
-MNIST, Fashion MNIST, CIFAR10 Classification K Test training/testing/models can be found in this [Noteboook](https://github.com/mkang817415/Convolutional-Nearest-Neighbor/blob/main/Notebooks/2D/K.ipynb).
-
-# Notebooks
-
-* [ConvNN 2D & ConvNN 1D & Pixelshuffle/unshuffle 1D](https://colab.research.google.com/drive/1SsJgSMoOBpagm4cJ551-EU7-BVlfKNzT?usp=sharing): 
-In this notebook, we demonstrate the functionality and parameters for **Convolution Nearest Neighbor** in 2D and 1D. 
-
-* [Classification ConvNN](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/detr_demo.ipynb): In this notebook, we demonstrate how to implement a simple neural network using **Convolution Nearest Neighbor** in 2D and 1D with training/testing of simple data for classification (ie. MNIST, FashionMNIST, etc)
-
-* [Denoising ConvNN](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/DETR_panoptic.ipynb): In this notebook, we demonstrate how to implement a simple neural network using **Convolution Nearest Neighbor** in 2D and 1D with training/testing of simple data for Denoising (ie. MNIST, FashionMNIST, etc)
-
-
-# Future Work
-Our ongoing research focuses on: 
-1. Improving learning performance for spatial Conv2dNN 
-2. Exploring hybrid branching networks with traditional convolution and ConvNN
-3. Addressing training time inconsistencies 
-4. Testing on larger images and implementing Faiss for faster top-k operations in PyTorch. 
-
-# License
+## License 
 Convolutional-Nearest-Neighbor is released under the MIT License. Please see the [LICENSE](LICENSE) file for more information.
 
-# Contributing
-<<<<<<< HEAD
-We welcome feedback and collaboration! Please reach out to: 
-=======
-We welcome feedback and collaboration. Please reach out to: 
->>>>>>> 57552f498208f6f65fda97824d2de81bed0148ab
-- Mingi Kang : mkang2@bowdoin.edu 
-- Jeova Farias : j.farias@bowdoin.edu
+## Contributing 
+Contributions, issues, and feature requests are welcome! 
+Please reach out to: 
+- **Mingi Kang** <mkang2@bowdoin.edu>
+- **Jeova Farias** <j.farias@bowdoin.edu>
