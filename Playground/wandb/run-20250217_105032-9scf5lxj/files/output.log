@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/Playground/wandb_pg.py", line 48, in <module>
+    for epoch in range(wandb.config.epochs):
+                       ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'dict' object has no attribute 'epochs'

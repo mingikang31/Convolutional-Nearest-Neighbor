@@ -525,6 +525,10 @@ Our ongoing research focuses on:
 Convolutional-Nearest-Neighbor is released under the MIT License. Please see the [LICENSE](LICENSE) file for more information.
 
 # Contributing
+<<<<<<< HEAD
 We welcome feedback and collaboration! Please reach out to: 
+=======
+We welcome feedback and collaboration. Please reach out to: 
+>>>>>>> 57552f498208f6f65fda97824d2de81bed0148ab
 - Mingi Kang : mkang2@bowdoin.edu 
 - Jeova Farias : j.farias@bowdoin.edu
