@@ -176,8 +176,10 @@ class TransformerEncoder(nn.Module):
         mlp_output = self.mlp(x)
         x = self.norm2(x + self.dropout2(mlp_output)) 
         return x
-        
 
+
+
+"""Multi-Head Layers for Transformer Encoder"""
 class MultiHeadAttention(nn.Module): 
     def __init__(self, d_model, num_heads, dropout):
         super(MultiHeadAttention, self).__init__()
@@ -606,8 +608,6 @@ class MultiHeadConvNN(nn.Module):
         prime = prime.reshape(b, c, -1)
         return prime
     
-    
-    
 class MultiHeadConv1dAttention(nn.Module):
     def __init__(self, d_model, num_heads, kernel_size): 
         super(MultiHeadConv1dAttention, self).__init__()
@@ -659,7 +659,6 @@ class MultiHeadConv1dAttention(nn.Module):
         x = self.W_o(self.combine_heads(self.batch_split(x.permute(0, 2, 1))))
         return x
         
-
 class MultiHeadConv1d(nn.Module):
     def __init__(self, d_model, num_heads, kernel_size, seq_length=197):
         super(MultiHeadConv1d, self).__init__()
@@ -716,7 +715,6 @@ class MultiHeadConv1d(nn.Module):
 if __name__ == "__main__":
     import torch
     from types import SimpleNamespace
-    # python vit_main.py --layer Attention --patch_size 16 --num_layers 8 --num_heads 8 --d_model 512 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 
     
     # ViT-Small configuration
     args = SimpleNamespace(

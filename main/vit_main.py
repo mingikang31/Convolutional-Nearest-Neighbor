@@ -33,7 +33,7 @@ def args_parser():
     
     # Additional Layer Arguments for ConvNN
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN Layer")
-    parser.add_argument("--kernel_size", type=int, default=9, help="Kernel size for Conv1d Layer")
+    parser.add_argument("--kernel_size", type=int, default=3, help="Kernel size for Conv1d Layer")
     parser.add_argument("--num_samples", type=int, default=0, help="Number of samples for ConvNN Layer, -1 for all samples")
     parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
 
