@@ -1,0 +1,1195 @@
+\documentclass{article}
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2024
+
+
+% ready for submission
+\usepackage{neurips_2024}
+\usepackage{amsmath}
+\usepackage{lineno}
+
+% additional packages
+\usepackage{booktabs}
+\usepackage{threeparttable}
+
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{neurips_2024}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+%     \usepackage[final]{neurips_2024}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2024}
+
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}  
+
+
+\usepackage{listings}
+\usepackage{rotating}
+\usepackage{bm}
+
+% Check table
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{rotating}
+\usepackage{pifont}
+
+
+
+\newcommand{\cmark}{\ding{51}}  % ✓
+\newcommand{\xmark}{\ding{55}}  % ✗
+
+\title{ConvNN: Convolutional Nearest Neighbors}
+
+% Authors
+\author{   
+  Jeova Farias \\ 
+  Bowdoin College \\
+  Brunswick, ME 04011 \\
+  \texttt{j.farias@bowdoin.edu} \\ 
+  \And 
+  Mingi Kang \\
+  Bowdoin College \\
+  Brunswick Maine \\
+  \texttt{mkang2@bowdoin.edu} \\
+}
+
+% Begin Document
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    ConvNN: Convolutional Nearest Neighbors extends the concept of K-Nearest Neighbors (KNN) from machine learning to convolutional operation in deep learning. By incorporating KNN selection within a convolutional framework, ConvNN aggregates features based on learned relationships between similar or spatially close tokens (e.g., pixels), regardless of their adjacency in the standard grid. This allows capturing deeper spatial context compareed to traditional convolution kernels. This work details the ConvNN layer and explores its conceptual links to standard convolution and attention mechanisms, highlighting KNN as a unifying principle. 
+\end{abstract}
+
+
+
+\section{Introduction}
+The K-Nearest Neighbor (KNN) algorithm is a fundamental concept in machine learning. Inspired by KNN, we propose Convolutional Nearest Neighbors (ConvNN). Standard convolutional layers excel at learning local patterns by processing adjacent pixels within a fixed kernel. However, they inherently struggle to capture long-range raltionships between spatially distant but feature-wise similar elements. ConvNN Addresses this limitation by expanding the receptive field dynamically. For each token (e.g., pixel or feature vector), it identifies the \(K\) nearest neighbors across the entire input based on feature similarity or distance. It then applies a convolutional operation over these selected neighbors, enabling the model to learn from spatially diverse and contextually relevant information. 
+
+This approach establishes a connection between convolutional networks and attention-based models like Transformers. This paper first introduces the mechanics of the ConvNN layer. Subsequently, it dives into the theoretical relationship between, Convolution, KNN, and Attention, positioning KNN as a connecting concept. 
+
+\subsection{Motivation}
+The motivation stems from bridging the gap between the local processing of convolutions and the global, dynamic context aggregation of attention mechanisms. Standard convolutions use a fixed, local neighborhood by their kernels. Attention mechanisms compute pairwise similarities across all tokens to determine the weights. ConvNN offers a hybrid approach: it dynamically selects a neighborhood based on similarity (like attention) but uses a learned convolutional filter for aggregation (like CNNs), focusing specifically on the \(K\)-most relevant neighbors. 
+
+
+\section{ConvNN: Convolutional Nearest Neighbors}
+\label{gen_inst}
+
+\subsection{K-Nearest Neighbor Selection}
+To identify the \(K\)-Nearest Neighbors, we first need a metic to compare tokens. Given an input tensor, we compute pairwise similarity or distance between all tokens within each item in the batch. 
+
+Let
+
+\[
+    \mathbf{X} \in \mathbb{R}^{B \times C \times N}
+\]
+
+be the batch of \(B\) feature maps, where each map contains \(N\) tokens (e.g., pixels, points, or sequence elements), and each token is represented by a \(C\)-dimensional feature vector. The feature vectors for the \(i\)th batch item are: 
+
+\[
+    x_{i,1}, x_{i,2}, \ldots , x_{i, N} \in \mathbb{R}^C 
+\]
+
+\subsection*{Computing Distances between Tokens}
+
+The Euclidean distance between tokens \(x_{i,j}\) and \(x_{i,k}\) within the same batch item \(i\) is computed as
+
+\[
+    \mathbf{D}_{ijk} = \|x_{i,j} - x_{i,k}\|_2 = \sqrt{\sum_{c=1}^C (x_{i,cj} - x_{i,ck})^2}
+\]
+
+where \(x_{i,cj}\) denotes the \(c\)-th channel of the \(j\)-th token in the \(i\)-th batch item. The full pairwise Euclidean distance matrix for each batch item gives
+
+\[
+    \mathbf{D} \in \mathbb{R}^{B \times N \times N}
+\]
+
+\subsection*{Computing Similarity between Tokens}
+
+Alternatively, we can use cosine similarity. First, normalize each feature vector to unit length along the channel dimension: 
+
+\[
+    \tilde{x}_{i,j} = \frac{x_{i,j}}{\|x_{i,j}\|_2} \quad \text{where} \quad \|x_{i,j}\|_2 = \sqrt{\sum_{c=1}^C x_{i,cj}^2}
+\]
+
+The cosine similarity between normalized tokens \(\tilde{x}_{i,j}\) and \(\tilde{x}_{i,k}\) is their dot product: 
+
+\[
+    \mathbf{S}_{ijk} = \tilde{x}_{i,j}^{\top} \tilde{x}_{i,k} = \sum_{c=1}^C \tilde{x}_{i,cj} \tilde{x}_{i,ck}
+\]
+
+The full pairwise similarity matrix for each batch item gives 
+
+\[
+    \mathbf{S} \in \mathbb{R}^{B \times N \times N}
+\]
+
+\subsection*{Efficient Batched Distance Matrix Calculation}
+
+The pairwise Euclidean matrix \(\mathbf{D} \in \mathbb{R}^{B \times N \times N}\) can be efficiently computed using batched matrix operations: 
+
+\[
+    \mathbf{D}_{ijk} = \sqrt{\|x_{i,j}\|^2 + \|x_{i,k}\|^2 - 2x_{i,j}^{\top}x_{i,k}}
+\]
+
+In matrix form for the entire batch: 
+
+\[
+    \mathbf{D} = \sqrt{\mathbf{r}[:, \texttt{None}, :] + \mathbf{r}[:, :, \texttt{None}] - 2(\mathbf{XX})}
+\]
+
+where: 
+
+\begin{itemize}
+    \item  \(\mathbf{r} \in \mathbb{R}^{B \times N}\) contains the squared \(\ell_2\) norm for each token, computed by summing squares along the channel dimension \(C\): 
+    \[
+        \mathbf{r}_{ij} = \sum_{c=1}^C \mathbf{X}^2_{i,c,j}
+    \]
+    (e.g., using \texttt{torch.sum(X**2, dim=1, keepdim=True)}.
+
+    \item \(\mathbf{XX} \in \mathbb{R}^{B \times N \times N}\) represents the batched Gram matrix (dot product between all pairs of tokens within each batch item), computed as 
+    \[
+        \sum_{c=1}^C \mathbf{X}_{i,c,j} \mathbf{X}_{i,c,k}
+    \]
+    (e.g., using \texttt{torch.bmm(X.transposed(2, 1), X)}).
+
+    \item The notation \texttt{[:, \texttt{None}, :]} and \texttt{[:, :, \texttt{None}]} denotes broadcasting of \(\mathbf{r}\) to match the \(B \times N \times N\) shape. 
+\end{itemize}
+
+\subsection*{Efficient Batched Similarity Matrix Calculation}
+
+We compute the cosine similarity matrix \(\mathbf{S} \in \mathbb{R}^{B \times N \times N}\) by first normalizing each eature vector along the channel dimension \(C\): 
+
+\[
+    \tilde{\mathbf{X}} = \frac{\mathbf{X}}{\|\mathbf{X}\|_2} \quad (\text{Norm computed over dimension } C)
+\]
+
+(e.g., using \texttt{torch.nn.F.Noramalize(X, p=2, dim=1)}).
+
+Then, compute the batched Gram matrix of the normalized features: 
+
+\[
+\mathbf{S} = \tilde{\mathbf{X}}\tilde{\mathbf{X}}
+\]
+
+(e.g., using \texttt{torch.bmm(X.transposed(2, 1), X)}).
+
+\subsection{K-Nearest Neighbor Feature Gathering}
+
+Given the input feature tensor \(\mathbf{X} \in \mathbb{R}^{B \times C \times N}\) and a pairwise distance matrix \(\mathbf{D} \in \mathbb{R}^{B \times N \times N}\) (or similarity matrix \(\mathbf{S}\), we gather the features of the \(K\) nearest neighbors for each of the \(N\) tokens in each batch item. 
+
+First, find the indices of the \(K\) nearest neighbors for each token \(j\) by selecting the smallest distances (or largest similarities) in row \(j\) of the matrix: 
+
+\[
+    \mathcal{I} = \texttt{argsort}(\mathbf{D})[:, :, :K] \quad (\text{or } \texttt{argsort}(S)[:, :, -K, :])
+\]
+
+This yields
+
+\[
+    \mathcal{I} \in \mathbb{R}^{B \times N \times N}
+\]
+
+where \(\mathcal{I}_{ijk}\) is the index of the \(k\)-th nearest neighbor of token \(j\) in batch item \(i\).
+
+(e.g., using \texttt{torch.topk(D, K, dim=2)})
+
+These indices \(\mathcal{I}\) are then used to gather the corresponding feature vectors from the original tensor \(\mathbf{X}\). The goal is to construct a new tensor \(\mathbf{X}_{\text{knn}}\) where \(\mathbf{X}_{\text{knn}}[i, :, j, k]\) contains the \(C\)-dimensional feature vector of the \(k\)-th nearest neighbor of token \(j\) in batch \(i\). The resulting tensor shape is: 
+
+\[
+    \mathbf{X}_{\text{knn}} \in \mathbb{R}^{B \times C \times N \times K}
+\]
+
+This gathering operation requires indexing. In PyTorch, it can be implemented using torch.gather by expanding the index tensor to match the dimensions of the input tensor along which gathering occurs. 
+
+The gathered neighbor features \(\mathbf{X}_{\text{knn}} \in \mathbb{R}^{B \times C \times N \times K}\) represent the neighborhood information for each token. To prepare these features a subsequent convolutional layer that processes each neighborhood independently, we stack the neighbors along a single dimension. We reshape the tensor by merging the \(N\) (Tokens) and \(K\) (neighbor) dimensions: 
+
+\[
+    \mathbf{X}_{\text{stacked}} = \texttt{reshape}(\mathbf{X}_{\text{knn}}) \in \mathbb{R}^{B \times C \times (N \cdot K)}
+\]
+
+(e.g., using \texttt{x.reshape(B, C, N * K)} or \texttt{x.view(B, C, -1)})
+
+This arrangs the data such that the \(K\) neighbors for token 0 come first, then the \(K\) neighbors for token 1, and so on, along the last dimension. 
+
+
+\subsection*{PyTorch Code}
+
+\begin{verbatim}
+import torch 
+
+def gather_X_knn(matrix, matrix_magnitude, K, maximum):
+    """ 
+    Gathers K nearest neighbor features based on indices from Topk. 
+    Input: 
+        matrix: torch.Tensor, Features, shape (B, C, N)
+        matrix_magnitude: torch.Tensor, distance/similarity matrix, shape (B, N, N)
+        K: int, number of nearest neighbors 
+        maximum: boolean, true for similarity, false for distance
+    Return: 
+        x_knn: Gathered features, shape (B, C, N*K)
+    """
+
+    B, C, N = matrix.shape 
+
+    _, topk_indices = torch.topk(matrix_magnitude, k=K, dim=2, largest=maximum)
+
+    # Expand indices to add channel dimension: (B, 1, N, K) 
+    # then expand to (B, C, N, K)
+    topk_indices_expanded = topk_indices.unsqueeze(1).expand(B, C, N, K)
+
+    # Expand matrix to add nearest neighbor dimension: (B, C, N, 1) 
+    # then expand to (B, C, N, K)
+    matrix_expanded = matrix.unsqueeze(-1).expand(B, C, N, K)
+
+    # Gather along the token dimension (dim=2) using the expanded indices. 
+    x_knn = torch.gather(matrix_expanded, dim=2, index=topk_indices_expanded)
+
+    # Flatten the token and neighbor dimensions: (B, C, N*K)
+    x_knn = x_knn.view(B, C, -1)
+    return x_knn
+\end{verbatim}
+
+\subsection{Grouped Convolution Over K-Nearest Neighbors}
+To learn the information within each \(K\)-neighbor group, we apply 1D convolution to \(\mathbf{X}_{\text{stacked}}\) along the last dimension \((N \cdot K)\). We use: 
+
+\begin{itemize}
+    \item \texttt{in\_channels = C}
+    \item \texttt{out\_channels = C\_out (where \(C_{\text{out}}\) is the desired number of output features)}
+    \item \texttt{kernel\_size = K}
+    \item \texttt{stride = K}
+    \item \texttt{padding = 0}
+\end{itemize}
+
+This configuration ensures that the convolution kernel slides exactly over each group of \(K\) neighbors without overlap. Each application of the kernel aggregates the \(K\) neighbor features for a specific original token into a single \(C_{\text{out}}\)-dimensional output vector. 
+
+\[
+    \mathbf{X}_{\text{agg}} = \texttt{Conv1D}(\mathbf{X}_{\text{stacked}}) \in \mathbb{R}^{B \times C_{\text{out}} \times N}
+\]
+
+The convolution performs a learned, weighted sum within each neighbor group: 
+
+\[
+    \mathbf{X}_{\text{agg}}[:, :, i] = \sum_{k=0}^{K-1} \mathbb{W}_k \cdot \mathbf{X}_{\text{stacked}}[:, :, iK + k] + b
+\]
+
+where \(\mathbf{W}_k \in \mathbb{R}^{C_{\text{out}} \times C}\) are learned weights for the \(k\)-th position within the kernel, and \(\mathbf{b} \in \mathbb{R}^{C_{\text{out}}}\) is the learned bias vector.
+
+\paragraph{Output Shape Matches Input Spatial shape: }
+The output tensor \(\mathbf{X}_{\text{agg}}\) has shape \([B, C_{\text{out}}, N]\), matching the spatial dimension \(N\) of the original input \(\mathbf{X} \in \mathbb{R}^{B \times C \times N}\). This allows ConvNN layers to be seamlessly integrated into existing architectures. For example, one may use residual connections: 
+
+\[
+    \mathbf{X}_{\text{out}} = \mathbf{X} + \mathbf{X}_{\text{agg}} \quad \text{(if } C_{\text{out}} = C \text{)}
+\]
+
+or employ a projection. It also facilitates stacking multiple ConvNN layers or combining them with other standard layers (e.g., pooling, standard convolution). 
+
+
+\subsection{Pixel Sampling \& Pixel Shuffle}
+The computation of distance/similarity matrices and top-k operations are proportional to the size of the image as a 2D image of size \(W \times H\), it then flattens to \((W*H\) which then it must create a similarity matrix of shape \((W*H) \times (W*H)\) and each token of \((W*H)\) must compare to all of the other pixels. Which then the  time complexity is \(O((W*H)^2)\). As the size of the image increases, then the time for computing the similarities and getting the $K$ most similar neighbors takes quadruple the time complexity. 
+
+To help with the time complexity of this, \textbf{Random Sampling} and \textbf{Spatial Sampling} are introduced. 
+
+\subsection{Pixel Sampling \& Pixel Shuffle}
+
+The computation of distance or similarity matrices and top-\(k\) operations scales with the size of the image. Given a 2D image of size \(W \times H\), flattening it produces a vector of length \(H \cdot W\). Consequently, the similarity matrix has shape \((H \cdot W) \times (H \cdot W)\), requiring each of the \(H \cdot W\) tokens to be compared to every other pixel. Thus, the time complexity is
+
+\[
+O\big((H \cdot W)^2\big).
+\]
+
+As the image size increases, the computation time for calculating similarities and selecting the \(K\) most similar neighbors grows quadratically.
+
+To alleviate this, we introduce \textbf{Random Sampling} and \textbf{Spatial Sampling} techniques.
+
+\subsection*{Random Sampling}
+
+For an image tensor of shape \((B, C, H, W)\), representing Batch, Channels, Height, and Width respectively, the ConvNN 2D implementation first flattens the spatial dimensions, resulting in
+\[
+(B, C, H \cdot W).
+\]
+
+To reduce computational cost, we randomly select a subset of the flattened spatial indices.
+
+Let
+\[
+N = H \cdot W, \quad n = \text{number of samples}, \quad x = \mathbb{R}^{B \times C \times N}.
+\]
+Let \(\pi\) be a uniformly random permutation of the set \(\{0, 1, \ldots, N-1\}\). Then the sampled indices are
+\[
+\mathrm{rand\_idx} = \{\pi(0), \pi(1), \ldots, \pi(n-1)\}.
+\]
+
+We then extract
+\[
+x_{\mathrm{sample}} = x[:,:,\,\mathrm{rand\_idx}] \in \mathbb{R}^{B\times C \times n}.
+\]
+
+
+Now the time complexity is
+
+\[
+O\big((H \cdot W) \cdot n\big).
+\]
+
+thus reducing the computational time of both similarity matrix calculation and top-\(k\) operations. 
+
+Instead of comparing every token with every other pixel, we only compare it to the \(n\) randomly sampled from the original input \(x = \mathbb{R}^{B \times C \times N}\). 
+
+
+\subsection*{Spatial Sampling}
+
+Spatial Sampling furthers the sampling method of random sampling but in a uniformed way. For an image tensor of shape \((B, C, H, W)\),  the idea is to first get a sample image tensor of shape 
+\((B, C, h, w)\), where \(h\) and \(w\) are the spatially sampled indices for Height and Width of the image tensor. 
+
+
+To reduce the \(O((H \cdot W)^2)\) cost of a full similarity matrix, we instead sample a regular grid of spatial locations.  Let the tensor be
+
+\[
+x_{1}\in\mathbb{R}^{B\times C\times H\times W},
+\]
+
+and denote the number of samples per axis by \(s\) and the padding by \(p\).  We compute one‐dimensional index vectors
+\[
+i_{k} = \left\lfloor\,p + \frac{k}{s-1}\,(H - 2p - 1)\right\rfloor,\quad
+j_{\ell} = \left\lfloor\,p + \frac{\ell}{s-1}\,(W - 2p - 1)\right\rfloor,
+\]
+for \(k,\ell = 0,\dots,s-1\).  These define a grid of coordinates
+\[
+\mathcal{G} = \bigl\{(i_{k},\,j_{\ell}) : k,\ell=0,\dots,s-1\bigr\}.
+\]
+
+We then extract the sampled entries
+\[
+x_{\mathrm{sample}} = \bigl\{\,x_{1}[\,b,c,i_{k},j_{\ell}\,]\;\bigm|\;b=1,\dots,B,\;c=1,\dots,C,\;(i_{k},j_{\ell})\in\mathcal{G}\bigr\}.
+\]
+If we flatten the spatial grid so that \(|\mathcal{G}|=s^2\), then
+\[
+x_{\mathrm{sample}}\;\in\;\mathbb{R}^{B\times C\times s^2}.
+\]
+
+Equivalently, one can compute a single “flat” index for each \((i_{k},j_{\ell})\) by
+\[
+n = i_{k}\,W + j_{\ell},
+\]
+and then slice the flattened tensor \(x_{1}\in\mathbb{R}^{B\times C\times N}\) (with \(N=H\cdot W\)) at those \(n\) values.  This yields the same \(B\times C\times s^2\) sample tensor but makes the indexing explicit in 1D.
+
+
+Now the time complexity is
+
+\[
+O\big((H \cdot W) \cdot s^2\big).
+\]
+
+thus reducing the computational time of both similarity matrix calculation and top-\(k\) operations. 
+
+Instead of comparing every token with every other pixel, we only compare it to the \(s^2\) spatially sampled from the original input \(x = \mathbb{R}^{B \times C \times N}\). 
+
+
+
+% EXPLAIN MORE HERE:::::*****
+
+
+
+\section{Theory: Convolution, KNN, Attention}
+This section explores the conceptual links between standard Convolution, K-Nearest Neighbors (KNN), and the Attention mechanism, highlighting KNN as a common thread. 
+
+\subsection{Connection between Convolution and KNN}
+
+Standard convolution can be viewed as a specialized, local form of KNN aggregation. A convolutional kernel processes a fixed neighborhood (e.g. \(3 \times 3\) pixels) around a central pixel. This neighborhood consists of the spatially closest pixels -implicitly a form of KNN where \(K\) is fixed (e.g., \(K=9\) for a \(3 \times 3\) kernel) and the neighborhood selection is based purely on spatial adjacency (minimum Euclidean distance in pixel coordinates), not feature similarity. The kernel weights are learned parameters that determine how information from these local "neighbors" is aggregated. 
+
+\paragraph{ConvNN} generalizes this idea: 
+
+\begin{itemize}
+    \item \textbf{Neighborhood Selection:} Instead of a fixed spatial grid, ConvNN selects neighbors based on feature similarity or distance across the entire input (i.e., the \(K\) nearest neighbors in feature space). This allows capturing relationships between elements that are spatially distant but semantically related. 
+    \item \textbf{Aggregation:} ConvNN still uses a learned convolutional filter to aggregate information from the selected \(K\) neighbors, similar to how standard convolution aggregates from its local neighborhood. 
+\end{itemize}
+
+As a simplied recap for a single batch item (omitting the batch dimension) is as follows.
+
+Let the input matrix be 
+
+\[
+    \mathbf{X} \in \mathbb{R}^{C \times N}
+\]
+
+Then: 
+
+\begin{enumerate}
+    \item Compute the distance/similarity matrix: 
+    \[
+        \mathbf{D} \in \mathbb{R}^{N \times N} \quad \text{or} \quad \mathbf{S} \in \mathbb{R}^{N \times N}
+    \]
+    \item Get top-K indices: 
+    \[
+        \mathcal{I} \in \mathbb{R}^{N \times K}
+    \]
+    \item Gather neighbor features: 
+    \[
+        \mathbf{X}_{\text{knn}} \in \mathbb{R}^{C \times N \times K}
+    \]
+    \item Stack features: 
+    \[
+        \mathbf{X}_{\text{stacked}} \in \mathbb{R}^{C \times (N \cdot K)}
+    \]
+    \item Apply a 1D convolution with kernel size \(K\) and stride \(K\).
+\end{enumerate}
+
+\subsection{Connection between KNN and Attention}
+The standard attention mechanism, particularly the Scaled Dot-Product Attention, can also be interpreted through the lens of KNN: 
+
+\[
+    \text{Attention}(Q, K, V) = \text{softmax}\!\Biggl(\frac{QK^{\top}}{\sqrt{d_k}}\Biggr)V, 
+\]
+where: 
+
+\begin{itemize}
+    \item \(Q \in \mathbb{R}^{N \times d_k}\) is the Query matrix (with \(N\) tokens). 
+    \item \(K \in \mathbb{R}^{N \times d_k} \) is the Key matrix. 
+    \item \(V \in \mathbb{R}^{N \times d_v}\) is the value matrix. 
+\end{itemize}
+
+Here, \(QK^{\top} \in \mathbb{R}^{N \times N}\) represents pairwise similarity scores between queries and keys. The softmax operation is applied row-wise to the scaled similarity scores to convert them into a probability distribution (attention weights) that sum to 1. The output is a weighted sum of the Value vectors, where the weights indicate how much query \(i\) attends to key \(j\). 
+
+Because the softmax function assigns higher weights to keys with greater similarity to the query, this mechanism is related to KNN: tokens with higher similarity scores contribute more to the output. 
+
+\subsection*{KNN-Max: A Hard KNN Variant of Attention}
+We can make the KNN connection even more explicit by replacing the softmax with a hard selection mechanism based on the top-K similarity scores. This variant, which we call \(\text{KNN}_{Max}\) (Nearest Neighbor Max), is defined as follows. Given the scaled similarity scores matrix
+
+\[
+    \mathbf{M} = \frac{QK^{\top}}{\sqrt{d_k}} \in \mathbb{R}^{N \times N}
+\]
+
+KNNMax operates row-wise: 
+
+\[
+\text{KNNMax}(\mathbf{M})_{ij} = 
+\begin{cases}
+    1 & \text{if } \mathbf{M}_{ij} \text{ is among the top } K \text{ value in row } i \\
+    0 & \text{otherwise}
+\end{cases}
+\]
+
+This creates a binary attention matrix \(\mathbf{A}_{\text{KNN}_{Max}} \in \mathbb{R}^{N \times N}\), where each row \(i\) has exactly \(K\) ones, indicating the \(K\) keys most similar to query \(i\).
+
+The KNNMax attention output is computed as: 
+
+\[
+    \text{Attention}_{\text{KNN}_{Max}}(Q, K, V) = \mathbf{A}_{\text{KNN}_{Max}}V,
+\]
+
+where each output vector \(\text{Attention}_{\text{KNN}_{Max}}[i, :]\) is the (optionally averaged) sum of the Value vectors corresponding to the \(K\) nearest neighbors for query \(i\).
+
+\subsection{Bridge between Convolution and Attention: K-Nearest Neighbors}
+
+Both ConvNN and attention mechanisms (particularly the KNNMax variant) leverage the principle of K-Nearest Neighbors to aggregate information dynamically based on token relationships, thereby moving beyond fixed local grids. In summary, KNN serves as a conceptual bridge:
+
+\begin{itemize}
+    \item \textbf{Neighborhood Selection:}
+    \begin{itemize}
+    \item \emph{ConvNN:} Selects \( K \) neighbors based on distance/similarity in the input feature space \( (\mathbf{X}) \).
+        \item \emph{Attention/KNNMax:} Selects \( K \) neighbors based on similarity in a learned projection space (using the \( Q \)–\( K \) similarity).
+    \end{itemize}
+    \item \textbf{Aggregation Mechanism:}
+    \begin{itemize}
+        \item \emph{ConvNN:} Uses a learned convolutional filter (with kernel size \(K\) and stride \(K\)) for a weighted sum of neighbor features.
+        \item \emph{Attention (softmax):} Uses dynamically computed weights (via softmax) for a weighted sum of Value vectors.
+        \item \emph{Attention (KNNMax):} Uses binary (0 or 1) weights for an (optionally averaged) unweighted sum of the Value vectors.
+    \end{itemize}
+\end{itemize}
+
+
+\subsection*{Numerical Example}
+
+Building upon the concept of computing distances between tokens, we now illustrate how nearest neighbor attention, specifically $\text{KNN}_{\text{max}}$, translates to a convolutional operation using a numerical example.
+
+Let $M \in \mathbb{R}^{N \times N}$ represent the matrix resulting from $\text{KNN}_{\text{Max}}(\mathbf{X})$. Let $V \in \mathbb{R}^{N \times d_v}$ be the value matrix, where $d$ is the token dimension and $n$ is the number of tokens.
+
+After applying $\text{KNN}_{\text{max}}$ to $M$, the rows of $M$ are transformed into binary vectors, indicating the top-$k$ nearest neighbors for each token. We then perform a matrix multiplication with $V$:
+
+\[
+\text{KNN}_{\text{max}}(M)V =
+\begin{bmatrix}
+1 & 0 & 1 \\
+\end{bmatrix}
+\times
+\begin{bmatrix}
+0 & 1 \\
+2 & 1 \\
+5 & 2
+\end{bmatrix}
+=
+\begin{bmatrix}
+(1 \cdot 0) + (0 \cdot 2) + (1 \cdot 5) & (1 \cdot 1) + (0 \cdot 1) + (1 \cdot 2) \\
+\end{bmatrix}
+=
+\begin{bmatrix}
+5 & 3
+\end{bmatrix}
+\]
+
+This resulting vector, with shape $\in \mathbb{R}^{1 \times d}$, represents the aggregated information from the nearest neighbors.
+
+To achieve the same output using convolution, we employ depthwise convolution. Specifically, we treat each dimension of the value matrix $V$ as a separate channel and apply a corresponding kernel.
+
+Since the convolution operation effectively computes a weighted sum, we design kernels that mimic the selection and aggregation performed by $\text{KNN}_{\text{max}}$. In this example, with $d=2$, we require two kernels:
+
+\[
+Kernel_1 =
+\begin{bmatrix}
+1 & 0 \\
+0 & 0 \\
+1 & 0
+\end{bmatrix}
+, \quad
+Kernel_2 =
+\begin{bmatrix}
+0 & 1 \\
+0 & 0 \\
+0 & 1
+\end{bmatrix}
+\]
+
+These kernels select the values corresponding to the nearest neighbors identified by $\text{KNN}_{\text{max}}(M)$. We then convolve these kernels with the value matrix $V$:
+
+\[
+\begin{bmatrix}
+1 & 0 \\
+0 & 0 \\
+1 & 0
+\end{bmatrix}
+\text{ CONVOLVE } \xrightarrow{}
+\begin{bmatrix}
+0 & 1 \\
+2 & 1 \\
+5 & 2
+\end{bmatrix}
+= 5, \quad
+\begin{bmatrix}
+0 & 1 \\
+0 & 0 \\
+0 & 1
+\end{bmatrix}
+\text{ CONVOLVE } \xrightarrow{}
+\begin{bmatrix}
+0 & 1 \\
+2 & 1 \\
+5 & 2
+\end{bmatrix}
+= 3
+\]
+
+This convolution operation produces the same output vector $\begin{bmatrix} 5 & 3 \end{bmatrix}$, demonstrating the equivalence between $\text{KNN}_{\text{max}}$ attention and depthwise convolution in this specific context.
+
+This numerical example highlights the inherent connection between attention mechanisms and convolutional techniques, with $K$-Nearest Neighbors acting as the bridge.
+
+\section{ConvNN Attention: Convolutional Nearest Neighbors Attention}
+This section expands on the ConvNN (Convolutional Nearest Neighbors) to merge more like the attention mechanisms in the transformer architecture. 
+
+Within the multihead attention block, there are linear layers for \(K, Q, V\) from the original input tensor \(X\). We take this and incorporate the linears layers into ConvNN before it's operations. 
+
+\begin{enumerate}
+    \item Linear Layers for \(K, Q, V\) from \(\mathbf{X}\)
+    \item Compute the distance/similarity matrix using \(K\) and \(Q\)
+    \[
+        \mathbf{D} \in \mathbb{R}^{K \times Q} \quad \text{or} \quad \mathbf{S} \in \mathbb{R}^{K \times Q}
+    \]
+    \item Get top-K indices: 
+    \[
+        \mathcal{I} \in \mathbb{R}^{K_{key} \times K}
+    \]
+    \item Gather neighbor features: 
+    \[
+        \mathbf{X}_{\text{knn}} \in \mathbb{R}^{C \times V \times K}
+    \]
+    \item Stack features: 
+    \[
+        \mathbf{X}_{\text{stacked}} \in \mathbb{R}^{C \times (V \cdot K)}
+    \]
+    \item Apply a 1D convolution with kernel size \(K\) and stride \(K\).
+\end{enumerate}
+
+This adds a linear layer before the ConvNN operations, allowing for ConvNN to mimic attention as much as possible. 
+
+\subsection{Multihead ConvNN Attention}
+There are multiple aspects of Multihead Attention and Convolutional Nearest Neighbors that differ. The first is the architecture. Attention relies on softmax operation and linear layers, while Convolutional Nearest Neighbors rely on gathering the \(K\)-nearest neighbors and using the traditional convolution 1D. 
+
+One of the problems with Convolutional Nearest Neighbors is that there is no concept of number of heads in the standard convolution. Within the Multihead Attention, the input tensor is split into the number of heads and then computated to help feature extraction. However, splitting the input tensor within a convolution is not self explanatory. 
+
+To account for the number of heads idea of the Multihead Attention, we use a similar split heads function but changes the batches to account for the additional dimension. 
+
+\textbf{Multihead Attention} 
+
+Let the input tensor be 
+
+\[
+    X \in \mathbb{R}^{B \times N \times C}
+\]
+
+where $B$ is the batch size, $N$ is sequence length (or number of tokens), and $C$ is the embedding dimension. 
+
+Then we project $X$ into queries, Keys, and values: 
+
+\[
+Q = XW_Q + b_Q, \quad K = XW_K+b_K, \quad V = XW_V + b_V, \quad Q, K, V \in \mathbb{R}^{B \times N \times C}
+\]
+
+Then we split into $H$ heads. Let \(d = C/H\), and reshape $Q, K, V$ for head dimensions to it's own axis: 
+
+\[
+Q, K, V \in \mathbb{R}^{B \times H \times N \times d}
+\]
+
+Which then these would go through the scaled dot-product multihead attention. 
+
+\[
+Z = \text{Attention Scores} \space \cdot V \in \mathbb{R}^{B \times H \times N \times d}
+\]
+
+
+And then concatenate heads and reshape. 
+
+\[
+Z \rightarrow{} Z_{permute} \in \mathbb{R}^{B \times N \times (Hd = C)}
+\]
+
+
+
+\textbf{ConvNN Attention}
+Within the context of Convolutions, there are no such operation of splitting heads. Convolution 1D's input tensor needs to be in the shape \(X \in \mathbb{R}^{B \times C \times N}\), where $B$ is batch size, $C$ is the feature maps, and $N$ is the individual pixels. Not only is the permutation of the input tensor different, Convolution 1D cannot forward a tensor that has 4 dimensions. Therefore, splitting heads does not work with convolution. 
+
+\[
+X_{\text{split}} \in \mathbb{R}^{B \times H \times N \times d} \nrightarrow \text{Conv1d}
+\]
+
+Instead we can permute so that the extra dimension goes into the batch dimension. 
+
+Let input tensor be 
+
+\[
+X \in \mathbb{R}^{B \times N \times C}
+\]
+
+Then we split into $H$ heads. Let \(d = C/H\), and reshape $X$ with the extra dimension. 
+
+\[
+X_{\text{split}} \in \mathbb{R}^{B \times H \times N \times d}
+\]
+
+Then we can move the extra dimension, $d$ into the batch dimension $B$
+
+\[
+X_{reshape} \in \mathbb{R}^{Bd \times H \times N}
+\]
+
+This allows for Convolution 1D to work and be able utilize a similar technique as Multihead Attention's split heads function. After the convolution, we can reshape and use the combine heads function from Multihead Attention to get the original dimensions. 
+
+\[
+X_{out} \in \mathbb{R}^{Bd \times H \times N}
+\]
+
+\[
+X_{\text{reshape}} \in \mathbb{R}^{B \times H \times N \times d}
+\]
+
+\[
+X_{\text{reshape}} \in \mathbb{R}^{B \times N \times (Hd = C)}
+\]
+
+\section{ConvNN Attention with Linear Layers and Heads}
+With the splitting technique proposed above, we can seamlessly integrate the heads feature from Multihead Attention to ConvNN Attention. 
+
+\begin{enumerate}
+    \item Split heads for \(X\) and move \(d\) dimension into batch \(B\)
+    \item Linear Layers for \(K, Q, V\) from \(\mathbf{X}\)
+    \item Compute the distance/similarity matrix using \(K\) and \(Q\)
+    \[
+        \mathbf{D} \in \mathbb{R}^{K \times Q} \quad \text{or} \quad \mathbf{S} \in \mathbb{R}^{K \times Q}
+    \]
+    \item Get top-K indices: 
+    \[
+        \mathcal{I} \in \mathbb{R}^{K_{key} \times K}
+    \]
+    \item Gather neighbor features: 
+    \[
+        \mathbf{X}_{\text{knn}} \in \mathbb{R}^{C \times V \times K}
+    \]
+    \item Stack features: 
+    \[
+        \mathbf{X}_{\text{stacked}} \in \mathbb{R}^{C \times (V \cdot K)}
+    \]
+    \item Apply a 1D convolution with kernel size \(K\) and stride \(K\).
+    \item Create extra dimension for \(d\) from batch \(B\) and combine heads for \(X\)
+\end{enumerate}
+
+This implementation of ConvNN allows for full transparency and mimics the entire process of the Multihead Attention and can now be experimented by a plug-and-play way inside various transformer architectures. 
+
+\section{Experiment}
+We will be primarily experimenting with CIFAR10 and CIFAR100 datasets as these experiments are demonstrating the underlying power of ConvNN on a smaller scale. We will be using Nvidia's A100 GPU for training on the HPC server. 
+
+There are three models that was used to experiment. 
+
+\begin{itemize}
+    \item Simple Multi Layer Neural Net
+    \item VGG16 
+    \item ViT 
+\end{itemize}
+
+All three of these models can switch between Attention, standard Convolution, ConvNN, and ConvNN Attention. 
+
+
+
+
+
+\section{Results}
+\begin{table}[h]
+  \centering
+  \begin{threeparttable}
+    \caption{CIFAR10 with 10 Epochs}\label{tab1}
+    \begin{tabular}{@{}l|l|l|l|l|l@{}}
+      \toprule
+      Models & Params & Ave. Epoch & Top-1 & Top-1* & Epoch*\\ 
+      \midrule
+      CNN                                   & \(33.57M\) & \(12.71s\) & \(\bm{64.13\%}\) & \(\bm{65.90\%}\) & 4 \\
+      
+      \midrule
+      ConvNN                                & \(33.57M\) & \(14.75s\) & \(54.92\%\)  & \(56.92\%\) & 5 \\
+      ConvNN\(_{rand}\)                     & \(33.57M\) & \(14.44s\) & \(53.03\%\)  & \(54.77\%\) & 4 \\
+      ConvNN\(_{spatial}\)                  & \(33.57M\) & \(16.47s\) & \(53.49\%\)  & \(56.29\%\) & 5 \\
+      
+      \midrule
+      ConvNN\(_{attn}\)                     & \(39.86M\) & \(14.94s\) & \(41.21\%\)  & \(42.02\%\) & 7 \\
+      ConvNN\(_{attn+rand}\)                & \(39.86M\) & \(15.10s\) & \(59.18\%\)  & \(59.37\%\) & 8 \\
+      ConvNN\(_{attn+spatial}\)             & \(39.86M\) & \(17.33s\) & \(57.14\%\)  & \(59.26\%\) & 7 \\
+
+      ConvNN\(_{attnV}\)                    & \(35.67M\) & \(15.04s\) & \(53.17\%\)  & \(53.22\%\) & 9 \\
+      ConvNN\(_{attnV+rand}\)               & \(35.67M\) & \(14.97s\) & \(60.10\%\)  & \(60.10\%\) & 10 \\
+      
+      \midrule
+      B-Conv2d-ConvNN                       & \(33.58M\) & \(15.16s\) & \(\bm{65.46\%}\) & \(\bm{66.04\%}\) & 2 \\
+      B-Conv2d-ConvNN\(_{rand}\)            & \(33.58M\) & \(15.00s\) & \(\bm{66.01\%}\) & \(\bm{67.16\%}\) & 3 \\
+      B-Conv2d-ConvNN\(_{spatial}\)         & \(33.58M\) & \(16.78s\) & \(\bm{67.13\%}\) & \(\bm{67.61\%}\) & 3 \\
+      
+      \midrule
+      B-Conv2d-ConvNN\(_{attn+rand}\)       & \(39.87M\) & \(15.54s\) & \(\bm{64.64\%}\) & \(\bm{67.33\%}\) & 3 \\
+      B-Conv2d-ConvNN\(_{attn+spatial}\)    & \(39.87M\) & \(18.01s\) & \(\bm{66.38\%}\) & \(\bm{67.40\%}\) & 3 \\
+      B-Conv2d-ConvNN\(_{attnV+rand}\)      & \(35.68M\) & \(15.37s\) & \(\bm{66.64\%}\) & \(\bm{67.84\%}\) & 3 \\
+      
+      \midrule
+      B-Attention-ConvNN                     & \(33.58M\) & \(20.40s\) & \(59.84\%\) & \(62.68\%\) & 4 \\
+      B-Attention-ConvNN\(_{rand}\)          & \(33.58M\) & \(20.00s\) & \(60.35\%\) & \(61.76\%\) & 4 \\
+      B-Attention-ConvNN\(_{spatial}\)       & \(33.58M\) & \(21.80s\) & \(58.09\%\) & \(59.52\%\) & 3 \\
+      
+      \midrule
+      B-Attention-ConvNN\(_{attn+rand}\)     & \(39.87M\) & \(20.39s\) & \(61.40\%\) & \(62.57\%\) & 7 \\
+      B-Attention-ConvNN\(_{attn+spatial}\)  & \(39.87M\) & \(23.26s\) & \(61.42\%\) & \(61.42\%\) & 10 \\
+      B-Attention-ConvNN\(_{attnV+rand}\)    & \(35.68M\) & \(20.28s\) & \(62.69\%\) & \(62.70\%\) & 9 \\
+      
+      \midrule
+       B-Attention-Conv2d                    & \(33.66M\) & \(18.34s\) & \(\bm{65.55\%}\) & \(\bm{67.37\%}\) & 3 \\
+      
+      \midrule
+      Attention\(_{1-head}\)                     & \(33.57M\) & \(17.84s\) & \(52.78\%\) & \(55.19\%\) & 4 \\
+      Attention\(_{2-heads}\)                    & \(33.57M\) & \(16.23s\) & \(50.54\%\) & \(53.71\%\) & 5 \\
+      Attention\(_{4-heads}\)                    & \(33.57M\) & \(17.69s\) & \(52.36\%\) & \(54.79\%\) & 6 \\
+      Attention\(_{8-heads}\)                    & \(33.57M\) & \(20.48s\) & \(55.03\%\) & \(56.45\%\) & 6 \\
+      Attention\(_{16-heads}\)                   & \(33.57M\) & \(26.52s\) & \(56.63\%\) & \(57.37\%\) & 8 \\
+      Attention\(_{32-heads}\)                   & \(33.57M\) & \(38.44s\) & \(56.88\%\) & \(59.19\%\) & 6 \\
+      % Example & data 7   & data 8           & data 9\tnote{3} \\
+      \bottomrule
+      
+    \end{tabular}
+    \begin{tablenotes}
+      \centering               
+      \footnotesize
+      \item Note: Each of these models have two layers and a classifier layer. The results are from 10 epochs for CIFAR10 dataset, with lr = 0.001.
+      \item[*] Highest Top-1 before overfit and epoch number. 
+      \item[B] - indicates Branching Networks
+      \item[rand] Random Sampling of pixels.
+      \item[spatial] Spatial Sampling of pixels.
+      \item[attn] ConvNN Attention Implementation with K, Q, V linear layers.
+      \item[attnV] ConvNN Attention Implementation with only V linear layer.
+    \end{tablenotes}
+  \end{threeparttable}
+\end{table}
+
+
+% Pixel Shuffle vs. no Shuffle 
+\begin{table}[h]
+  \centering
+  \begin{threeparttable}
+    \caption{PixelShuffle vs. No PixelShuffle}
+    \label{tab2}
+
+    \begin{tabular*}{\textwidth}{@{\extracolsep\fill}l|ccc|ccc}
+      \toprule
+      & \multicolumn{3}{@{}c@{}}{Shuffle}
+      & \multicolumn{3}{@{}c@{}}{No Shuffle} \\
+      \cmidrule(l){2-4}\cmidrule(l){5-7}
+      Models     & Params  & Epoch & Top-1
+                 & Params  & Epoch & Top-1 \\
+      \midrule
+      ConvNN                                & \(33.57M\) & \(14.58s\) & \(\bm{54.81}\%\) 
+                                            & \(33.57M\) & \(19.87s\) & \(50.07\%\) \\
+      ConvN\(_{rand}\)                      & \(33.57M\) & \(14.52s\) & \(\bm{55.54}\%\) 
+                                            & \(33.57M\) & \(14.41s\) & \(53.31\%\) \\
+      ConvNN\(_{spatial}\)                  & \(33.57M\) & \(16.52s\) & \(\bm{54.79}\%\) 
+                                            & \(33.57M\) & \(20.18s\) & \(50.58\%\) \\
+      ConvNN\(_{attn}\)                     & \(39.86M\) & \(15.46s\) & \(\bm{59.86}\%\) 
+                                            & \(39.86M\) & \(15.89s\) & \(53.20\%\) \\
+      \midrule
+      B-Conv2d-ConvNN\(_{rand}\)            & \(33.58M\) & \(15.01s\) & \(66.26\%\) 
+                                            & \(33.58M\) & \(15.32s\) & \(\bm{66.71}\%\) \\
+      B-Conv2d-ConvNN\(_{attn+rand}\)       & \(39.87M\) & \(15.52s\) & \(\bm{65.03}\%\) 
+                                            & \(39.87M\) & \(16.13s\) & \(64.58\%\) \\
+      \bottomrule
+    \end{tabular*}
+    \begin{tablenotes}
+      \centering               
+      \footnotesize
+      \item Note: Each of these models have two layers and a classifier layer. The results are from 10 epochs for CIFAR10 dataset, with lr = 0.001.
+      \item[B] - indicates Branching Networks
+      \item[rand] Random Sampling of pixels.
+      \item[spatial] Spatial Sampling of pixels.
+      \item[attn] ConvNN Attention Implementation with K, Q, V linear layers.
+    \end{tablenotes}
+    
+  \end{threeparttable}
+\end{table}
+
+
+%-------------------------------------------------------------
+
+\begin{table}[h]
+  \centering
+  \begin{threeparttable}
+    \caption{CIFAR10 + CIFAR100 with 100 Epochs}
+    \label{tab2}
+
+    % 2 Layer Table
+    \begin{tabular*}{\textwidth}{@{\extracolsep\fill}l|cccc|cccc}
+      \toprule
+      & \multicolumn{4}{@{}c@{}}{CIFAR10}
+      & \multicolumn{4}{@{}c@{}}{CIFAR100} \\
+      & \multicolumn{4}{@{}c@{}}{2 Layers}
+      & \multicolumn{4}{@{}c@{}}{2 Layers} \\
+      \cmidrule(l){2-5}\cmidrule(l){6-9}
+      Models     & Param  & Epoch & Top-1* & Epoch*
+                 & Param  & Epoch & Top-1* & Epoch* \\
+      \midrule
+      Conv                            & \(.16M\) & \(9.37s\) & \(\bm{62.78\%}\) & 24
+                                      & \(1.64M\) & \(9.14s\) & \(\bm{30.82\%}\) & 6\\
+      \midrule
+      NN                              & \(.20M\) & \(10.91s\) & \(59.31\%\) & 14
+                                      & \(1.68M\) & \(11.60s\) & \(28.09\%\) & 4\\
+      NN\(_{rand}\)                   & \(.20M\) & \(10.78s\) & \(59.58\%\) & 35
+                                      & \(1.68M\) & \(11.33s\) & \(26.27\%\) & 7\\
+      NN\(_{spatial}\)                & \(.20M\) & \(12.86s\) & \(55.68\%\) & 16
+                                      & \(1.68M\) & \(12.98s\) & \(26.59\%\) & 6\\
+      NN\(_{attn+rand}\)              & \(.60M\) & \(11.24s\) & \(59.04\%\) & 15
+                                      & \(2.07M\) & \(12.68s\) & \(\bm{32.43}\%\) & 10 \\
+      NN\(_{attn+spat}\)              & \(.47M\) & \(11.58s\) & \(58.15\%\) & 20
+                                      & \(1.95M\) & \(12.52s\) & \(28.84\%\) & 7\\
+      \midrule
+      B-Conv-NN                       & \(.21M\) & \(11.52s\) & \(60.54\%\) & 25
+                                      & \(1.68M\) & \(12.67s\) & \(28.01\%\) & 9\\
+      B-Conv-NN\(_{rand}\)            & \(.21M\) & \(11.45s\) & \(61.62\%\) & 27
+                                      & \(1.68M\) & \(13.33s\) & \(28.49\%\) & 7\\
+      B-Conv-NN\(_{spatial}\)         & \(.21M\) & \(13.59s\) & \(59.08\%\) & 22
+                                      & \(1.68M\) & \(13.86s\) & \(28.17\%\) & 8\\
+      B-Conv-NN\(_{attn+rand}\)       & \(.60M\) & \(12.00s\) & \(61.48\%\) & 22
+                                      & \(2.08M\) & \(13.12s\) & \(\bm{30.86}\%\) & 10\\
+      B-Conv-NN\(_{attn+spat}\)       & \(.48M\) & \(13.45s\) & \(61.02\%\) & 20 
+                                      & \(1.95M\) & \(12.66s\) & \(27.14\%\) & 6 \\
+      \midrule 
+      B-Att-Conv                      & \(.20M\) & \(14.15s\) & \(\bm{63.04}\%\) & 38
+                                      & \(1.68M\) & \(14.52s\) & \(\bm{30.88}\%\) & 10\\
+
+      \midrule 
+      B-Att-NN                        & \(.24M\) & \(15.76s\) & \(59.82\%\) & 17
+                                      & \(1.72M\) & \(16.47s\) & \(27.73\%\) & 5\\
+      B-Att-NN\(_{rand}\)             & \(.24M\) & \(15.73s\) & \(58.73\%\) & 28
+                                      & \(1.72M\) & \(16.33s\) & \(27.38\%\) & 7\\
+      B-Att-NN\(_{spatial}\)          & \(.24M\) & \(17.84s\) & \(56.27\%\) & 20
+                                      & \(1.72M\) & \(18.09s\) & \(27.41\%\) & 9\\
+      B-Att-NN\(_{attn+rand}\)        & \(.64M\) & \(16.12s\) & \(58.97\%\) & 38
+                                      & \(2.11M\) & \(17.45s\) & \(29.98\%\) & 100\\
+      B-Att-NN\(_{attn+spat}\)        & \(.51M\) & \(18.98s\) & \(57.90\%\) & 25
+                                      & \(1.99M\) & \(16.96s\) & \(25.86\%\) & 8\\
+                                            
+      \midrule
+      Attention                       & \(.20M\) & \(13.62s\) & \(51.69\%\) & 27 
+                                      & \(1.67M\) & \(14.12s\) & \(23.85\%\) & 17\\
+
+      \bottomrule
+    \end{tabular*}
+    
+    % 4 Layer Table
+    \begin{tabular*}{\textwidth}{@{\extracolsep\fill}l|cccc|cccc}
+      \toprule
+      & \multicolumn{4}{@{}c@{}}{CIFAR10}
+      & \multicolumn{4}{@{}c@{}}{CIFAR100} \\
+      & \multicolumn{4}{@{}c@{}}{4 Layers}
+      & \multicolumn{4}{@{}c@{}}{4 Layers} \\
+      \cmidrule(l){2-5}\cmidrule(l){6-9}
+      Models     & Param  & Epoch & Top-1* & Epoch*
+                 & Param  & Epoch & Top-1* & Epoch* \\
+      \midrule
+      Conv                            & \(.17M\) & \(9.89s\) & \(\bm{63.05\%}\) & 24
+                                      & \(1.64M\) & \(10.22s\) & \(\bm{31.09\%}\) & 9\\
+      \midrule
+      NN                              & \(.28M\) & \(14.22s\) & \(58.30\%\) & 12
+                                      & \(1.75M\) & \(14.72s\) & \(26.19\%\) & 5\\
+      NN\(_{rand}\)                   & \(.28M\) & \(14.61s\) & \(58.42\%\) & 22
+                                      & \(1.75M\) & \(14.26s\) & \(25.28\%\) & 6\\
+      NN\(_{spatial}\)                & \(.28M\) & \(18.25s\) & \(53.42\%\) & 15
+                                      & \(1.75M\) & \(17.71s\) & \(24.52\%\) & 5\\
+      NN\(_{attn+rand}\)              & \(1.06M\) & \(14.51s\) & \(59.26\%\) & 42
+                                      & \(2.54M\) & \(15.07s\) & \(\bm{31.15}\%\) & 68 \\
+      NN\(_{attn+spat}\)              & \(.82M\) & \(15.32s\) & \(55.42\%\) & 13
+                                      & \(2.29M\) & \(15.23s\) & \(28.10\%\) & 21\\
+      \midrule
+      B-Conv-NN                       & \(.29M\) & \(15.47s\) & \(58.62\%\) & 14
+                                      & \(1.76M\) & \(15.73s\) & \(26.47\%\) & 9\\
+      B-Conv-NN\(_{rand}\)            & \(.29M\) & \(15.25s\) & \(60.52\%\) & 28
+                                      & \(1.76M\) & \(15.48s\) & \(25.25\%\) & 9\\
+      B-Conv-NN\(_{spatial}\)         & \(.29M\) & \(19.76s\) & \(57.30\%\) & 17
+                                      & \(1.76M\) & \(18.93s\) & \(25.79\%\) & 6\\
+      B-Conv-NN\(_{attn+rand}\)       & \(1.07M\) & \(18.71s\) & \(56.45\%\) & 14
+                                      & \(2.55M\) & \(16.09s\) & \(27.41\%\) & 13\\
+      B-Conv-NN\(_{attn+spat}\)       & \(.83M\) & \(17.12s\) & \(59.76\%\) & 29 
+                                      & \(2.30M\) & \(16.49s\) & \(26.78\%\) & 27 \\
+      \midrule 
+      B-Att-Conv                      & \(.25M\) & \(19.74s\) & \(61.07\%\) & 33
+                                      & \(1.72M\) & \(20.21s\) & \(28.26\%\) & 13 \\
+
+      \midrule 
+      B-Att-NN                        & \(.36M\) & \(24.67s\) & \(57.15\%\) & 16
+                                      & \(1.84M\) & \(24.78s\) & \(23.82\%\) & 6\\
+      B-Att-NN\(_{rand}\)             & \(.36M\) & \(24.33s\) & \(54.08\%\) & 23
+                                      & \(1.84M\) & \(23.54\) & \(23.67\%\) & 11\\
+      B-Att-NN\(_{spatial}\)          & \(.36M\) & \(26.98s\) & \(52.85\%\) & 19
+                                      & \(1.84M\) & \(26.92s\) & \(24.27\%\) & 6\\
+      B-Att-NN\(_{attn+rand}\)        & \(1.15M\) & \(25.18s\) & \(55.68\%\) & 44
+                                      & \(2.62M\) & \(25.72s\) & \(25.47\%\) & 58\\
+      B-Att-NN\(_{attn+spat}\)        & \(.90M\) & \(25.39s\) & \(54.37\%\) & 22
+                                      & \(2.38M\) & \(25.59s\) & \(26.26\%\) & 30\\
+                                            
+      \midrule
+      Attention                       & \(.24M\) & \(18.38s\) & \(52.45\%\) & 82
+                                      & \(1.71M\) & \(18.76s\) & \(22.48\%\) & 100\\
+
+      \bottomrule
+    \end{tabular*}
+
+
+    
+  \end{threeparttable}
+\end{table}
+
+
+\begin{table}[h]
+  \centering
+  \begin{threeparttable}
+    \caption{CIFAR10 + CIFAR100 with 100 Epochs Continued}
+    \label{tab2}
+
+    % 2 Layer Table
+    \begin{tabular*}{\textwidth}{@{\extracolsep\fill}l|cccc|cccc}
+      \toprule
+      & \multicolumn{4}{@{}c@{}}{CIFAR10}
+      & \multicolumn{4}{@{}c@{}}{CIFAR100} \\
+      & \multicolumn{4}{@{}c@{}}{8 Layers}
+      & \multicolumn{4}{@{}c@{}}{8 Layers} \\
+      \cmidrule(l){2-5}\cmidrule(l){6-9}
+      Models     & Param  & Epoch & Top-1* & Epoch*
+                 & Param  & Epoch & Top-1* & Epoch* \\
+      \midrule
+      Conv                            & \(.18M\) & \(11.39s\) & \(\bm{61.79\%}\) & 26
+                                      & \(1.65M\) & \(10.90s\) & \(\bm{28.10\%}\) & 7\\
+      \midrule
+      NN                              & \(.43M\) & \(20.73s\) & \(56.30\%\) & 13
+                                      & \(1.90M\) & \(21.05s\) & \(22.26\%\) & 5\\
+      NN\(_{rand}\)                   & \(.43M\) & \(19.95s\) & \(57.93\%\) & 37
+                                      & \(1.90M\) & \(19.53s\) & \(24.27\%\) & 7\\
+      NN\(_{spatial}\)                & \(.43M\) & \(26.87s\) & \(51.49\%\) & 15
+                                      & \(1.90M\) & \(27.52s\) & \(22.87\%\) & 6\\
+      NN\(_{attn+rand}\)              & \(2.00M\) & \(20.92s\) & \(57.62\%\) & 69
+                                      & \(3.47M\) & \(21.04s\) & \(27.74\%\) & 69 \\
+      NN\(_{attn+spat}\)              & \(1.51M\) & \(21.22s\) & \(54.19\%\) & 24
+                                      & \(2.98M\) & \(21.59s\) & \(22.19\%\) & 49\\
+      \midrule
+      B-Conv-NN                       & \(.45M\) & \(22.92s\) & \(56.44\%\) & 15
+                                      & \(1.92M\) & \(23.46s\) & \(18.72\%\) & 4\\
+      B-Conv-NN\(_{rand}\)            & \(.45M\) & \(22.31s\) & \(58.34\%\) & 24
+                                      & \(1.92M\) & \(22.31s\) & \(22.33\%\) & 9\\
+      B-Conv-NN\(_{spatial}\)         & \(.45M\) & \(30.44s\) & \(55.95\%\) & 15
+                                      & \(1.92M\) & \(32.00s\) & \(21.32\%\) & 5\\
+      B-Conv-NN\(_{attn+rand}\)       & \(2.02M\) & \(23.75s\) & \(60.22\%\) & 29
+                                      & \(3.50M\) & \(23.98s\) & \(26.86\%\) & 96\\
+      B-Conv-NN\(_{attn+spat}\)       & \(1.53M\) & \(24.30s\) & \(55.27\%\) & 69 
+                                      & \(3.00M\) & \(24.51s\) & \(20.37\%\) & 52 \\
+      \midrule 
+      B-Att-Conv                      & \(.35M\) & \(30.90s\) & \(56.89\%\) & 52
+                                      & \(1.82M\) & \(30.98s\) & \(22.60\%\) & 27\\
+
+      \midrule 
+      B-Att-NN                        & \(.60M\) & \(40.45s\) & \(51.62\%\) & 36
+                                      & \(2.07M\) & \(41.91s\) & \(20.03\%\) & 8\\
+      B-Att-NN\(_{rand}\)             & \(.60M\) & \(40.44s\) & \(50.02\%\) & 31
+                                      & \(2.072M\) & \(39.57s\) & \(19.69\%\) & 16\\
+      B-Att-NN\(_{spatial}\)          & \(.60M\) & \(46.41s\) & \(46.72\%\) & 14
+                                      & \(2.07M\) & \(46.56s\) & \(19.10\%\) & 5\\
+      B-Att-NN\(_{attn+rand}\)        & \(2.17M\) & \(41.73s\) & \(10.36\%\) & 6
+                                      & \(3.64M\) & \(41.16s\) & \(19.35\%\) & 100\\
+      B-Att-NN\(_{attn+spat}\)        & \(1.68M\) & \(42.00s\) & \(10.29\%\) & 5
+                                      & \(3.15M\) & \(42.02s\) & \(1.02\%\) & 1\\
+                                            
+      \midrule
+      Attention                       & \(.32M\) & \(28.22s\) & \(47.61\%\) & 95 
+                                      & \(1.80M\) & \(28.24s\) & \(1\%\) & 0\\
+
+      \bottomrule
+    \end{tabular*}
+    
+  \end{threeparttable}
+\end{table}
+
+
+
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{
+l!{\vrule width 1pt}%
+cc!{\vrule width 1pt}%
+cccc!{\vrule width 1pt}%
+ccc!{\vrule width 1pt}%
+c!{\vrule width 1pt}%
+c|c
+}
+\toprule
+\multirow{3}{*}{\textbf{Ablation on $\downarrow$}} &
+\multirow{3}{*}{\rotatebox{90}{Pre-training}} &
+\multirow{3}{*}{\rotatebox{90}{Fine-tuning}} &
+\rotatebox{90}{Rand-} &
+\rotatebox{90}{AutoAug} &
+\rotatebox{90}{Mixup} &
+\rotatebox{90}{CutMix} &
+\rotatebox{90}{Erasing} &
+\rotatebox{90}{Stoch.} &
+\rotatebox{90}{Repeated} &
+\rotatebox{90}{Dropout} &
+\rotatebox{90}{Exp. Moving} &
+\multicolumn{2}{c}{\textbf{top-1 accuracy}} \\
+& & &
+\rotatebox{90}{Augment} & & & &
+& \rotatebox{90}{Depth} &
+\rotatebox{90}{Augment} & & \rotatebox{90}{Avg.} &
+\rotatebox{90}{pre-trained 224$^{2}$} &
+\rotatebox{90}{fine-tuned 384$^{2}$} \\ \midrule
+none: DeiT-B & adamw & adamw &
+\cmark & \xmark & \cmark & \cmark &
+\cmark & \cmark & \cmark & \xmark & \xmark &
+81.8\,$\pm$0.2 & 83.1\,$\pm$0.1 \\
+\midrule
+\multicolumn{14}{c}{}\\[-1.4em] % tiny vertical gap before next block
+\multicolumn{1}{l}{\textbf{optimizer}} &&&&&&&&&&&& \\
+\cmidrule(lr){1-1}
+\cmidrule(lr){2-3}
+\cmidrule(lr){4-11}
+\cmidrule(lr){12-12}
+\cmidrule(lr){13-14}
+\gtext{\,} & SGD   & \gtext{adamw} &
+\gxmark & \gxmark & \gcmark & \gcmark &
+\gcmark & \gcmark & \gcmark & \gxmark & \gxmark &
+74.5 & 77.3 \\
+\gtext{\,} & \gtext{adamw} & SGD &
+\cmark & \cmark & \cmark & \cmark &
+\cmark & \cmark & \cmark & \xmark & \xmark &
+81.8 & 83.1 \\
+\midrule
+\multicolumn{14}{c}{}\\[-1.4em]
+\multicolumn{1}{l}{\textbf{data augmentation}} &&&&&&&&&&&& \\
+\cmidrule(lr){1-1}
+\cmidrule(lr){2-3}
+\cmidrule(lr){4-11}
+\cmidrule(lr){12-12}
+\cmidrule(lr){13-14}
+\gtext{\,} & \gtext{adamw} & \gtext{adamw} &
+\xmark & \cmark & \cmark & \cmark &
+\cmark & \cmark & \cmark & \xmark & \xmark &
+79.6 & 80.4 \\
+\gtext{\,} & \gtext{adamw} & \gtext{adamw} &
+\cmark & \xmark & \cmark & \cmark &
+\cmark & \cmark & \cmark & \xmark & \xmark &
+81.2 & 81.9 \\
+\gtext{\,} & \gtext{adamw} & \gtext{adamw} &
+\cmark & \cmark & \xmark & \xmark &
+\cmark & \cmark & \cmark & \xmark & \xmark &
+78.7 & 79.8 \\
+\gtext{\,} & \gtext{adamw} & \gtext{adamw} &
+\cmark & \cmark & \cmark & \cmark &
+\cmark & \cmark & \cmark & \xmark & \xmark &
+80.0 & 80.6 \\
+\gtext{\,} & \gtext{adamw} & \gtext{adamw} &
+\cmark & \cmark & \xmark & \xmark &
+\cmark & \cmark & \cmark & \xmark & \xmark &
+75.8 & 76.7 \\
+\midrule
+\multicolumn{14}{c}{}\\[-1.4em]
+\multicolumn{1}{l}{\textbf{regularization}} &&&&&&&&&&&& \\
+\cmidrule(lr){1-1}
+\cmidrule(lr){2-3}
+\cmidrule(lr){4-11}
+\cmidrule(lr){12-12}
+\cmidrule(lr){13-14}
+\gtext{\,} & \gtext{adamw} & \gtext{adamw} &
+\cmark & \cmark & \cmark & \cmark &
+\cmark & \cmark & \cmark & \xmark & \xmark &
+4.3$^{*}$ & 0.1 \\
+\gtext{\,} & \gtext{adamw} & \gtext{adamw} &
+\cmark & \cmark & \cmark & \cmark &
+\cmark & \cmark & \cmark & \xmark & \xmark &
+3.4$^{*}$ & 0.1 \\
+\gtext{\,} & \gtext{adamw} & \gtext{adamw} &
+\cmark & \cmark & \cmark & \cmark &
+\cmark & \cmark & \cmark & \cmark & \xmark &
+76.5 & 77.4 \\
+\gtext{\,} & \gtext{adamw} & \gtext{adamw} &
+\cmark & \cmark & \cmark & \cmark &
+\cmark & \cmark & \cmark & \cmark & \cmark &
+81.3 & 83.1 \\
+\gtext{\,} & \gtext{adamw} & \gtext{adamw} &
+\cmark & \cmark & \cmark & \cmark &
+\cmark & \cmark & \cmark & \cmark & \cmark &
+81.9 & 83.1 \\
+\bottomrule
+\end{tabular}
+\caption{Ablation study on DeiT‑B with optimizer, data augmentation, and regularization variations.}
+\end{table}
+
+
+
+\end{document}
+
