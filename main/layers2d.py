@@ -978,7 +978,7 @@ class Conv2d_ConvNN_Branching(nn.Module):
         assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
         assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'" 
-        assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
+        assert sum(channel_ratio) == out_channels, "Channel ratio must add up to output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
         # Initialize parameters
@@ -1023,7 +1023,7 @@ class Conv2d_ConvNN_Branching(nn.Module):
             )
         
         # Pointwise Convolution Layer
-        self.pointwise_conv = nn.Conv2d(self.out_channels*2, self.out_channels, 1)
+        self.pointwise_conv = nn.Conv2d(self.out_channels, self.out_channels, 1)
 
     def forward(self, x):
         
@@ -1063,7 +1063,7 @@ class Conv2d_ConvNN_Spatial_Branching(nn.Module):
         assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
         assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
-        assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
+        assert sum(channel_ratio) == out_channels, "Channel ratio must add up to output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
         # Initialize parameters        
@@ -1108,7 +1108,7 @@ class Conv2d_ConvNN_Spatial_Branching(nn.Module):
             )
 
         # Pointwise Convolution Layer
-        self.pointwise_conv = nn.Conv2d(self.out_channels*2, self.out_channels, 1)
+        self.pointwise_conv = nn.Conv2d(self.out_channels, self.out_channels, 1)
 
     def forward(self, x):
         
@@ -1151,7 +1151,7 @@ class Conv2d_ConvNN_Attn_Branching(nn.Module):
         assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(image_size, tuple) and len(image_size) == 2, "Error: image_size must be a tuple of (height, width)"
-        assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
+        assert sum(channel_ratio) == out_channels, "Channel ratio must add up to output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
         # Initialize parameters
@@ -1199,7 +1199,7 @@ class Conv2d_ConvNN_Attn_Branching(nn.Module):
             )
         
         # Pointwise Convolution Layer
-        self.pointwise_conv = nn.Conv2d(self.out_channels*2, self.out_channels, 1)
+        self.pointwise_conv = nn.Conv2d(self.out_channels, self.out_channels, 1)
 
     def forward(self, x):
         if self.channel_ratio[0] != 0:
@@ -1238,7 +1238,7 @@ class Conv2d_ConvNN_Attn_Spatial_Branching(nn.Module):
         assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(image_size, tuple) and len(image_size) == 2, "Error: image_size must be a tuple of (height, width)"
-        assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
+        assert sum(channel_ratio) == out_channels, "Channel ratio must add up to output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
         # Initialize parameters        
@@ -1286,7 +1286,7 @@ class Conv2d_ConvNN_Attn_Spatial_Branching(nn.Module):
             )
         
         # Pointwise Convolution Layer
-        self.pointwise_conv  = nn.Conv2d(self.out_ch*2, self.out_ch, 1)
+        self.pointwise_conv  = nn.Conv2d(self.out_ch, self.out_ch, 1)
 
     def forward(self, x):
         if self.channel_ratio[0] != 0:
@@ -1323,7 +1323,7 @@ class Conv2d_ConvNN_Attn_V_Branching(nn.Module):
         assert isinstance(image_size, tuple) and len(image_size) == 2, "Error: image_size must be a tuple of (height, width)"
         assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"        
-        assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
+        assert sum(channel_ratio) == out_channels, "Channel ratio must add up to output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
         # Initialize parameters        
@@ -1372,7 +1372,7 @@ class Conv2d_ConvNN_Attn_V_Branching(nn.Module):
             )
 
         # Pointwise Convolution Layer
-        self.pointwise_conv  = nn.Conv2d(self.out_channels*2, self.out_channels, 1)
+        self.pointwise_conv  = nn.Conv2d(self.out_channels, self.out_channels, 1)
 
     def forward(self, x):
         if self.channel_ratio[0] != 0:
@@ -1408,7 +1408,7 @@ class Attention_ConvNN_Branching(nn.Module):
         assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(num_heads, int) and num_heads > 0, "Error: num_heads must be a positive integer"
-        assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
+        assert sum(channel_ratio) == out_channels, "Channel ratio must add up to output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
         
@@ -1454,7 +1454,7 @@ class Attention_ConvNN_Branching(nn.Module):
             )
         
         # Pointwise Convolution Layer
-        self.pointwise_conv = nn.Conv2d(self.out_channels*2, self.out_channels, 1)
+        self.pointwise_conv = nn.Conv2d(self.out_channels, self.out_channels, 1)
 
     def forward(self, x):
         if self.channel_ratio[0] != 0:
@@ -1490,7 +1490,7 @@ class Attention_ConvNN_Spatial_Branching(nn.Module):
         assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(num_heads, int) and num_heads > 0, "Error: num_heads must be a positive integer"
-        assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
+        assert sum(channel_ratio) == out_channels, "Channel ratio must add up to output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
         # Initializing Parameters
@@ -1536,7 +1536,7 @@ class Attention_ConvNN_Spatial_Branching(nn.Module):
             )
 
         # Pointwise Convolution Layer
-        self.pointwise_conv  = nn.Conv2d(self.out_channels*2, self.out_channels, 1)
+        self.pointwise_conv  = nn.Conv2d(self.out_channels, self.out_channels, 1)
 
     def forward(self, x):
         if self.channel_ratio[0] != 0:
@@ -1575,7 +1575,7 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(num_heads, int) and num_heads > 0, "Error: num_heads must be a positive integer"
         assert isinstance(image_size, tuple) and len(image_size) == 2, "Error: image_size must be a tuple of (height, width)"
-        assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
+        assert sum(channel_ratio) == out_channels, "Channel ratio must add up to output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
         # Initialize parameters
@@ -1623,7 +1623,7 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
             )
 
         # Pointwise Convolution Layer
-        self.pointwise_conv  = nn.Conv2d(self.out_channels*2, self.out_channels, 1)
+        self.pointwise_conv  = nn.Conv2d(self.out_channels, self.out_channels, 1)
 
     def forward(self, x):
         if self.channel_ratio[0] != 0:
@@ -1662,7 +1662,7 @@ class Attention_ConvNN_Attn_Spatial_Branching(nn.Module):
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(num_heads, int) and num_heads > 0, "Error: num_heads must be a positive integer"
         assert isinstance(image_size, tuple) and len(image_size) == 2, "Error: image_size must be a tuple of (height, width)"
-        assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
+        assert sum(channel_ratio) == out_channels, "Channel ratio must add up to output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
         # Initialize parameters
@@ -1710,7 +1710,7 @@ class Attention_ConvNN_Attn_Spatial_Branching(nn.Module):
             )
 
         # Pointwise Convolution Layer
-        self.pointwise_conv  = nn.Conv2d(self.out_channels*2, self.out_channels, 1)
+        self.pointwise_conv  = nn.Conv2d(self.out_channels, self.out_channels, 1)
 
     def forward(self, x):
         if self.channel_ratio[0] != 0:
@@ -1748,7 +1748,7 @@ class Attention_ConvNN_Attn_V_Branching(nn.Module):
         assert magnitude_type in ["distance", "similarity"], "Error: magnitude_type must be one of ['distance', 'similarity']"
         assert samples == "all" or (isinstance(samples, int) and samples > 0), "Error: samples must be greater than 0 or 'all'"
         assert isinstance(num_heads, int) and num_heads > 0, "Error: num_heads must be a positive integer"
-        assert sum(channel_ratio) == 2*out_channels, "Channel ratio must add up to 2*output channels"
+        assert sum(channel_ratio) == out_channels, "Channel ratio must add up to output channels"
         assert len(channel_ratio) == 2, "Channel ratio must be of length 2"
         
         # Initialize parameters
@@ -1795,7 +1795,7 @@ class Attention_ConvNN_Attn_V_Branching(nn.Module):
             )
 
         # Pointwise Convolution Layer
-        self.pointwise_conv  = nn.Conv2d(self.out_channels*2, self.out_channels, 1)
+        self.pointwise_conv  = nn.Conv2d(self.out_channels, self.out_channels, 1)
 
     def forward(self, x):
         
@@ -1828,7 +1828,7 @@ class Attention_Conv2d_Branching(nn.Module):
                  shuffle_scale, 
                  location_channels
                  ):
-        # Channel_ratio must add up to 2*out_ch
+        # Channel_ratio must add up to out_ch
 
         super(Attention_Conv2d_Branching, self).__init__()
         
@@ -1869,7 +1869,7 @@ class Attention_Conv2d_Branching(nn.Module):
             )
         
         # Pointwise Convolution Layer
-        self.pointwise_conv  = nn.Conv2d(self.out_channels*2, self.out_channels, 1)
+        self.pointwise_conv  = nn.Conv2d(self.out_channels, self.out_channels, 1)
 
     def forward(self, x):
         x1 = self.branch1(x)
