@@ -1,3 +1,5 @@
+# In allconvnet_main.py
+
 """Main File for the project"""
 
 import argparse 
@@ -6,7 +8,8 @@ import os
 
 # Datasets 
 from dataset import ImageNet, CIFAR10, CIFAR100
-from train_eval import Train_Eval
+# *** NOTE: Ensure your updated train_eval.py is saved ***
+from train_eval import Train_Eval 
 
 # Models 
 from allconvnet import AllConvNet 
@@ -14,9 +17,13 @@ from allconvnet import AllConvNet
 # Utilities 
 from utils import write_to_file, set_seed
 
+import wandb
 
+# The args_parser() and check_args() functions remain unchanged
 def args_parser():
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", add_help=False) 
+
+    parser.add_argument("--experiment_name", type=str, default="ConvNN_Experiment", help="Name of the experiment for logging purposes")
     
     # Model Arguments
     parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], help="Type of Convolution or Attention layer to use")
@@ -28,13 +35,7 @@ def args_parser():
     parser.add_argument("--kernel_size", type=int, default=3, help="Kernel Size for Conv2d")        
     parser.add_argument("--sampling", type=str, default=None, choices=["All", "Random", "Spatial"], help="Sampling method for ConvNN Models")
     parser.add_argument("--num_samples", type=int, default=0, help="Number of samples for ConvNN Models")
-    
-    
     parser.add_argument("--num_heads", type=int, default=4, help="Number of heads for Attention Models")
-    
-    # parser.add_argument("--d_model", type=int, default=9, help="Dimensionality of the model for Attention Models") # might not use (check again)
-    
-    
     parser.add_argument("--shuffle_pattern", type=str, default="BA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")
     parser.add_argument("--shuffle_scale", type=int, default=2, help="Shuffle scale for ConvNN Models")
     parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
@@ -51,7 +52,6 @@ def args_parser():
     parser.add_argument("--use_amp", action="store_true", help="Use mixed precision training")
     parser.set_defaults(use_amp=False)
     parser.add_argument("--clip_grad_norm", type=float, default=None, help="Gradient clipping value")
-    
     
     # Loss Function Arguments
     parser.add_argument("--criterion", type=str, default="CrossEntropy", choices=["CrossEntropy", "MSE"], help="Loss function to use for training")
@@ -77,22 +77,18 @@ def args_parser():
     return parser
 
 def check_args(args):
-    # Check the arguments based on the model 
+    # This function remains unchanged
     print("Checking arguments based on the model...")    
-    
     assert args.layer in ["Conv2d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], f"Model {args.layer} not supported"
     assert args.dataset in ["cifar10", "cifar100", 'imagenet'], f"Dataset {args.dataset} not supported"
     assert args.criterion in ["CrossEntropy", "MSE"], f"Criterion {args.criterion} not supported"
     assert args.optimizer in ['adam', 'sgd', 'adamw'], f"Optimizer {args.optimizer} not supported"
     assert args.scheduler in ['step', 'cosine', 'plateau'], f"Scheduler {args.scheduler} not supported"
-    
     assert args.num_layers == len(args.channels), f"Number of layers {args.num_layers} does not match the number of channels {len(args.channels)}"
-        
-    if args.sampling == "All": # only for Conv2d_NN, Conv2d_NN_Attn
+    if args.sampling == "All":
         args.num_samples = 0
     if args.num_samples == 0:
         args.sampling = "All"
-
     args.resize = False
     return args
     
@@ -101,6 +97,13 @@ def main(args):
 
     args = check_args(args)
     
+    # Initialize wandb as early as possible
+    wandb.init(
+        project="ConvNN: All ConvNet",
+        name=args.experiment_name,
+        config=vars(args) # Log all command-line arguments
+    )
+    
     # Check if the output directory exists, if not create it
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
@@ -108,55 +111,56 @@ def main(args):
     # Dataset 
     if args.dataset == "cifar10":
         dataset = CIFAR10(args)
-        args.num_classes = dataset.num_classes 
-        args.img_size = dataset.img_size 
+        # These are now part of the wandb config, no need to re-assign to args
+        wandb.config.update({"num_classes": dataset.num_classes, "img_size": dataset.img_size})
     elif args.dataset == "cifar100":
         dataset = CIFAR100(args)
-        args.num_classes = dataset.num_classes 
-        args.img_size = dataset.img_size 
+        wandb.config.update({"num_classes": dataset.num_classes, "img_size": dataset.img_size})
     elif args.dataset == "imagenet":
         dataset = ImageNet(args)
-        args.num_classes = dataset.num_classes 
-        args.img_size = dataset.img_size
+        wandb.config.update({"num_classes": dataset.num_classes, "img_size": dataset.img_size})
     else:
         raise ValueError("Dataset not supported")
-    
 
-    
-    
     # Model 
     model = AllConvNet(args)
     print(f"Model: {model.name}")
     
-    # Parameters
+    # Parameters - Log these directly to wandb summary
     total_params, trainable_params = model.parameter_count()
     print(f"Total Parameters: {total_params}")
     print(f"Trainable Parameters: {trainable_params}")
-    args.total_params = total_params
-    args.trainable_params = trainable_params
+    wandb.summary['total_params'] = total_params
+    wandb.summary['trainable_params'] = trainable_params
     
     # Set the seed for reproducibility
-    set_seed(args.seed)
-    
+    if args.seed != 0:
+        set_seed(args.seed)
     
     # Training Modules 
-    train_eval_results = Train_Eval(args, 
-                                model, 
-                                dataset.train_loader, 
-                                dataset.test_loader
+    # Capture the returned dictionary of summary metrics
+    summary_results = Train_Eval(args, 
+                                 model, 
+                                 dataset.train_loader, 
+                                 dataset.test_loader
                                 )
     
-    # Storing Results in output directory 
-    write_to_file(os.path.join(args.output_dir, "args.txt"), args)
-    write_to_file(os.path.join(args.output_dir, "model.txt"), model)
-    write_to_file(os.path.join(args.output_dir, "train_eval_results.txt"), train_eval_results)
+    # Log the final, best metrics to the wandb summary
+    wandb.summary.update(summary_results)
+
+    # Storing Results in output directory remains possible
+    print(f"Saving artifacts to {args.output_dir}")
+    write_to_file(os.path.join(args.output_dir, "args.txt"), str(wandb.config))
+    write_to_file(os.path.join(args.output_-dir, "model.txt"), str(model))
+    # Write the summary dictionary to the results file
+    write_to_file(os.path.join(args.output_dir, "summary_results.txt"), str(summary_results))
+
+    # *** IMPORTANT: Finish the wandb run ***
+    wandb.finish()
+
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", parents=[args_parser()])
     args = parser.parse_args()
 
     main(args)
-
-# python allconvnet_main.py --layer Conv2d --num_layers 3 --channels 8 16 32 --dataset cifar10 --num_epochs 10 --device cuda --output_dir ./Output/Simple/Conv2d 
-
-# python allconvnet_main.py --layer Conv2d/ConvNN --num_layers 3 --channels 8 16 32 --sampling Spatial --num_samples 8 --dataset cifar10 --num_epochs 10 --device cuda --output_dir ./Output/Simple/Conv2d_ConvNN_Spatial
