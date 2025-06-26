@@ -68,7 +68,8 @@ def args_parser():
     # Device Arguments
     parser.add_argument("--device", type=str, default="cuda", choices=["cpu", "cuda", "mps"], help="Device to use for training and evaluation")
     parser.add_argument('--seed', default=0, type=int)
-    
+    parser.add_argument("--num_workers", type=int, default=1, help="Number of workers for Dataloader")
+
     # Output Arguments 
     parser.add_argument("--output_dir", type=str, default="./Output/VIT/VIT_Attention", help="Directory to save the output files")
     
@@ -78,7 +79,7 @@ def main(args):
     
     # --- 1. Initialize wandb as early as possible ---
     wandb.init(
-        project="ConvNN: ViT", # A specific project name for ViT experiments
+        project="ConvNN ViT", # A specific project name for ViT experiments
         name=args.experiment_name,
         config=vars(args) # Log all command-line arguments
     )

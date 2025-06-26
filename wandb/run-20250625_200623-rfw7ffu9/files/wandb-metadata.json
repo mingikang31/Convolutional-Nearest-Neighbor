@@ -1,0 +1,102 @@
+{
+  "os": "Linux-5.14.0-570.22.1.el9_6.x86_64-x86_64-with-glibc2.34",
+  "python": "CPython 3.10.18",
+  "startedAt": "2025-06-26T00:06:24.168344Z",
+  "args": [
+    "--experiment_name",
+    "test1",
+    "--layer",
+    "Conv2d",
+    "--num_layers",
+    "3",
+    "--channels",
+    "8",
+    "8",
+    "8",
+    "--dataset",
+    "cifar10",
+    "--batch_size",
+    "8",
+    "--num_epochs",
+    "10",
+    "--use_amp",
+    "--num_workers",
+    "4"
+  ],
+  "program": "/home/mkang2/Convolutional-Nearest-Neighbor/allconvnet_main.py",
+  "codePath": "allconvnet_main.py",
+  "git": {
+    "remote": "git@github.com:mingikang31/Convolutional-Nearest-Neighbor.git",
+    "commit": "07bf001390037b9649426ed00a3da9ee7d793b71"
+  },
+  "email": "mkang2@bowdoin.edu",
+  "root": "/home/mkang2/Convolutional-Nearest-Neighbor",
+  "host": "moose66",
+  "executable": "/home/mkang2/miniconda3/envs/main/bin/python",
+  "codePathLocal": "allconvnet_main.py",
+  "cpu_count": 16,
+  "cpu_count_logical": 16,
+  "gpu": "NVIDIA A100 80GB PCIe",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "53619982336",
+      "used": "17346031616"
+    }
+  },
+  "memory": {
+    "total": "403807404032"
+  },
+  "cpu": {
+    "count": 16,
+    "countLogical": 16
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA A100 80GB PCIe",
+      "memoryTotal": "85899345920",
+      "cudaCores": 6912,
+      "architecture": "Ampere",
+      "uuid": "GPU-418da940-1928-71e6-fa74-8889e551d850"
+    }
+  ],
+  "slurm": {
+    "cluster_name": "bowdoin",
+    "conf": "/etc/slurm/slurm.conf",
+    "cpus_on_node": "3",
+    "cpus_per_task": "3",
+    "get_user_env": "1",
+    "gpus_on_node": "1",
+    "gtids": "0",
+    "job_account": "hpcgroup",
+    "job_cpus_per_node": "3",
+    "job_end_time": "1751067042",
+    "job_gid": "2026",
+    "job_gpus": "4",
+    "job_id": "12743",
+    "job_name": "jupyterhub-spawner",
+    "job_nodelist": "moose66",
+    "job_num_nodes": "1",
+    "job_partition": "gpu",
+    "job_qos": "normal",
+    "job_start_time": "1750894242",
+    "job_uid": "21144",
+    "job_user": "mkang2",
+    "jobid": "12743",
+    "localid": "0",
+    "mem_per_cpu": "11264",
+    "nnodes": "1",
+    "nodeid": "0",
+    "nodelist": "moose66",
+    "prio_process": "0",
+    "procid": "0",
+    "submit_dir": "/etc/jupyterhub",
+    "submit_host": "moosehead5",
+    "task_pid": "405714",
+    "tasks_per_node": "1",
+    "topology_addr": "moose66",
+    "topology_addr_pattern": "node",
+    "tres_per_task": "cpu:3"
+  },
+  "cudaVersion": "12.8"
+}

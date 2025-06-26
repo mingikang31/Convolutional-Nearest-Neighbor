@@ -1,0 +1,87 @@
+_wandb:
+    value:
+        cli_version: 0.20.1
+        m: []
+        python_version: 3.10.18
+        t:
+            "1":
+                - 1
+                - 41
+            "2":
+                - 1
+                - 41
+            "3":
+                - 13
+                - 16
+                - 55
+            "4": 3.10.18
+            "5": 0.20.1
+            "12": 0.20.1
+            "13": linux-x86_64
+K:
+    value: 9
+batch_size:
+    value: 8
+channels:
+    value:
+        - 8
+        - 8
+        - 8
+clip_grad_norm:
+    value: null
+criterion:
+    value: CrossEntropy
+data_path:
+    value: ./Data
+dataset:
+    value: cifar10
+device:
+    value: cuda
+experiment_name:
+    value: test1
+kernel_size:
+    value: 3
+layer:
+    value: Conv2d
+location_channels:
+    value: false
+lr:
+    value: 0.001
+lr_gamma:
+    value: 0.1
+lr_step:
+    value: 20
+magnitude_type:
+    value: similarity
+momentum:
+    value: 0.9
+num_epochs:
+    value: 10
+num_heads:
+    value: 4
+num_layers:
+    value: 3
+num_samples:
+    value: 0
+num_workers:
+    value: 4
+optimizer:
+    value: adamw
+output_dir:
+    value: ./Output/Simple/ConvNN
+resize:
+    value: false
+sampling:
+    value: All
+scheduler:
+    value: step
+seed:
+    value: 0
+shuffle_pattern:
+    value: BA
+shuffle_scale:
+    value: 2
+use_amp:
+    value: true
+weight_decay:
+    value: 1e-06

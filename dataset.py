@@ -14,11 +14,11 @@ class ImageNet(datasets.ImageNet):
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
         
-        self.train_data = datasets.ImageNet(root=args.data_path, split='train', download=False, transform=transform)
+        self.train_data = datasets.ImageNet(root=args.data_path, split='train', download=True, transform=transform)
         self.test_data = datasets.ImageNet(root=args.data_path, split='val', download=False, transform=transform)
         
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False)
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
         
         self.num_classes = 1000
         self.img_size = (3, 224, 224)
@@ -57,11 +57,11 @@ class CIFAR100(datasets.CIFAR100):
         
         
         
-        self.train_data = datasets.CIFAR100(root=args.data_path, train=True, download=False, transform=transform)
+        self.train_data = datasets.CIFAR100(root=args.data_path, train=True, download=True, transform=transform)
         self.test_data = datasets.CIFAR100(root=args.data_path, train=False, download=False, transform=transform)
         
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False)
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
         
         self.num_classes = 100
         self.upscale_dataset()
@@ -117,10 +117,10 @@ class CIFAR10(datasets.CIFAR10):
       
       
         
-        self.train_data = datasets.CIFAR10(root=args.data_path, train=True, download=False, transform=transform)
+        self.train_data = datasets.CIFAR10(root=args.data_path, train=True, download=True, transform=transform)
         self.test_data = datasets.CIFAR10(root=args.data_path, train=False, download=False, transform=transform)
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False)
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, pin_memory=True)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=True)
         
         self.num_classes = 10 
 
@@ -162,7 +162,7 @@ class MNIST(datasets.MNIST):
             transforms.Normalize(mean=[0.1307], std=[0.3081])
         ])
         
-        self.train_data = datasets.MNIST(root=args.data_path, train=True, download=False, transform=transform)
+        self.train_data = datasets.MNIST(root=args.data_path, train=True, download=True, transform=transform)
         self.test_data = datasets.MNIST(root=args.data_path, train=False, download=False, transform=transform)
         self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True)
         self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False)
