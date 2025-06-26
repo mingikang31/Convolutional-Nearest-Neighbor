@@ -38,6 +38,7 @@ Two main architectures are supported:
 - **MultiHeadConvNN**: 1D nearest Neighbor convolution with linear projects on sequences
 - **MultiHeadConv1dAttention**: Traditional 1D convolution with linear projection on feature vectors
 - **MultiHeadConv1d**: Traditional 1D convolution with linear projection on sequences
+- **MultiHeadKvtAttention**: KVT Attention from *k-NN Attention for Boosting Vision Transformers*
 
 ## Installation
 ```Shell 
@@ -99,7 +100,7 @@ Run `python vit_main.py --help` to see all available options.
 #### Model & Layer Configuration
 | Flag                 | Default       | Choices                   | Description                                  |
 | -------------------- | ------------- | ------------------------- | -------------------------------------------- |
-| `--layer`            | `Attention`   | `Attention`, `ConvNN`, `ConvNNAttention`, `Conv1d`, `Conv1dAttention` | Layer type for ViT transformer blocks |
+| `--layer`            | `Attention`   | `Attention`, `ConvNN`, `ConvNNAttention`, `Conv1d`, `Conv1dAttention`, `KvtAttention`| Layer type for ViT transformer blocks |
 | `--patch_size`       | `16`          | _integer_                 | Patch size for input images                 |
 | `--num_layers`       | `8`           | _integer_                 | Number of transformer layers                |
 | `--num_heads`        | `4`           | _integer_                 | Number of attention heads                   |
@@ -195,6 +196,9 @@ python vit_main.py --layer ConvNNAttention --num_layers 6 --num_heads 8 --d_mode
 
 # Hybrid Conv2d/ConvNN (AllConvNet)
 python allconvnet_main.py --layer Conv2d/ConvNN --channels 64 128 256 --sampling Random --num_samples 32
+
+# KVT (ViT)
+python vit_main.py --layer KvtAttention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1
 ```
 
 ## License 
