@@ -17,7 +17,7 @@ def args_parser():
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", add_help=False) 
     
     # Model Arguments
-    parser.add_argument("--layer", type=str, default="Attention", choices=["Attention", "ConvNN", "ConvNNAttention", "Conv1d", "Conv1dAttention"], help="Layer to use for training and evaluation")
+    parser.add_argument("--layer", type=str, default="Attention", choices=["Attention", "ConvNN", "ConvNNAttention", "Conv1d", "Conv1dAttention", "KvtAttention"], help="Layer to use for training and evaluation")
     
     parser.add_argument("--patch_size", type=int, default=16, help="Patch size for Attention Models")
     parser.add_argument("--num_layers", type=int, default=8, help="Number of layers in the model")   

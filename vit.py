@@ -151,7 +151,12 @@ class TransformerEncoder(nn.Module):
             self.attention = MultiHeadConv1d(d_model, num_heads, args.kernel_size)
         elif args.layer == "Conv1dAttention":
             self.attention = MultiHeadConv1dAttention(d_model, num_heads, args.kernel_size)
-
+        if args.layer == "KvtAttention":
+            self.attention = MultiHeadKvtAttention(
+                                        dim=d_model, 
+                                        num_heads=num_heads, 
+                                        attn_drop=dropout,
+                                        topk= args.K) 
         
         
         self.norm1 = nn.LayerNorm(d_model)
@@ -711,6 +716,40 @@ class MultiHeadConv1d(nn.Module):
         x = self.conv(x) 
         x = self.W_o(self.combine_heads(self.batch_split(x))).permute(0, 2, 1)
         return x
+
+class MultiHeadKvtAttention(nn.Module):
+    def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.,topk=100):
+        super().__init__()
+        self.num_heads = num_heads
+        head_dim = dim // num_heads
+        # NOTE scale factor was wrong in my original version, can set manually to be compat with prev weights
+        self.scale = qk_scale or head_dim ** -0.5
+
+        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.attn_drop = nn.Dropout(attn_drop)
+        self.proj = nn.Linear(dim, dim)
+        self.proj_drop = nn.Dropout(proj_drop)
+        self.topk = topk
+
+    def forward(self, x):
+        B, N, C = x.shape
+        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]   # make torchscript happy (cannot use tensor as tuple)
+        attn = (q @ k.transpose(-2, -1)) * self.scale
+        # the core code block
+        mask=torch.zeros(B,self.num_heads,N,N,device=x.device,requires_grad=False)
+        index=torch.topk(attn,k=self.topk,dim=-1,largest=True)[1]
+        mask.scatter_(-1,index,1.)
+        attn=torch.where(mask>0,attn,torch.full_like(attn,float('-inf')))
+        # end of the core code block
+
+        attn = attn.softmax(dim=-1)
+        attn = self.attn_drop(attn)
+
+        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = self.proj(x)
+        x = self.proj_drop(x)
+        return x
     
 if __name__ == "__main__":
     import torch
@@ -756,44 +795,56 @@ if __name__ == "__main__":
     print(f"Output shape: {output.shape}\n")
     
     
-    print("ConvNN")
-    args.layer = "ConvNN"
-    model = ViT(args)
-    total_params, trainable_params = model.parameter_count()
-    print(f"Total parameters: {total_params:,}")
-    print(f"Trainable parameters: {trainable_params:,}")
+    # print("ConvNN")
+    # args.layer = "ConvNN"
+    # model = ViT(args)
+    # total_params, trainable_params = model.parameter_count()
+    # print(f"Total parameters: {total_params:,}")
+    # print(f"Trainable parameters: {trainable_params:,}")
     
-    output_convnn = model(x)
+    # output_convnn = model(x)
     
-    print(f"Output shape: {output_convnn.shape}\n")
+    # print(f"Output shape: {output_convnn.shape}\n")
     
     
-    print("ConvNNAttention")
-    args.layer = "ConvNNAttention"
-    model = ViT(args)
-    total_params, trainable_params = model.parameter_count()
-    print(f"Total parameters: {total_params:,}")
-    print(f"Trainable parameters: {trainable_params:,}")
+    # print("ConvNNAttention")
+    # args.layer = "ConvNNAttention"
+    # model = ViT(args)
+    # total_params, trainable_params = model.parameter_count()
+    # print(f"Total parameters: {total_params:,}")
+    # print(f"Trainable parameters: {trainable_params:,}")
     
-    output = model(x)
+    # output = model(x)
     
-    print(f"Output shape: {output.shape}\n")
+    # print(f"Output shape: {output.shape}\n")
     
 
-    print("Conv1d")
-    args.layer = "Conv1d"
-    model = ViT(args)
-    total_params, trainable_params = model.parameter_count()
-    print(f"Total parameters: {total_params:,}")
-    print(f"Trainable parameters: {trainable_params:,}")
+    # print("Conv1d")
+    # args.layer = "Conv1d"
+    # model = ViT(args)
+    # total_params, trainable_params = model.parameter_count()
+    # print(f"Total parameters: {total_params:,}")
+    # print(f"Trainable parameters: {trainable_params:,}")
     
-    output = model(x)
+    # output = model(x)
     
-    print(f"Output shape: {output.shape}\n")
+    # print(f"Output shape: {output.shape}\n")
     
     
-    print("Conv1dAttention")
-    args.layer = "Conv1dAttention"
+    # print("Conv1dAttention")
+    # args.layer = "Conv1dAttention"
+    # model = ViT(args)
+    # total_params, trainable_params = model.parameter_count()
+    # print(f"Total parameters: {total_params:,}")
+    # print(f"Trainable parameters: {trainable_params:,}")
+    
+    # output = model(x)
+    
+    # print(f"Output shape: {output.shape}")
+
+
+    print("KvtAttention")
+    args.layer = "KvtAttention"
     model = ViT(args)
     total_params, trainable_params = model.parameter_count()
     print(f"Total parameters: {total_params:,}")
