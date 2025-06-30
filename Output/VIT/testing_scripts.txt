@@ -1,0 +1,34 @@
+# Attention [COMPLETED]
+python vit_main.py --layer Attention --patch_size 16 --num_layers 3 --num_heads 4 --d_hidden 8 --d_mlp 24 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/Attention
+
+# Conv1d [COMPLETED]
+python vit_main.py --layer Conv1d --patch_size 16 --num_layers 3 --kernel_size 9 --num_heads 4 --d_hidden 8 --d_mlp 24 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/Conv1d 
+
+# Conv1d Attention [COMPLETED]
+python vit_main.py --layer Conv1dAttention --patch_size 16 --num_layers 3 --kernel_size 9 --num_heads 4 --d_hidden 8 --d_mlp 24 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/Conv1dAttention
+
+# KVT Attention[COMPLETED]
+python vit_main.py --layer KvtAttention --patch_size 16 --num_layers 3 --K 9 --num_heads 4 --d_hidden 8 --d_mlp 24 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/KvtAttention
+
+# ConvNN All [COMPLETED]
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 3 --K 9 --sampling_type all --num_heads 4 --d_hidden 8 --d_mlp 24 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/ConvNN_All
+
+# ConvNN Random [COMPLETED]
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 3 --K 9 --sampling_type random --num_samples 32 --num_heads 4 --d_hidden 8 --d_mlp 24 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/ConvNN_Random
+
+
+# ConvNN Spatial [COMPLETED]
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 3 --K 9 --sampling_type spatial --num_samples 32 --num_heads 4 --d_hidden 8 --d_mlp 24 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/ConvNN_spatial
+
+
+# ConvNNAttention All 
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 3 --K 9 --sampling_type all --num_heads 4 --d_hidden 8 --d_mlp 24 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/ConvNNAttention_All
+
+# ConvNNAttention Random 
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 3 --K 9 --sampling_type random --num_samples 32 --num_heads 4 --d_hidden 8 --d_mlp 24 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/ConvNNAttention_Random
+
+
+# ConvNNAttention Spatial 
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 3 --K 9 --sampling_type spatial --num_samples 32 --num_heads 4 --d_hidden 8 --d_mlp 24 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/ConvNNAttention_spatial
+
+
