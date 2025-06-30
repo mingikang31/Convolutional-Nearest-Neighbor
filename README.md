@@ -1,4 +1,4 @@
-# Convolutional Nearest Neighbor (ConvNN) with AllConvNet and Vision Transformer Architectures 
+# Convolutional Nearest Neighbor (ConvNN) with AllConvNet and Vision Transformer Architectures
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -9,203 +9,196 @@
 
 **Project periods:** Summer 2024, Spring 2025, Summer 2025
 
-## Overview 
-Traditional convolutions only see a fixed grid of adjacent pixels. **ConvNN**: 
-- Finds the _K_-nearest neighbors of each token (pixel or feature vector). 
-- Aggregates their values by distance- or similarity-based weightings. 
-- Captures long-range dependencies and relationships between pixels.
-- Is drop-in compatible with both AllConvNet and Vision Transformer architectures.
+## Overview
+Traditional convolutions aggregate features from a fixed grid of adjacent pixels. This project introduces **Convolutional Nearest Neighbor (ConvNN)**, a novel layer that operates on a more flexible, data-driven neighborhood.
+
+**How ConvNN Works:**
+- For each token (a pixel or feature vector), it finds the *K*-nearest neighbors from a global or sampled pool of candidates.
+- It aggregates the values of these neighbors, often using distance or similarity metrics for weighting.
+- This approach allows the model to capture long-range dependencies and non-local relationships that standard convolutions might miss.
+- ConvNN is designed to be a drop-in replacement for standard layers in both fully convolutional networks and Vision Transformers.
 
 ### Key Concepts
-- **AllConvNet Architecture**: A fully convolutional network that can incorporate various layer types including traditional Conv2d, ConvNN, and Attention layers.
-- **Vision Transformer (ViT)**: Transformer-based architecture with patch embeddings that can utilize ConvNN layers for enhanced feature extraction.
-- **Layer Flexibility**: Supports single layer types or branching layer types (e.g., Conv2d/ConvNN, ConvNNAttention).
-- **Attention Integration**: Can combine attention mechanisms with convolutional nearest neighbor layers for enhanced feature extraction.
+- **AllConvNet Architecture**: A flexible, fully convolutional network where each block can be a traditional `Conv2d`, `ConvNN`, an `Attention2d` layer, or a hybrid branching combination of these.
+- **Vision Transformer (ViT)**: A standard ViT architecture where the multi-head self-attention block can be replaced with our custom `MultiHeadConvNN` or `MultiHeadConvNNAttention` layers.
+- **Layer Flexibility**: The project supports single-layer types (e.g., `ConvNN` only) and powerful branching architectures (e.g., `Conv2d/ConvNN`, `Attention/ConvNN_Attn`) to combine the strengths of different operations.
+- **Sampling Strategies**: To manage computational complexity, `ConvNN` layers support multiple sampling strategies: `all` (dense), `random`, and `spatial`.
 
-### Implementation 
-Two main architectures are supported:
+### Implementation
+Two main architectures are supported, each with a corresponding entry-point script:
 
-**AllConvNet Layers:**
-- **Conv2d**: Traditional 2D convolution layers
-- **ConvNN**: Nearest neighbor convolution layers
-- **ConvNN_Attn**: ConvNN with attention mechanisms
-- **Attention**: Pure attention layers
-- **Branching Combination**: Branching layer types (e.g., Conv2d/ConvNN, Attention/ConvNN)
+**1. AllConvNet Layers (`allconvnet_main.py`)**: These are 2D layers operating directly on image-like feature maps.
+- **`Conv2d`**: Standard 2D convolution.
+- **`ConvNN`**: The core 2D nearest neighbor convolution.
+- **`ConvNN_Attn`**: A hybrid that uses Q,K,V projections to find nearest neighbors.
+- **`Attention2d`**: A pure 2D spatial attention layer.
+- **Branching Combinations**: Parallel branches of any two of the above layers (e.g., `Conv2d/ConvNN`, `Attention/ConvNN_Attn`).
 
-**ViT Layers:**
-- **MultiHeadAttention**: Standard transformer multi-head attention
-- **MultiHeadConvNNAttention**: 1D nearest neighbor convolution with linear projection on feature vectors
-- **MultiHeadConvNN**: 1D nearest Neighbor convolution with linear projects on sequences
-- **MultiHeadConv1dAttention**: Traditional 1D convolution with linear projection on feature vectors
-- **MultiHeadConv1d**: Traditional 1D convolution with linear projection on sequences
-- **MultiHeadKvtAttention**: KVT Attention from *k-NN Attention for Boosting Vision Transformers*
+**2. ViT Layers (`vit_main.py`)**: These are 1D layers operating on sequences of patch embeddings.
+- **`MultiHeadAttention`**: Standard Transformer multi-head self-attention.
+- **`MultiHeadConvNN`**: A 1D ConvNN using linear projections on sequences.
+- **`MultiHeadConvNNAttention`**: A 1D ConvNN using linear projections on features (Q,K,V).
+- **`MultiHeadConv1d` / `MultiHeadConv1dAttention`**: Traditional 1D convolutions integrated into the attention block structure.
+- **`MultiHeadKvtAttention`**: An implementation of k-NN Attention for boosting Vision Transformers.
 
 ## Installation
-```Shell 
-git clone https://github.com/mingikang31/Convolutional-Nearest-Neighbor.git
-```
-Then, Install required dependencies:
-- torch, torchvision, torchsummary, numpy, matplotlib, tqdm, Pillow
-```Shell
+```shell
+git clone [https://github.com/mingikang31/Convolutional-Nearest-Neighbor.git](https://github.com/mingikang31/Convolutional-Nearest-Neighbor.git)
+cd Convolutional-Nearest-Neighbor
+````
+
+Then, install the required dependencies:
+
+```shell
 pip install -r requirements.txt
 ```
 
-## Training & Evaluation 
+## Training & Evaluation Examples
 
 ### AllConvNet Examples
 
-Basic ConvNN training on CIFAR-10:
-```Shell 
-python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 8 16 32 --K 9 --sampling Spatial --num_samples 64 --batch_size 64 --output_dir ./Output/AllConvNet/ConvNN --device cuda --num_epochs 10 --dataset cifar10
+Train a pure `ConvNN` model with spatial sampling:
+
+```shell
+python allconvnet_main.py \
+    --layer ConvNN \
+    --sampling_type spatial \
+    --num_samples 8 \
+    --K 9 \
+    --channels 64 128 256 \
+    --num_layers 3 \
+    --dataset cifar10 \
+    --output_dir ./Output/AllConvNet/ConvNN_Spatial
 ```
 
-Hybrid Conv2d/ConvNN layers:
-```Shell
-python allconvnet_main.py --layer Conv2d/ConvNN --num_layers 3 --channels 8 16 32 --sampling Spatial --num_samples 8 --dataset cifar10 --num_epochs 10 --device cuda --output_dir ./Output/AllConvNet/Conv2d_ConvNN_Spatial
+Train a hybrid `Attention/ConvNN_Attn` branching model with random sampling:
+
+```shell
+python allconvnet_main.py \
+    --layer Attention/ConvNN_Attn \
+    --sampling_type random \
+    --num_samples 32 \
+    --channels 64 128 256 \
+    --num_layers 3 \
+    --dataset cifar10 \
+    --output_dir ./Output/AllConvNet/Hybrid_Random
 ```
 
 ### Vision Transformer Examples
 
-Standard ViT with attention:
-```Shell
-python vit_main.py --layer Attention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_Attention
+Train a standard ViT with default attention:
+
+```shell
+python vit_main.py \
+    --layer Attention \
+    --patch_size 16 \
+    --num_layers 8 \
+    --num_heads 8 \
+    --d_model 512 \
+    --dataset cifar10 \
+    --output_dir ./Output/ViT/Attention
 ```
 
-ViT with ConvNN layers:
-```Shell
-python vit_main.py --layer ConvNN --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --K 9 --num_samples 32 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNN
+Replace the attention block with our `MultiHeadConvNNAttention` layer:
+
+```shell
+python vit_main.py \
+    --layer ConvNNAttention \
+    --patch_size 16 \
+    --num_layers 8 \
+    --num_heads 8 \
+    --d_model 512 \
+    --K 9 \
+    --num_samples 32 \
+    --sampling_type random \
+    --dataset cifar10 \
+    --output_dir ./Output/ViT/ConvNNAttention
 ```
 
-ViT with ConvNN and Attention combined:
-```Shell
-python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --K 9 --num_samples 32 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNNAttention
-```
-
-## Command-Line Interface 
+## Command-Line Interface
 
 ### AllConvNet (`allconvnet_main.py`)
+
 Run `python allconvnet_main.py --help` to see all available options.
 
 #### Model & Layer Configuration
-| Flag                 | Default       | Choices                   | Description                                  |
-| -------------------- | ------------- | ------------------------- | -------------------------------------------- |
-| `--layer`            | `ConvNN`      | `Conv2d`, `ConvNN`, `ConvNN_Attn`, `Attention`, `Conv2d/ConvNN`, `Conv2d/ConvNN_Attn`, `Attention/ConvNN`, `Attention/ConvNN_Attn`, `Conv2d/Attention` | Which convolution/attention layer to use |
-| `--num_layers`       | `5`           | _integer_                 | Number of sequential layers                  |
-| `--channels`         | `[32,64,128,256,512]` | _list of integers_    | Channel sizes for each layer                 |
-| `--kernel_size`      | `3`           | _integer_                 | Kernel size for Conv2d layers               |
+
+| Flag                | Default                 | Choices                                                                                               | Description                                         |
+| ------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `--layer`           | `ConvNN`                | `Conv2d`, `ConvNN`, `ConvNN_Attn`, `Attention`, `Conv2d/ConvNN`, `Conv2d/Attention`, etc.               | Which convolution/attention/branching layer to use. |
+| `--num_layers`      | `5`                     | *integer*                                                                                             | Number of sequential layers in the network.         |
+| `--channels`        | `[32,64,128,256,512]`   | *list of integers*                                                                                    | Output channel sizes for each respective layer.     |
+| `--kernel_size`     | `3`                     | *integer*                                                                                             | Kernel size for standard `Conv2d` layers.           |
+| `--num_heads`       | `4`                     | *integer*                                                                                             | Number of heads for `Attention2d` layers.           |
+| `--shuffle_pattern` | `BA`                    | `BA`, `NA`                                                                                            | `unshuffle` Before & `shuffle` After, or `None`.    |
+| `--shuffle_scale`   | `2`                     | *integer*                                                                                             | Scale factor for pixel shuffle/unshuffle.           |
+
+#### ConvNN-Specific Parameters (for AllConvNet)
+
+| Flag               | Default        | Choices                    | Description                                         |
+| ------------------ | -------------- | -------------------------- | --------------------------------------------------- |
+| `--K`              | `9`            | *integer*                  | Number of nearest neighbors to find.                |
+| `--sampling_type`  | `all`          | `all`, `random`, `spatial` | How to select the pool of neighbor candidates.      |
+| `--num_samples`    | `-1`           | *integer*                  | Number of samples for `random` or `spatial` mode. Set to -1 for `all` sampling. |
+| `--sample_padding` | `0`            | *integer*                  | Padding for `spatial` sampling.                     |
+| `--magnitude_type` | `similarity`   | `similarity`, `distance`   | Metric for finding nearest neighbors.               |
 
 ### Vision Transformer (`vit_main.py`)
+
 Run `python vit_main.py --help` to see all available options.
 
 #### Model & Layer Configuration
-| Flag                 | Default       | Choices                   | Description                                  |
-| -------------------- | ------------- | ------------------------- | -------------------------------------------- |
-| `--layer`            | `Attention`   | `Attention`, `ConvNN`, `ConvNNAttention`, `Conv1d`, `Conv1dAttention`, `KvtAttention`| Layer type for ViT transformer blocks |
-| `--patch_size`       | `16`          | _integer_                 | Patch size for input images                 |
-| `--num_layers`       | `8`           | _integer_                 | Number of transformer layers                |
-| `--num_heads`        | `4`           | _integer_                 | Number of attention heads                   |
-| `--d_model`          | `512`         | _integer_                 | Model dimension                             |
-| `--dropout`          | `0.1`         | _float_                   | General dropout rate                        |
-| `--attention_dropout`| `0.1`         | _float_                   | Attention-specific dropout rate             |
 
-### ConvNN-Specific Parameters (Both Architectures)
-| Flag                 | Default       | Choices                   | Description                                  |
-| -------------------- | ------------- | ------------------------- | -------------------------------------------- |
-| `--K`                | `9`           | _integer_                 | Number of nearest neighbors                  |
-| `--sampling`         | `None`/`All`  | `All`, `Random`, `Spatial`| How to select neighbors (AllConvNet only)   |
-| `--num_samples`      | `0`           | _integer_                 | Max samples per query (0 means all)         |
-| `--kernel_size`      | `3`           | _integer_                 | Kernel size for Conv layers                 |
-| `--magnitude_type`   | `similarity`  | `similarity`, `distance`  | Weighting type                               |
-| `--shuffle_pattern`  | `BA`          | `BA`, `NA`                | Before-After vs no shuffle (AllConvNet only)|
-| `--shuffle_scale`    | `2`           | _integer_                 | Pixel unshuffle factor (AllConvNet only)    |
-| `--location_channels`| _flag_        |                           | Append XY coordinates (AllConvNet only)     |
+| Flag                  | Default     | Choices                                                                    | Description                                     |
+| --------------------- | ----------- | -------------------------------------------------------------------------- | ----------------------------------------------- |
+| `--layer`             | `Attention` | `Attention`, `ConvNN`, `ConvNNAttention`, `Conv1d`, `Conv1dAttention`, `KvtAttention` | Layer type for ViT transformer blocks.          |
+| `--patch_size`        | `16`        | *integer*                                                                  | Side length of square image patches.            |
+| `--num_layers`        | `8`         | *integer*                                                                  | Number of transformer encoder layers.           |
+| `--num_heads`         | `8`         | *integer*                                                                  | Number of attention heads.                      |
+| `--d_model`           | `512`       | *integer*                                                                  | The main embedding dimension of the model.      |
+| `--d_mlp`             | `2048`      | *integer*                                                                  | Dimension of the inner MLP feed-forward layer.  |
+| `--dropout`           | `0.1`       | *float*                                                                    | General dropout rate for linear layers.         |
+| `--attention_dropout` | `0.1`       | *float*                                                                    | Dropout rate applied to attention probabilities. |
 
-### Data & Training (Both Architectures)
-| Flag                 | Default        | Choices                   | Description                                  |
-| -------------------- | -------------- | ------------------------- | -------------------------------------------- |
-| `--dataset`          | `cifar10`      | `cifar10`, `cifar100`, `imagenet`| Dataset for training and evaluation   |
-| `--data_path`        | `./Data`       | _string_                  | Path to the dataset                          |
-| `--batch_size`       | `64`           | _integer_                 | Batch size for training                      |
-| `--num_epochs`       | `100`          | _integer_                 | Number of epochs for training                |
-| `--use_amp`          | _flag_         |                           | Enable mixed-precision (FP16)                |
-| `--clip_grad_norm`   | `None`         | _float_                   | Maximum gradient norm (if any)               |
+#### ConvNN-Specific Parameters (for ViT)
 
-### Optimization & Learning Rate (Both Architectures)
-| Flag                 | Default        | Choices                     | Description                                  |
-| -------------------- | -------------- | --------------------------- | -------------------------------------------- |
-| `--criterion`        | `CrossEntropy` | `CrossEntropy`, `MSE`       | Loss function                                |
-| `--optimizer`        | `adamw`        | `adam`, `sgd`, `adamw`      | Optimizer                                    |
-| `--momentum`         | `0.9`          | _float_                     | Only for SGD                                 |  
-| `--weight_decay`     | `1e-6`         | _float_                     | L2 regularization                            |
-| `--lr`               | `1e-3`         | _float_                     | Base learning rate                           |
-| `--scheduler`        | `step`         | `step`, `cosine`, `plateau` | LR schedule type                             |
-| `--lr_step`          | `20`           | _integer_                   | Step scheduler step size                     |
-| `--lr_gamma`         | `0.1`          | _float_                     | Step scheduler decay factor                  |
+| Flag               | Default        | Choices                    | Description                                         |
+| ------------------ | -------------- | -------------------------- | --------------------------------------------------- |
+| `--K`              | `9`            | *integer*                  | Number of nearest neighbors to find.                |
+| `--sampling_type`  | `all`          | `all`, `random`, `spatial` | How to select the pool of neighbor candidates.      |
+| `--num_samples`    | `-1`           | *integer*                  | Number of samples for `random` or `spatial` mode. Set to -1 for `all` sampling. |
+| `--sample_padding` | `0`            | *integer*                  | Padding for `spatial` sampling.                     |
+| `--magnitude_type` | `similarity`   | `similarity`, `distance`   | Metric for finding nearest neighbors.               |
 
-### Device & Reproduction (Both Architectures)
-| Flag                 | Default        | Choices                     | Description                                  |
-| -------------------- | -------------- | --------------------------- | -------------------------------------------- |
-| `--device`           | `cuda`         | `cuda`, `mps`, `cpu`        | Device for training inference                |
-| `--seed`             | `0`            | _integer_                   | Random seed for reproducibility              |
-| `--output_dir`       | Architecture-specific | _path_               | Path to save output                          |  
+*(Note: Data, Training, and Optimization arguments are shared between both scripts. Run `--help` for details.)*
 
-## Project Structure 
-```Shell
+## Project Structure
+
+```
 .
-├── layers1d.py           # 1D layers for ViT and AllConvNet
-├── layers2d.py           # 2D layers for AllConvNet
-├── dataset.py            # CIFAR-10/100 & ImageNet wrappers
-├── train_eval.py         # Training & evaluation loop
-├── allconvnet.py         # AllConvNet architecture implementation
-├── allconvnet_main.py    # CLI entrypoint for AllConvNet
-├── vit.py                # Vision Transformer implementation
-├── vit_main.py           # CLI entrypoint for ViT
-├── utils.py              # I/O, logging, seed setup
-├── README.md             # ← you are here
-└── LICENSE               # MIT License
+├── layers1d.py          # 1D layers for ViT and AllConvNet
+├── layers2d.py          # 2D layers for AllConvNet
+├── dataset.py           # CIFAR-10/100 & ImageNet wrappers
+├── train_eval.py        # Training & evaluation loop
+├── allconvnet.py        # AllConvNet architecture implementation
+├── allconvnet_main.py   # CLI entrypoint for AllConvNet
+├── vit.py               # Vision Transformer implementation
+├── vit_main.py          # CLI entrypoint for ViT
+├── utils.py             # I/O, logging, seed setup
+├── README.md            # ← you are here
+└── LICENSE              # MIT License
 ```
 
-## Architecture Comparison
+## License
 
-| Feature | AllConvNet | Vision Transformer |
-|---------|------------|-------------------|
-| **Input Processing** | Direct pixel-level convolution | Patch-based tokenization |
-| **Layer Types** | Conv2d, ConvNN, Attention, Hybrids | Attention, ConvNN, Conv1d, Hybrids |
-| **Spatial Processing** | 2D spatial operations | 1D sequence of patches |
-| **Configuration** | Channel-based depth control | Transformer block depth |
-| **Best For** | Image-level feature extraction | Global context modeling |
+Convolutional-Nearest-Neighbor is released under the MIT License. Please see the [LICENSE](https://www.google.com/search?q=LICENSE) file for more information.
 
-## Example Workflows
+## Contributing
 
-### Comparing Architectures
-```Shell
-# AllConvNet with ConvNN
-python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 64 128 --dataset cifar10 --output_dir ./Output/AllConvNet/ConvNN
+Contributions, issues, and feature requests are welcome\!
+Please reach out to:
 
-# ViT with ConvNN
-python vit_main.py --layer ConvNN --num_layers 3 --d_model 128 --dataset cifar10 --output_dir ./Output/ViT/ConvNN
-```
+  - **Mingi Kang** [mkang2@bowdoin.edu](mailto:mkang2@bowdoin.edu)
+  - **Jeova Farias** [j.farias@bowdoin.edu](mailto:j.farias@bowdoin.edu)
 
-### Ablation Studies
-```Shell
-# Pure attention (ViT)
-python vit_main.py --layer Attention --num_layers 6 --num_heads 8 --d_model 256
-
-# ConvNN + Attention (ViT)
-python vit_main.py --layer ConvNNAttention --num_layers 6 --num_heads 8 --d_model 256 --K 16
-
-# Hybrid Conv2d/ConvNN (AllConvNet)
-python allconvnet_main.py --layer Conv2d/ConvNN --channels 64 128 256 --sampling Random --num_samples 32
-
-# KVT (ViT)
-python vit_main.py --layer KvtAttention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1
-```
-
-## License 
-Convolutional-Nearest-Neighbor is released under the MIT License. Please see the [LICENSE](LICENSE) file for more information.
-
-## Contributing 
-Contributions, issues, and feature requests are welcome! 
-Please reach out to: 
-- **Mingi Kang** <mkang2@bowdoin.edu>
-- **Jeova Farias** <j.farias@bowdoin.edu>
+<!-- end list -->
