@@ -26,20 +26,15 @@ def args_parser():
     # Additional Layer Arguments
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN")
     parser.add_argument("--kernel_size", type=int, default=3, help="Kernel Size for Conv2d")        
-    parser.add_argument("--sampling", type=str, default=None, choices=["All", "Random", "Spatial"], help="Sampling method for ConvNN Models")
-    parser.add_argument("--num_samples", type=int, default=0, help="Number of samples for ConvNN Models")
+    parser.add_argument("--sampling_type", type=str, default='all', choices=["all", "random", "spatial"], help="Sampling method for ConvNN Models")
+    parser.add_argument("--num_samples", type=int, default=-1, help="Number of samples for ConvNN Models")
+    parser.add_argument("--sample_padding", type=int, default=0, help="Padding for spatial sampling in ConvNN Models")
     
-    
-    parser.add_argument("--num_heads", type=int, default=4, help="Number of heads for Attention Models")
-    
-    # parser.add_argument("--d_model", type=int, default=9, help="Dimensionality of the model for Attention Models") # might not use (check again)
-    
+    parser.add_argument("--num_heads", type=int, default=4, help="Number of heads for Attention Models")    
     
     parser.add_argument("--shuffle_pattern", type=str, default="BA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")
     parser.add_argument("--shuffle_scale", type=int, default=2, help="Shuffle scale for ConvNN Models")
     parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
-    parser.add_argument("--location_channels", action="store_true", help="Use location channels for ConvNN Models")
-    parser.set_defaults(location_channels=False)
     
     # Arguments for Data 
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", 'imagenet'], help="Dataset to use for training and evaluation")
@@ -88,10 +83,10 @@ def check_args(args):
     
     assert args.num_layers == len(args.channels), f"Number of layers {args.num_layers} does not match the number of channels {len(args.channels)}"
         
-    if args.sampling == "All": # only for Conv2d_NN, Conv2d_NN_Attn
-        args.num_samples = 0
-    if args.num_samples == 0:
-        args.sampling = "All"
+    if args.sampling_type == "all": # only for Conv2d_NN, Conv2d_NN_Attn
+        args.num_samples = -1
+    if args.num_samples == -1:
+        args.sampling_type = "all"
 
     args.resize = False
     return args
@@ -120,9 +115,6 @@ def main(args):
         args.img_size = dataset.img_size
     else:
         raise ValueError("Dataset not supported")
-    
-
-    
     
     # Model 
     model = AllConvNet(args)

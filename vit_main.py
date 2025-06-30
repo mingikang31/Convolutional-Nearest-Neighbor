@@ -22,24 +22,23 @@ def args_parser():
     parser.add_argument("--patch_size", type=int, default=16, help="Patch size for Attention Models")
     parser.add_argument("--num_layers", type=int, default=8, help="Number of layers in the model")   
     parser.add_argument("--num_heads", type=int, default=4, help="Number of heads for Attention Models")
-    parser.add_argument("--d_model", type=int, default=512, help="Dimensionality of the model for Attention Models")
 
+    # Model Dimension Arguments
+    parser.add_argument("--d_hidden", type=int, default=512, help="Hidden dimension for the model")
+    parser.add_argument("--d_mlp", type=int, default=2048, help="MLP dimension for the model")
 
-    
+    # Dropout Arguments
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate for the model")
-    parser.add_argument("--attention_dropout", type=float, default=0.1, help="Dropout rate for the model")
-
-    
+    parser.add_argument("--attention_dropout", type=float, default=0.1, help="Dropout rate for the model")    
     
     # Additional Layer Arguments for ConvNN
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN Layer")
-    parser.add_argument("--kernel_size", type=int, default=3, help="Kernel size for Conv1d Layer")
-    parser.add_argument("--num_samples", type=int, default=0, help="Number of samples for ConvNN Layer, -1 for all samples")
+    parser.add_argument("--kernel_size", type=int, default=9, help="Kernel size for Conv1d Layer")
+    parser.add_argument("--num_samples", type=int, default=None, help="Number of samples for ConvNN Layer, -1 for all samples")
+    parser.add_argument("--sampling_type", type=str, default=None, choices=["all", "random", "spatial"], help="Sampling type for ConvNN Models")
+    parser.add_argument("--sample_padding", type=int, default=None, help="Padding for spatial sampling in ConvNN Models")
     parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
 
-    
-    
-    
     
     # Arguments for Data 
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", 'imagenet'], help="Dataset to use for training and evaluation")
@@ -77,8 +76,6 @@ def args_parser():
     return parser
     
 def main(args):
-    
-    
     # Check if the output directory exists, if not create it
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
@@ -99,7 +96,6 @@ def main(args):
         args.img_size = dataset.img_size
     else:
         raise ValueError("Dataset not supported")
-    
     
     model = ViT(args)
     print(f"Model: {model.name}")
@@ -149,3 +145,5 @@ if __name__ == '__main__':
 # python vit_main.py --layer ConvNN --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --num_samples 32 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNN_Random
 
 # python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --num_samples 32 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_ConvNNAttention_Random
+
+# python vit_main.py --layer KvtAttention --patch_size 16 --num_layers 3 --num_heads 4 --d_model 8 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --output_dir ./Output/VIT/VIT_KvtAttention
