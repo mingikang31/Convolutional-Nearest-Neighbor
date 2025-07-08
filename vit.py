@@ -7,7 +7,12 @@ import torch.nn.functional as F
 from torchsummary import summary 
 import numpy as np 
 
-from typing import cast, Union
+from typing import cast, Union, Optional
+
+from utils import *
+
+# 
+from natten import NeighborhoodAttention1D, NeighborhoodAttention2D
 
 '''VGG Model Class'''
 class ViT(nn.Module): 
@@ -143,16 +148,38 @@ class TransformerEncoder(nn.Module):
         elif args.layer == "ConvNNAttention": 
             self.attention = MultiHeadConvNNAttention(d_hidden, num_heads, args.K, args.sampling_type, args.num_samples, args.sample_padding, args.magnitude_type)
         elif args.layer == "Conv1d":
-            self.attention = MultiHeadConv1d(d_hidden, num_heads, args.kernel_size)
+            self.attention = MultiHeadConv1d(d_hidden, num_heads, args.K)
         elif args.layer == "Conv1dAttention":
-            self.attention = MultiHeadConv1dAttention(d_hidden, num_heads, args.kernel_size)
+            self.attention = MultiHeadConv1dAttention(d_hidden, num_heads, args.K)
         elif args.layer == "KvtAttention":
-            self.attention = MultiHeadKvtAttention(
-                                        dim=d_hidden, 
-                                        num_heads=num_heads, 
-                                        attn_drop=attention_dropout,
-                                        topk=args.K) 
-        
+            self.attention = MultiHeadKvtAttention(dim=d_hidden, num_heads=num_heads, attn_drop=attention_dropout, topk=args.K)
+        elif args.layer == "LocalAttention":
+            local_attention_params = {
+                "window_size": 128,  # Default window size for local attention
+                "dim_head": 64,  # Default dimension of each head
+                "causal": False,  # Whether to use causal attention
+                "prenorm": False,  # Whether to use pre-norm
+                "qk_rmsnorm": False,  # Whether to use RMSNorm for query and key
+                "qk_scale": 8,  # Scaling factor for query and key
+                "use_xpos": False,  # Whether to use XPOS
+                "xpos_scale_base": None,  # Base scale for XPOS
+                "exact_windowsize": None,  # Exact window size for local attention
+                "gate_values_per_head": False  # Whether to gate values per head
+                
+            }
+            self.attention = MultiHeadLocalAttention(dim=d_hidden, heads=num_heads, dropout=attention_dropout, **local_attention_params)
+        elif args.layer == "NeighborhoodAttention": 
+            neighborhood_attention_params = {
+                "stride": 1,  # Default stride for neighborhood attention
+                "dilation": 1,  # Default dilation for neighborhood attention
+                "qkv_bias": True,  # Whether to use bias in QKV projections
+                "qk_scale": None,  # Scaling factor for QK
+                "is_causal": False,  # Whether to use causal attention
+            }
+            
+            self.attention = NeighborhoodAttention1D(embed_dim=d_hidden, num_heads=num_heads, kernel_size=args.K, proj_drop=attention_dropout, **neighborhood_attention_params
+            ) 
+
         self.norm1 = nn.LayerNorm(d_hidden)
         self.norm2 = nn.LayerNorm(d_hidden)
         self.dropout1 = nn.Dropout(dropout)
@@ -222,13 +249,13 @@ class MultiHeadAttention(nn.Module):
         return output
 
 class MultiHeadConvNNAttention(nn.Module):
-    def __init__(self, d_hidden, num_heads, K, sampling_type, num_samples, sample_padding, magnitude_type):
+    def __init__(self, d_hidden, num_heads, K, sampling_type, num_samples, sample_padding, magnitude_type, seq_length=197):
         super(MultiHeadConvNNAttention, self).__init__()
         assert d_hidden % num_heads == 0, "d_hidden must be divisible by num_heads"
         self.d_hidden = d_hidden
         self.num_heads = num_heads
         self.d_k = d_hidden // num_heads
-        
+        self.seq_length = seq_length
         self.K = K
         self.sampling_type = sampling_type
         self.sampling_type = sampling_type
@@ -260,7 +287,7 @@ class MultiHeadConvNNAttention(nn.Module):
     def split_head(self, x): 
         batch_size, seq_length, d_hidden = x.size()
         self.batch_size = batch_size
-        self.seq_length = seq_length
+        # self.seq_length = seq_length
         return x.view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2) # (B, num_heads, seq_length, d_k)
         
     def combine_heads(self, x): 
@@ -288,27 +315,56 @@ class MultiHeadConvNNAttention(nn.Module):
             prime = self._prime(v, matrix_magnitude, self.K, self.maximum) 
 
         elif self.sampling_type == 'random': # Random Samples
-            q = self.batch_combine(self.split_head(self.W_q(x)))
+            ### OLD CODE BELOW ###
+            # # Sample after linear projection
+            # q = self.batch_combine(self.split_head(self.W_q(x)))
             
-            # Select random samples from q
-            rand_idx = torch.randperm(q.shape[2], device=q.device)[:self.num_samples]
-            q_sample = q[:, :, rand_idx]
+            # # Select random samples from q
+            # rand_idx = torch.randperm(q.shape[2], device=q.device)[:self.num_samples]
+            # q = q[:, :, rand_idx]
+            ### END OF OLD CODE ###
 
+
+
+            ### NEW CODE BELOW ###
+            # Sampling Before linear projection
+            rand_idx = torch.randperm(x.shape[1], device=x.device)[:self.num_samples]
+            x_sample = x[:, rand_idx, :]  
+            q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            ### END OF NEW CODE ###
+
+            
+
+            
             # ConvNN Algorithm 
-            matrix_magnitude = self._calculate_distance_matrix_N(k, q_sample, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q_sample)
+            matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
             range_idx = torch.arange(len(rand_idx), device=q.device)
             matrix_magnitude[:, rand_idx, range_idx] = float('inf') if self.magnitude_type == 'distance' else float('-inf')
             prime = self._prime_N(v, matrix_magnitude, self.K, rand_idx, self.maximum)
 
         elif self.sampling_type == 'spatial': # Spatial Samples
-            q = self.batch_combine(self.split_head(self.W_q(x)))
+            ### OLD CODE BELOW ###
+            # # Sampling After Linear Projection
+            # q = self.batch_combine(self.split_head(self.W_q(x)))
 
-            # Select spatial samples from q
-            spat_idx = torch.linspace(0 + self.sample_padding, q.shape[2] - self.sample_padding - 1, self.num_samples, device=q.device).long()
-            q_sample = q[:, :, spat_idx]
+            # # Select spatial samples from q
+            # spat_idx = torch.linspace(0 + self.sample_padding, q.shape[2] - self.sample_padding - 1, self.num_samples, device=q.device).long()
+            # q = q[:, :, spat_idx]
+            ### END OF OLD CODE ###
+
+
+
+            ### NEW CODE BELOW ###
+            # Sampling Before Linear Projection
+            spat_idx = torch.linspace(0 + self.sample_padding, x.shape[1] - self.sample_padding - 1, self.num_samples, device=x.device).long()
+            x_sample = x[:, spat_idx, :]
+            q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            ### END OF NEW CODE ###
+
+
 
             # ConvNN Algorithm 
-            matrix_magnitude = self._calculate_distance_matrix_N(k, q_sample, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q_sample)
+            matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
             range_idx = torch.arange(len(spat_idx), device=q.device)
             matrix_magnitude[:, spat_idx, range_idx] = float('inf') if self.magnitude_type == 'distance' else float('-inf')
             prime = self._prime_N(v, matrix_magnitude, self.K, spat_idx, self.maximum)
@@ -393,8 +449,8 @@ class MultiHeadConvNN(nn.Module):
         self.maximum = True if self.magnitude_type == 'similarity' else False
         self.seq_length = seq_length
         
-        # Linear projections for query, key, value
-        self.W_q = nn.Linear(self.seq_length, self.seq_length)
+        # Linear projections for query, key, value        
+        self.W_q = nn.Linear(self.seq_length, self.seq_length) if sampling_type == 'all' else nn.Linear(self.num_samples, self.num_samples)
         self.W_k = nn.Linear(self.seq_length, self.seq_length)
         self.W_v = nn.Linear(self.seq_length, self.seq_length)
         self.W_o = nn.Linear(self.seq_length, self.seq_length)
@@ -416,7 +472,6 @@ class MultiHeadConvNN(nn.Module):
     def split_head(self, x):
         batch_size, d_hidden, seq_length = x.size()
         self.batch_size = batch_size
-        self.seq_length = seq_length
         return x.view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2) 
     
     def combine_heads(self, x): 
@@ -437,7 +492,6 @@ class MultiHeadConvNN(nn.Module):
 
         k = self.batch_combine(self.split_head(self.W_k(x)))
         v = self.batch_combine(self.split_head(self.W_v(x)))
-
         
         if self.sampling_type == 'all': # All Samples
             q = self.batch_combine(self.split_head(self.W_q(x)))
@@ -446,27 +500,23 @@ class MultiHeadConvNN(nn.Module):
             prime = self._prime(v, matrix_magnitude, self.K, self.maximum) 
 
         elif self.sampling_type == 'random': # Random Samples
-            q = self.batch_combine(self.split_head(self.W_q(x)))
-            
-            # Select random samples from q
-            rand_idx = torch.randperm(q.shape[2], device=q.device)[:self.num_samples]
-            q_sample = q[:, :, rand_idx]
+            rand_idx = torch.randperm(x.shape[2], device=x.device)[:self.num_samples]
+            x_sample = x[:, :, rand_idx]  
+            q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
 
             # ConvNN Algorithm 
-            matrix_magnitude = self._calculate_distance_matrix_N(k, q_sample, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q_sample)
+            matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
             range_idx = torch.arange(len(rand_idx), device=q.device)
             matrix_magnitude[:, rand_idx, range_idx] = float('inf') if self.magnitude_type == 'distance' else float('-inf')
             prime = self._prime_N(v, matrix_magnitude, self.K, rand_idx, self.maximum)
 
         elif self.sampling_type == 'spatial': # Spatial Samples
-            q = self.batch_combine(self.split_head(self.W_q(x)))
-
-            # Select spatial samples from q
-            spat_idx = torch.linspace(0 + self.sample_padding, q.shape[2] - self.sample_padding - 1, self.num_samples, device=q.device).long()
-            q_sample = q[:, :, spat_idx]
-
+            spat_idx = torch.linspace(0 + self.sample_padding, x.shape[2] - self.sample_padding - 1, self.num_samples, device=x.device).long()
+            x_sample = x[:, :, spat_idx]
+            q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            
             # ConvNN Algorithm 
-            matrix_magnitude = self._calculate_distance_matrix_N(k, q_sample, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q_sample)
+            matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
             range_idx = torch.arange(len(spat_idx), device=q.device)
             matrix_magnitude[:, spat_idx, range_idx] = float('inf') if self.magnitude_type == 'distance' else float('-inf')
             prime = self._prime_N(v, matrix_magnitude, self.K, spat_idx, self.maximum)
@@ -669,7 +719,142 @@ class MultiHeadKvtAttention(nn.Module):
         x = self.proj(x)
         x = self.proj_drop(x)
         return x
-    
+
+class MultiHeadLocalAttention(nn.Module):
+    def __init__(
+        self,
+        dim,
+        window_size = 128,
+        dim_head = 64,
+        heads = 8,
+        dropout = 0.,
+        causal = False,
+        prenorm = False,
+        qk_rmsnorm = False,
+        qk_scale = 8,
+        use_xpos = False,
+        xpos_scale_base = None,
+        exact_windowsize = None,
+        gate_values_per_head = False,
+    ):
+        super().__init__()        
+        inner_dim = dim_head * heads
+
+        self.norm = nn.LayerNorm(dim) if prenorm else None
+
+        self.heads = heads
+        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias = False)
+
+        self.qk_rmsnorm = qk_rmsnorm
+
+        if qk_rmsnorm:
+            self.q_scale = nn.Parameter(torch.ones(dim_head))
+            self.k_scale = nn.Parameter(torch.ones(dim_head))
+
+        self.causal = causal
+        self.window_size = window_size
+        self.exact_windowsize = default(exact_windowsize, True)
+
+        self.attn_fn = LocalAttention(
+            dim = dim_head,
+            window_size = window_size,
+            causal = causal,
+            dropout = dropout, 
+            autopad = True,
+            scale = (qk_scale if qk_rmsnorm else None),
+            exact_windowsize = self.exact_windowsize,
+            use_xpos = use_xpos,
+            xpos_scale_base = xpos_scale_base,
+        )
+
+        self.to_v_gate = None
+
+        if gate_values_per_head:
+            self.to_v_gate = nn.Sequential(
+                nn.Linear(dim, heads)
+            )
+
+        self.to_out = nn.Linear(inner_dim, dim, bias = False)
+
+    def forward(
+        self,
+        x,
+        mask = None,
+        attn_bias = None,
+        cache = None,
+        return_cache = False
+    ):
+        seq_len = x.shape[-2]
+
+        if exists(self.norm):
+            x = self.norm(x)
+
+        q, k, v = self.to_qkv(x).chunk(3, dim = -1)
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), (q, k, v)) 
+
+        if self.qk_rmsnorm:
+            q, k = map(l2norm, (q, k))
+            q = q * self.q_scale
+            k = k * self.k_scale
+
+        if exists(cache):
+            assert seq_len == 1
+
+            assert self.causal and not exists(mask), 'only allow caching for specific configuration'
+
+            ck, cv = cache
+
+            q = q * (q.shape[-1] ** -0.5)
+
+            k = torch.cat((ck, k), dim = -2)
+            v = torch.cat((cv, v), dim = -2)
+
+            effective_window_size = self.attn_fn.look_backward * self.window_size
+
+            if self.exact_windowsize:
+                kv_start_index = -(effective_window_size + 1)
+            else:
+                seq_len = k.shape[-2]
+                kv_start_index = -(effective_window_size + (seq_len % self.window_size))
+
+            k, v = tuple(t[..., kv_start_index:, :] for t in (k, v))
+
+            if exists(self.attn_fn.rel_pos):
+                rel_pos = self.attn_fn.rel_pos
+                pos_emb, xpos_scale = rel_pos(k)
+                q, k = apply_rotary_pos_emb(q, k, pos_emb, scale = xpos_scale)
+
+            sim = einsum(q, k, 'b h i d, b h j d -> b h i j')
+
+            if exists(attn_bias):
+                k_len = k.shape[-2]
+                attn_bias = attn_bias[..., -1:, -k_len:]
+                assert attn_bias.shape[-1] == sim.shape[-1]
+                sim = sim + attn_bias
+
+            attn = sim.softmax(dim = -1)
+            out = einsum(attn, v, 'b h i j, b h j d -> b h i d')
+
+        else:
+            out = self.attn_fn(q, k, v, mask = mask, attn_bias = attn_bias)
+
+        if return_cache:
+            kv = torch.stack((k, v))
+
+        if exists(self.to_v_gate):
+            gates = self.to_v_gate(x)
+            gates = rearrange(gates, 'b n h -> b h n 1')
+            out = out * gates.sigmoid()
+
+        out = rearrange(out, 'b h n d -> b n (h d)')
+        out = self.to_out(out)
+
+        if not return_cache:
+            return out
+
+        return out, kv
+
+
 if __name__ == "__main__":
     import torch
     from types import SimpleNamespace
@@ -680,27 +865,28 @@ if __name__ == "__main__":
         patch_size = 16,                # 16x16 patches
         num_layers = 3,                 # 8 transformer layers
         num_heads = 4,                  # 8 attention heads
-        d_hidden = 8,                 # Hidden dimension
-        d_mlp = 24,                   # MLP dimension
+        d_hidden = 512,                 # Hidden dimension
+        d_mlp = 512,                   # MLP dimension
         num_classes = 100,              # CIFAR-100 classes
         K = 9,                          # For nearest neighbor operations
         kernel_size = 9,                # Kernel size for ConvNN
         dropout = 0.1,                  # Dropout rate
         attention_dropout = 0.1,        # Attention dropout
-        sampling_type = "spatial",          # Sampling type: 'all', 'random', or 'spatial'
+        sampling_type = "random",          # Sampling type: 'all', 'random', or 'spatial'
         sample_padding = 3,             # Padding for spatial sampling
         num_samples = 32,               # Number of samples for random or spatial sampling; -
         magnitude_type = "similarity",  # Or "distance"
         shuffle_pattern = "NA",         # Default pattern
         shuffle_scale = 1,              # Default scale
         layer = "Attention",            # Attention or ConvNN
-        device = torch.device("cuda" if torch.cuda.is_available() else 
-                             "mps" if torch.backends.mps.is_available() else "cpu"),
+        device = torch.device("cpu"),
         model = "ViT"                   # Model type
     )
     
     # Create the model
     model = ViT(args)
+    x = torch.randn(64, 3, 224, 224).to(args.device)  
+
     
     print("Regular Attention")
     # Print parameter count
@@ -708,7 +894,6 @@ if __name__ == "__main__":
     print(f"Total parameters: {total_params:,}")
     print(f"Trainable parameters: {trainable_params:,}")
     
-    x = torch.randn(64, 3, 224, 224).to(args.device)  
     
     # Forward pass
     with torch.no_grad():
@@ -716,6 +901,9 @@ if __name__ == "__main__":
     
     print(f"Output shape: {output.shape}\n")
     
+    # Spatial Params: 2,825,618
+    # Random Params: 2,825,618
+    # All Params: 2,939,468
     
     print("ConvNN")
     args.layer = "ConvNN"
@@ -724,9 +912,9 @@ if __name__ == "__main__":
     print(f"Total parameters: {total_params:,}")
     print(f"Trainable parameters: {trainable_params:,}")
     
-    output_convnn = model(x)
-    
-    print(f"Output shape: {output_convnn.shape}\n")
+    with torch.no_grad():
+        output = model(x)    
+    print(f"Output shape: {output.shape}\n")
     
     
     print("ConvNNAttention")
@@ -736,42 +924,63 @@ if __name__ == "__main__":
     print(f"Total parameters: {total_params:,}")
     print(f"Trainable parameters: {trainable_params:,}")
     
-    output = model(x)
-    
+    with torch.no_grad():
+        output = model(x)    
     print(f"Output shape: {output.shape}\n")
     
 
-    print("Conv1d")
-    args.layer = "Conv1d"
-    model = ViT(args)
-    total_params, trainable_params = model.parameter_count()
-    print(f"Total parameters: {total_params:,}")
-    print(f"Trainable parameters: {trainable_params:,}")
+    # print("Conv1d")
+    # args.layer = "Conv1d"
+    # model = ViT(args)
+    # total_params, trainable_params = model.parameter_count()
+    # print(f"Total parameters: {total_params:,}")
+    # print(f"Trainable parameters: {trainable_params:,}")
     
-    output = model(x)
+    # with torch.no_grad():
+    #     output = model(x)    
+    # print(f"Output shape: {output.shape}\n")
     
-    print(f"Output shape: {output.shape}\n")
     
+    # print("Conv1dAttention")
+    # args.layer = "Conv1dAttention"
+    # model = ViT(args)
+    # total_params, trainable_params = model.parameter_count()
+    # print(f"Total parameters: {total_params:,}")
+    # print(f"Trainable parameters: {trainable_params:,}")
     
-    print("Conv1dAttention")
-    args.layer = "Conv1dAttention"
-    model = ViT(args)
-    total_params, trainable_params = model.parameter_count()
-    print(f"Total parameters: {total_params:,}")
-    print(f"Trainable parameters: {trainable_params:,}")
-    
-    output = model(x)
-    
-    print(f"Output shape: {output.shape}\n")
+    # with torch.no_grad():
+    #     output = model(x)        
+    # print(f"Output shape: {output.shape}\n")
 
 
-    print("KvtAttention")
-    args.layer = "KvtAttention"
-    model = ViT(args)
-    total_params, trainable_params = model.parameter_count()
-    print(f"Total parameters: {total_params:,}")
-    print(f"Trainable parameters: {trainable_params:,}")
+    # print("KvtAttention")
+    # args.layer = "KvtAttention"
+    # model = ViT(args)
+    # total_params, trainable_params = model.parameter_count()
+    # print(f"Total parameters: {total_params:,}")
+    # print(f"Trainable parameters: {trainable_params:,}")
     
-    output = model(x)
+    # with torch.no_grad():
+    #     output = model(x)        
+    # print(f"Output shape: {output.shape}\n")
+
+    # print("LocalAttention")
+    # args.layer = "LocalAttention"
+    # model = ViT(args)
+    # total_params, trainable_params = model.parameter_count()
+    # print(f"Total parameters: {total_params:,}")
+    # print(f"Trainable parameters: {trainable_params:,}")
+
+    # with torch.no_grad():
+    #     output = model(x)    
+    # print(f"Output shape: {output.shape}\n")
     
-    print(f"Output shape: {output.shape}")
+    # print("NeighborhoodAttention")
+    # args.layer = "NeighborhoodAttention"
+    # model = ViT(args)
+    # total_params, trainable_params = model.parameter_count()
+    # print(f"Total parameters: {total_params:,}")    
+    # print(f"Trainable parameters: {trainable_params:,}")
+    # with torch.no_grad():
+    #     output = model(x)    
+    # print(f"Output shape: {output.shape}\n")

@@ -21,13 +21,10 @@ class AllConvNet(nn.Module):
         self.args = args
         self.model = "All Convolutional Network"
         self.name = f"{self.model} {self.args.layer}"
-
-        # We will pass the whole `args` object to the layers, so we don't need to copy every parameter.
         
         layers = []
-        in_ch = self.args.img_size[0] # Initial number of channels
+        in_ch = self.args.img_size[0] 
 
-        # --- This is the new, refactored layer creation loop ---
         for i in range(self.args.num_layers):
             out_ch = self.args.channels[i]
 
@@ -56,6 +53,7 @@ class AllConvNet(nn.Module):
                     "num_samples": self.args.num_samples,
                     "sample_padding": self.args.sample_padding,
                     "magnitude_type": self.args.magnitude_type,
+                    "coordinate_encoding": self.args.coordinate_encoding
                 })
                 layer = Conv2d_NN(**layer_params)
 
@@ -67,7 +65,8 @@ class AllConvNet(nn.Module):
                     "num_samples": self.args.num_samples,
                     "sample_padding": self.args.sample_padding,
                     "magnitude_type": self.args.magnitude_type,
-                    "img_size": self.args.img_size[1:] # Pass H, W
+                    "img_size": self.args.img_size[1:], # Pass H, W
+                    "coordinate_encoding": self.args.coordinate_encoding
                 })
                 layer = Conv2d_NN_Attn(**layer_params)
             
@@ -88,7 +87,8 @@ class AllConvNet(nn.Module):
                         "kernel_size": self.args.kernel_size,
                         "K": self.args.K, "stride": self.args.K,
                         "sampling_type": self.args.sampling_type, "num_samples": self.args.num_samples,
-                        "sample_padding": self.args.sample_padding, "magnitude_type": self.args.magnitude_type
+                        "sample_padding": self.args.sample_padding, "magnitude_type": self.args.magnitude_type,
+                        "coordinate_encoding": self.args.coordinate_encoding
                     })
                     layer = Conv2d_ConvNN_Branching(**layer_params)
                 
@@ -98,7 +98,8 @@ class AllConvNet(nn.Module):
                         "K": self.args.K, "stride": self.args.K,
                         "sampling_type": self.args.sampling_type, "num_samples": self.args.num_samples,
                         "sample_padding": self.args.sample_padding, "magnitude_type": self.args.magnitude_type,
-                        "img_size": self.args.img_size[1:]
+                        "img_size": self.args.img_size[1:],
+                        "coordinate_encoding": self.args.coordinate_encoding
                     })
                     layer = Conv2d_ConvNN_Attn_Branching(**layer_params)
                 
@@ -107,7 +108,8 @@ class AllConvNet(nn.Module):
                         "num_heads": self.args.num_heads,
                         "K": self.args.K, "stride": self.args.K,
                         "sampling_type": self.args.sampling_type, "num_samples": self.args.num_samples,
-                        "sample_padding": self.args.sample_padding, "magnitude_type": self.args.magnitude_type
+                        "sample_padding": self.args.sample_padding, "magnitude_type": self.args.magnitude_type,
+                        "coordinate_encoding": self.args.coordinate_encoding
                     })
                     layer = Attention_ConvNN_Branching(**layer_params)
 
@@ -117,7 +119,8 @@ class AllConvNet(nn.Module):
                         "K": self.args.K, "stride": self.args.K,
                         "sampling_type": self.args.sampling_type, "num_samples": self.args.num_samples,
                         "sample_padding": self.args.sample_padding, "magnitude_type": self.args.magnitude_type,
-                        "img_size": self.args.img_size[1:]
+                        "img_size": self.args.img_size[1:],
+                        "coordinate_encoding": self.args.coordinate_encoding
                     })
                     layer = Attention_ConvNN_Attn_Branching(**layer_params)
                 
@@ -125,7 +128,8 @@ class AllConvNet(nn.Module):
                 elif self.args.layer == "Conv2d/Attention":
                     layer_params.update({
                         "num_heads": self.args.num_heads,
-                        "kernel_size": self.args.kernel_size
+                        "kernel_size": self.args.kernel_size, 
+                        "coordinate_encoding": self.args.coordinate_encoding
                     })
                     layer = Attention_Conv2d_Branching(**layer_params)
                 
@@ -137,9 +141,8 @@ class AllConvNet(nn.Module):
                 # This is the final else for non-branching types
                 raise ValueError(f"Layer type {self.args.layer} not supported in AllConvNet")
 
-
+            layers.append(nn.InstanceNorm2d(out_ch)) # Pre-layer normalization
             layers.append(layer)
-            layers.append(nn.BatchNorm2d(out_ch))
             layers.append(nn.ReLU(inplace=True))
             
             # Update in_ch for the next layer
@@ -147,7 +150,7 @@ class AllConvNet(nn.Module):
             
         self.features = nn.Sequential(*layers)
         
-        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
         self.flatten = nn.Flatten()
             
         self.classifier = nn.Sequential(
@@ -159,7 +162,7 @@ class AllConvNet(nn.Module):
 
     def forward(self, x): 
         x = self.features(x)
-        x = self.global_pool(x)
+        x = self.pool(x)
         x = self.flatten(x)
         x = self.classifier(x)
         return x
@@ -185,8 +188,6 @@ class AllConvNet(nn.Module):
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 if __name__ == "__main__":
     import torch
@@ -252,7 +253,8 @@ if __name__ == "__main__":
         channel_ratio=(1, 1), # 50/50 split
         
         # Device
-        device=device
+        device=device, 
+        coordinate_encoding=True,  # Default to False for simplicity
     )
 
     # Dummy input tensor

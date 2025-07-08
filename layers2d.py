@@ -33,6 +33,7 @@ class Conv2d_NN(nn.Module):
                 shuffle_pattern, 
                 shuffle_scale, 
                 magnitude_type,
+                coordinate_encoding=False
                 ): 
         """
         Parameters: 
@@ -69,6 +70,12 @@ class Conv2d_NN(nn.Module):
         self.magnitude_type = magnitude_type
         self.maximum = True if self.magnitude_type == 'similarity' else False
 
+        # Positional Encoding (optional)
+        self.coordinate_encoding = coordinate_encoding
+        self.coordinate_cache = {} 
+        self.in_channels = in_channels + 2 if self.coordinate_encoding else in_channels
+        self.out_channels = out_channels + 2 if self.coordinate_encoding else out_channels
+
         # Shuffle2D/Unshuffle2D Layers
         self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
         self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
@@ -86,9 +93,19 @@ class Conv2d_NN(nn.Module):
 
         # Flatten Layer
         self.flatten = nn.Flatten(start_dim=2)
+
+        # Pointwise Convolution Layer
+        self.pointwise_conv = nn.Conv2d(in_channels=self.out_channels,
+                                         out_channels=self.out_channels - 2,
+                                         kernel_size=1,
+                                         stride=1,
+                                         padding=0)
         
+        
+
     def forward(self, x): 
-        # Unshuffle + Flatten 
+        # Coordinate Channels (optional) + Unshuffle + Flatten 
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
         x_2d = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
         x = self.flatten(x_2d)
 
@@ -133,6 +150,7 @@ class Conv2d_NN(nn.Module):
         unflatten = nn.Unflatten(dim=2, unflattened_size=x_2d.shape[2:])
         x = unflatten(x_conv)  # [batch_size, out_channels
         x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
+        x = self.pointwise_conv(x) if self.coordinate_encoding else x
         return x
 
     def _calculate_distance_matrix(self, matrix, sqrt=False):
@@ -195,6 +213,24 @@ class Conv2d_NN(nn.Module):
         prime = prime.view(b, c, -1)
         return prime
 
+    def _add_coordinate_encoding(self, x):
+        b, _, h, w = x.shape
+        cache_key = f"{h}_{w}_{x.device}"
+
+        if cache_key in self.coordinate_cache:
+            grid = self.coordinate_cache[cache_key]
+        else:
+            y_coords_vec = torch.linspace(start=-1, end=1, steps=h, device=x.device)
+            x_coords_vec = torch.linspace(start=-1, end=1, steps=w, device=x.device)
+
+            y_grid, x_grid = torch.meshgrid(y_coords_vec, x_coords_vec, indexing='ij')
+            grid = torch.stack((x_grid, y_grid), dim=0).unsqueeze(0)
+            self.coordinate_cache[cache_key] = grid
+
+        expanded_grid = grid.expand(b, -1, -1, -1)
+        x_with_coords = torch.cat((x, expanded_grid), dim=1)
+        return x_with_coords
+
 """(2) Conv2d_NN_Attn (All, Random, Spatial Sampling)"""
 class Conv2d_NN_Attn(nn.Module): 
     """Convolution 2D Nearest Neighbor Layer"""
@@ -209,7 +245,8 @@ class Conv2d_NN_Attn(nn.Module):
                 shuffle_pattern, 
                 shuffle_scale, 
                 magnitude_type,
-                img_size
+                img_size, 
+                coordinate_encoding=False
                 ): 
         """
         Parameters: 
@@ -250,6 +287,12 @@ class Conv2d_NN_Attn(nn.Module):
         self.img_size = img_size  # Image size for spatial sampling
         self.num_tokens = int((img_size[0] * img_size[1]) / (shuffle_scale**2)) if self.shuffle_pattern in ["B", "BA"] else (img_size[0] * img_size[1])
 
+        # Positional Encoding (optional)
+        self.coordinate_encoding = coordinate_encoding
+        self.coordinate_cache = {} 
+        self.in_channels = in_channels + 2 if self.coordinate_encoding else in_channels
+        self.out_channels = out_channels + 2 if self.coordinate_encoding else out_channels
+        
         # Shuffle2D/Unshuffle2D Layers
         self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
         self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
@@ -274,10 +317,17 @@ class Conv2d_NN_Attn(nn.Module):
         self.w_k = nn.Linear(self.num_tokens, self.num_tokens, bias=False) 
         self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False) 
         self.w_o = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
-
+        
+        # Pointwise Convolution Layer
+        self.pointwise_conv = nn.Conv2d(in_channels=self.out_channels,
+                                         out_channels=self.out_channels - 2,
+                                         kernel_size=1,
+                                         stride=1,
+                                         padding=0)
         
     def forward(self, x): 
-        # Unshuffle + Flatten 
+        # Coordinate Channels (optional) + Unshuffle + Flatten 
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
         x_2d = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
         x = self.flatten(x_2d)
 
@@ -330,12 +380,13 @@ class Conv2d_NN_Attn(nn.Module):
 
         # Post-Processing 
         x_conv = self.conv1d_layer(prime) 
-        x_out = self.w_o(x_conv)  # Output projection
+        x_out = self.w_o(x_conv)  
         
         # Unflatten + Shuffle
         unflatten = nn.Unflatten(dim=2, unflattened_size=x_2d.shape[2:])
         x = unflatten(x_out)  # [batch_size, out_channels
         x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
+        x = self.pointwise_conv(x) if self.coordinate_encoding else x
         return x
 
     def _calculate_similarity_matrix(self, K, Q):
@@ -396,6 +447,24 @@ class Conv2d_NN_Attn(nn.Module):
         prime = prime.reshape(b, c, -1)
         return prime
 
+    def _add_coordinate_encoding(self, x):
+        b, _, h, w = x.shape
+        cache_key = f"{h}_{w}_{x.device}"
+
+        if cache_key in self.coordinate_cache:
+            grid = self.coordinate_cache[cache_key]
+        else:
+            y_coords_vec = torch.linspace(start=-1, end=1, steps=h, device=x.device)
+            x_coords_vec = torch.linspace(start=-1, end=1, steps=w, device=x.device)
+
+            y_grid, x_grid = torch.meshgrid(y_coords_vec, x_coords_vec, indexing='ij')
+            grid = torch.stack((x_grid, y_grid), dim=0).unsqueeze(0)
+            self.coordinate_cache[cache_key] = grid
+
+        expanded_grid = grid.expand(b, -1, -1, -1)
+        x_with_coords = torch.cat((x, expanded_grid), dim=1)
+        return x_with_coords
+    
 """(3) Attention2d"""
 class Attention2d(nn.Module):
     def __init__(self, 
@@ -403,7 +472,8 @@ class Attention2d(nn.Module):
                  out_channels,
                  num_heads,
                  shuffle_pattern,
-                 shuffle_scale
+                 shuffle_scale, 
+                 coordinate_encoding=False
                  ): 
         super(Attention2d, self).__init__()
         
@@ -418,7 +488,12 @@ class Attention2d(nn.Module):
         self.shuffle_pattern = shuffle_pattern
         self.shuffle_scale = shuffle_scale
         
-        
+        # Positional Encoding (optional)
+        self.coordinate_encoding = coordinate_encoding
+        self.coordinate_cache = {} 
+        self.in_channels = in_channels + 2 if self.coordinate_encoding else in_channels
+        self.out_channels = out_channels + 2 if self.coordinate_encoding else out_channels
+
         # Shuffle2D/Unshuffle2D Layers
         self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
         self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
@@ -437,17 +512,42 @@ class Attention2d(nn.Module):
         
         # Flatten Layer
         self.flatten = nn.Flatten(start_dim=2)
-
+        
+        # Pointwise Convolution Layer
+        self.pointwise_conv = nn.Conv2d(in_channels=self.out_channels,
+                                         out_channels=self.out_channels - 2,
+                                         kernel_size=1,
+                                         stride=1,
+                                         padding=0)
         
     def forward(self, x):
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
         x_2d = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
         x = self.flatten(x_2d) 
         x = self.Attention1d(x)
         unflatten = nn.Unflatten(dim=2, unflattened_size=x_2d.shape[2:])
         x = unflatten(x)
         x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
+        x = self.pointwise_conv(x) if self.coordinate_encoding else x
         return x 
+    def _add_coordinate_encoding(self, x):
+            b, _, h, w = x.shape
+            cache_key = f"{h}_{w}_{x.device}"
 
+            if cache_key in self.coordinate_cache:
+                grid = self.coordinate_cache[cache_key]
+            else:
+                y_coords_vec = torch.linspace(start=-1, end=1, steps=h, device=x.device)
+                x_coords_vec = torch.linspace(start=-1, end=1, steps=w, device=x.device)
+
+                y_grid, x_grid = torch.meshgrid(y_coords_vec, x_coords_vec, indexing='ij')
+                grid = torch.stack((x_grid, y_grid), dim=0).unsqueeze(0)
+                self.coordinate_cache[cache_key] = grid
+
+            expanded_grid = grid.expand(b, -1, -1, -1)
+            x_with_coords = torch.cat((x, expanded_grid), dim=1)
+            return x_with_coords
+    
 """(4) Conv2d_ConvNN_Branching"""
 class Conv2d_ConvNN_Branching(nn.Module):
     def __init__(self, 
@@ -462,7 +562,9 @@ class Conv2d_ConvNN_Branching(nn.Module):
                  sample_padding, 
                  shuffle_pattern, 
                  shuffle_scale, 
-                 magnitude_type):
+                 magnitude_type, 
+                 coordinate_encoding=False
+                 ):
         
         super(Conv2d_ConvNN_Branching, self).__init__()
         
@@ -490,6 +592,8 @@ class Conv2d_ConvNN_Branching(nn.Module):
         self.shuffle_scale = shuffle_scale
         self.magnitude_type = magnitude_type
         self.maximum = True if self.magnitude_type == 'similarity' else False
+
+        self.coordinate_encoding = coordinate_encoding
         
         # Branch1 - Conv2d
         if self.channel_ratio[0] != 0:
@@ -515,7 +619,8 @@ class Conv2d_ConvNN_Branching(nn.Module):
                           sample_padding = self.sample_padding,
                           shuffle_pattern=self.shuffle_pattern, 
                           shuffle_scale=self.shuffle_scale,
-                          magnitude_type=self.magnitude_type), 
+                          magnitude_type=self.magnitude_type, 
+                          coordinate_encoding=self.coordinate_encoding), 
                 nn.ReLU()
             )
         
@@ -540,7 +645,8 @@ class Conv2d_ConvNN_Attn_Branching(nn.Module):
                  shuffle_pattern, 
                  shuffle_scale, 
                  magnitude_type,    
-                 img_size,     
+                 img_size,  
+                 coordinate_encoding=False   
                 ):
         super(Conv2d_ConvNN_Attn_Branching, self).__init__()
 
@@ -570,6 +676,7 @@ class Conv2d_ConvNN_Attn_Branching(nn.Module):
         self.maximum = True if self.magnitude_type == 'similarity' else False
         self.img_size = img_size  
         
+        self.coordinate_encoding = coordinate_encoding
         
         # Branch1 - Conv2d
         if self.channel_ratio[0] != 0:
@@ -596,7 +703,8 @@ class Conv2d_ConvNN_Attn_Branching(nn.Module):
                                shuffle_pattern=self.shuffle_pattern,
                                shuffle_scale=self.shuffle_scale,    
                                magnitude_type=self.magnitude_type,
-                               img_size=self.img_size),
+                               img_size=self.img_size, 
+                               coordinate_encoding=self.coordinate_encoding),
                 nn.ReLU()
             )
         
@@ -621,7 +729,8 @@ class Attention_ConvNN_Branching(nn.Module):
                  sample_padding,
                  shuffle_pattern,
                  shuffle_scale,
-                 magnitude_type
+                 magnitude_type, 
+                 coordinate_encoding=False
                  ):
         super(Attention_ConvNN_Branching, self).__init__()
 
@@ -650,6 +759,8 @@ class Attention_ConvNN_Branching(nn.Module):
         self.shuffle_scale = shuffle_scale
         self.magnitude_type = magnitude_type
         self.maximum = True if self.magnitude_type == 'similarity' else False
+
+        self.coordinate_encoding = coordinate_encoding
         
         # Branch1 - Attention2d
         if self.channel_ratio[0] != 0:
@@ -658,7 +769,8 @@ class Attention_ConvNN_Branching(nn.Module):
                             self.channel_ratio[0], 
                             shuffle_pattern=self.shuffle_pattern,
                             shuffle_scale=self.shuffle_scale,
-                            num_heads=self.num_heads),
+                            num_heads=self.num_heads, 
+                            coordinate_encoding=self.coordinate_encoding),
                 nn.ReLU()
             )
             
@@ -674,7 +786,8 @@ class Attention_ConvNN_Branching(nn.Module):
                           sample_padding = self.sample_padding,
                           shuffle_pattern=self.shuffle_pattern, 
                           shuffle_scale=self.shuffle_scale,
-                          magnitude_type=self.magnitude_type), 
+                          magnitude_type=self.magnitude_type, 
+                          coordinate_encoding=self.coordinate_encoding), 
                 nn.ReLU()
             )
         
@@ -700,7 +813,9 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
                  shuffle_pattern, 
                  shuffle_scale, 
                  magnitude_type,
-                 img_size):
+                 img_size, 
+                 coordinate_encoding=False
+                 ):
         
         super(Attention_ConvNN_Attn_Branching, self).__init__()
         
@@ -730,6 +845,8 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
         self.magnitude_type = magnitude_type
         self.maximum = True if self.magnitude_type == 'similarity' else False
         self.img_size = img_size  
+
+        self.coordinate_encoding = coordinate_encoding
         
         # Branch1 - Attention2d
         if self.channel_ratio[0] != 0:
@@ -738,7 +855,8 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
                             out_channels=self.channel_ratio[0], 
                             shuffle_pattern=self.shuffle_pattern,
                             shuffle_scale=self.shuffle_scale,
-                            num_heads=self.num_heads),
+                            num_heads=self.num_heads, 
+                            coordinate_encoding=self.coordinate_encoding),
                 nn.ReLU()
             )
             
@@ -756,7 +874,8 @@ class Attention_ConvNN_Attn_Branching(nn.Module):
                                shuffle_pattern=self.shuffle_pattern,
                                shuffle_scale=self.shuffle_scale,    
                                magnitude_type=self.magnitude_type,
-                               img_size=self.img_size),
+                               img_size=self.img_size, 
+                               coordinate_encoding=self.coordinate_encoding),
                 nn.ReLU()
             )
    
@@ -775,7 +894,8 @@ class Attention_Conv2d_Branching(nn.Module):
                  num_heads, 
                  kernel_size,
                  shuffle_pattern, 
-                 shuffle_scale
+                 shuffle_scale,
+                 coordinate_encoding=False
                  ):
 
         super(Attention_Conv2d_Branching, self).__init__()
@@ -789,7 +909,7 @@ class Attention_Conv2d_Branching(nn.Module):
         self.shuffle_pattern = shuffle_pattern
         self.shuffle_scale = shuffle_scale
         
-
+        self.coordinate_encoding = coordinate_encoding
     
         if self.channel_ratio[0] != 0:
             self.branch1 = nn.Sequential(
@@ -797,7 +917,8 @@ class Attention_Conv2d_Branching(nn.Module):
                             out_channels=self.channel_ratio[0], 
                             shuffle_pattern=self.shuffle_pattern,
                             shuffle_scale=self.shuffle_scale,
-                            num_heads=self.num_heads),
+                            num_heads=self.num_heads, 
+                            coordinate_encoding=self.coordinate_encoding),
                 nn.ReLU()
             )
             
@@ -824,17 +945,17 @@ if __name__ == "__main__":
     ex = torch.randn(2, 3, 32, 32)  # Example input tensor
     
     print("Conv2d_NN")
-    conv2d_nn = Conv2d_NN(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='spatial', num_samples=8, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity')
+    conv2d_nn = Conv2d_NN(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='spatial', num_samples=8, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', coordinate_encoding=True)
     output = conv2d_nn(ex)
     print(output.shape)  # Should print the shape of the output tensor after Conv2d
 
     print("Conv2d_NN_Attn")
-    conv2d_nn_attn = Conv2d_NN_Attn(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='spatial', num_samples=8, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', img_size=(32, 32))
+    conv2d_nn_attn = Conv2d_NN_Attn(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='spatial', num_samples=8, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', img_size=(32, 32), coordinate_encoding=True)
     output = conv2d_nn_attn(ex)
     print(output.shape)  # Should print the shape of the output tensor after Conv2d_NN_Attn
 
     print("Attention2d")
-    attention2d = Attention2d(in_channels=3, out_channels=16, num_heads=4, shuffle_pattern='BA', shuffle_scale=2)
+    attention2d = Attention2d(in_channels=3, out_channels=16, num_heads=4, shuffle_pattern='BA', shuffle_scale=2, coordinate_encoding=True)
     output = attention2d(ex)
     print(output.shape)  # Should print the shape of the output tensor after Attention2d
 
@@ -851,8 +972,9 @@ if __name__ == "__main__":
         sample_padding=0,
         shuffle_pattern='BA',
         shuffle_scale=2,
-        magnitude_type='similarity'
-    )
+        magnitude_type='similarity', 
+        coordinate_encoding=True)
+    
     output = conv2d_convnn_branching(ex)
     print(output.shape)  # Should print the shape of the output tensor after Conv2d
     print("Conv2d_ConvNN_Attn_Branching")
@@ -869,7 +991,8 @@ if __name__ == "__main__":
         shuffle_pattern='BA',
         shuffle_scale=2,
         magnitude_type='similarity',
-        img_size=(32, 32)
+        img_size=(32, 32), 
+        coordinate_encoding=True
     )
     output = conv2d_convnn_attn_branching(ex)
     print(output.shape)  # Should print the shape of the output tensor after Conv2d
@@ -886,7 +1009,8 @@ if __name__ == "__main__":
         sample_padding=0,
         shuffle_pattern='BA',
         shuffle_scale=2,
-        magnitude_type='similarity'
+        magnitude_type='similarity', 
+        coordinate_encoding=True
     )
     output = attention_convnn_branching(ex)
     print(output.shape)  # Should print the shape of the output tensor after Attention_Conv
@@ -899,7 +1023,9 @@ if __name__ == "__main__":
         num_heads=4,
         kernel_size=3,
         shuffle_pattern='BA',
-        shuffle_scale=2
+        shuffle_scale=2, 
+        coordinate_encoding=True
+
     )
     output = attention_conv2d_branching(ex)
     print(output.shape)  # Should print the shape of the output tensor after Attention_Conv2d_Branching

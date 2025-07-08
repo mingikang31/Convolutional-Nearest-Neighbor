@@ -17,7 +17,7 @@ def args_parser():
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", add_help=False) 
     
     # Model Arguments
-    parser.add_argument("--layer", type=str, default="Attention", choices=["Attention", "ConvNN", "ConvNNAttention", "Conv1d", "Conv1dAttention", "KvtAttention"], help="Layer to use for training and evaluation")
+    parser.add_argument("--layer", type=str, default="Attention", choices=["Attention", "ConvNN", "ConvNNAttention", "Conv1d", "Conv1dAttention", "KvtAttention", "LocalAttention", "NeighborhoodAttention"], help="Layer to use for training and evaluation")
     
     parser.add_argument("--patch_size", type=int, default=16, help="Patch size for Attention Models")
     parser.add_argument("--num_layers", type=int, default=8, help="Number of layers in the model")   
@@ -33,9 +33,8 @@ def args_parser():
     
     # Additional Layer Arguments for ConvNN
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN Layer")
-    parser.add_argument("--kernel_size", type=int, default=9, help="Kernel size for Conv1d Layer")
     parser.add_argument("--num_samples", type=int, default=-1, help="Number of samples for ConvNN Layer, -1 for all samples")
-    parser.add_argument("--sampling_type", type=str, default=all, choices=["all", "random", "spatial"], help="Sampling type for ConvNN Models")
+    parser.add_argument("--sampling_type", type=str, default="all", choices=["all", "random", "spatial"], help="Sampling type for ConvNN Models")
     parser.add_argument("--sample_padding", type=int, default=0, help="Padding for spatial sampling in ConvNN Models")
     parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
 
