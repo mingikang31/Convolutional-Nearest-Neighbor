@@ -40,6 +40,8 @@ Two main architectures are supported, each with a corresponding entry-point scri
 - **`MultiHeadConvNNAttention`**: A 1D ConvNN using linear projections on features (Q,K,V).
 - **`MultiHeadConv1d` / `MultiHeadConv1dAttention`**: Traditional 1D convolutions integrated into the attention block structure.
 - **`MultiHeadKvtAttention`**: An implementation of k-NN Attention for boosting Vision Transformers.
+- **`MultiHeadLocalAttention`**: Local Attention implementation from lucidrains
+- **`NeighborhoodAttention1D`**: NeighborhoodAttention1D from NATTEN
 
 ## Installation
 ```shell
@@ -125,9 +127,9 @@ Run `python allconvnet_main.py --help` to see all available options.
 
 | Flag                | Default                 | Choices                                                                                               | Description                                         |
 | ------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `--layer`           | `ConvNN`                | `Conv2d`, `ConvNN`, `ConvNN_Attn`, `Attention`, `Conv2d/ConvNN`, `Conv2d/Attention`, etc.               | Which convolution/attention/branching layer to use. |
+| `--layer`           | `ConvNN`                | `Conv2d`, `ConvNN`, `ConvNN_Attn`, `Attention`, `Conv2d/ConvNN`, `Conv2d/Attention`, etc.             | Which convolution/attention/branching layer to use. |
 | `--num_layers`      | `5`                     | *integer*                                                                                             | Number of sequential layers in the network.         |
-| `--channels`        | `[32,64,128,256,512]`   | *list of integers*                                                                                    | Output channel sizes for each respective layer.     |
+| `--channels`        | `8 16 32 64 128`        | *string of integers with space between*                                                               | Output channel sizes for each respective layer.     |
 | `--kernel_size`     | `3`                     | *integer*                                                                                             | Kernel size for standard `Conv2d` layers.           |
 | `--num_heads`       | `4`                     | *integer*                                                                                             | Number of heads for `Attention2d` layers.           |
 | `--shuffle_pattern` | `BA`                    | `BA`, `NA`                                                                                            | `unshuffle` Before & `shuffle` After, or `None`.    |
@@ -142,6 +144,8 @@ Run `python allconvnet_main.py --help` to see all available options.
 | `--num_samples`    | `-1`           | *integer*                  | Number of samples for `random` or `spatial` mode. Set to -1 for `all` sampling. |
 | `--sample_padding` | `0`            | *integer*                  | Padding for `spatial` sampling.                     |
 | `--magnitude_type` | `similarity`   | `similarity`, `distance`   | Metric for finding nearest neighbors.               |
+| `--coordinate_encoding` | `true`    | `flag to use`              | Add `Coordinate Encoding layers to the data`        |
+
 
 ### Vision Transformer (`vit_main.py`)
 
@@ -151,7 +155,7 @@ Run `python vit_main.py --help` to see all available options.
 
 | Flag                  | Default     | Choices                                                                    | Description                                     |
 | --------------------- | ----------- | -------------------------------------------------------------------------- | ----------------------------------------------- |
-| `--layer`             | `Attention` | `Attention`, `ConvNN`, `ConvNNAttention`, `Conv1d`, `Conv1dAttention`, `KvtAttention` | Layer type for ViT transformer blocks.          |
+| `--layer`             | `Attention` | `Attention`, `ConvNN`, `ConvNNAttention`, `Conv1d`, `Conv1dAttention`, `KvtAttention`, `LocalAttention`, `NeighborhoodAttention` | Layer type for ViT transformer blocks.          |
 | `--patch_size`        | `16`        | *integer*                                                                  | Side length of square image patches.            |
 | `--num_layers`        | `8`         | *integer*                                                                  | Number of transformer encoder layers.           |
 | `--num_heads`         | `8`         | *integer*                                                                  | Number of attention heads.                      |
@@ -160,11 +164,12 @@ Run `python vit_main.py --help` to see all available options.
 | `--dropout`           | `0.1`       | *float*                                                                    | General dropout rate for linear layers.         |
 | `--attention_dropout` | `0.1`       | *float*                                                                    | Dropout rate applied to attention probabilities. |
 
+*(Note: To change other parameters for `LocalAttention` and `NeighborhoodAttention`, change them in `TransformerEncoder` class in vit.py`.)*
 #### ConvNN-Specific Parameters (for ViT)
 
 | Flag               | Default        | Choices                    | Description                                         |
 | ------------------ | -------------- | -------------------------- | --------------------------------------------------- |
-| `--K`              | `9`            | *integer*                  | Number of nearest neighbors to find.                |
+| `--K`              | `9`            | *integer*                  | Number of nearest neighbors to find or kernel size. |
 | `--sampling_type`  | `all`          | `all`, `random`, `spatial` | How to select the pool of neighbor candidates.      |
 | `--num_samples`    | `-1`           | *integer*                  | Number of samples for `random` or `spatial` mode. Set to -1 for `all` sampling. |
 | `--sample_padding` | `0`            | *integer*                  | Padding for `spatial` sampling.                     |
