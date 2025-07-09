@@ -17,8 +17,8 @@ class ImageNet(datasets.ImageNet):
         self.train_data = datasets.ImageNet(root=args.data_path, split='train', download=False, transform=transform)
         self.test_data = datasets.ImageNet(root=args.data_path, split='val', download=False, transform=transform)
         
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=8)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=8)
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
         self.num_classes = 1000
         self.img_size = (3, 224, 224)
@@ -60,8 +60,8 @@ class CIFAR100(datasets.CIFAR100):
         self.train_data = datasets.CIFAR100(root=args.data_path, train=True, download=False, transform=transform)
         self.test_data = datasets.CIFAR100(root=args.data_path, train=False, download=False, transform=transform)
         
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=8)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=8)
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
         
         self.num_classes = 100
         self.upscale_dataset()
@@ -77,8 +77,8 @@ class CIFAR100(datasets.CIFAR100):
             self.test_data = upscaled_test
             
             # update the train and test loaders
-            self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.train_loader.batch_size, shuffle=True, num_workers=8)
-            self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.test_loader.batch_size, shuffle=False, num_workers=8)
+            self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.train_loader.batch_size, shuffle=True, num_workers=4)
+            self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.test_loader.batch_size, shuffle=False, num_workers=4)
         else:
             print("Upscale transform not defined. Skipping dataset upscale.")
     
@@ -119,8 +119,8 @@ class CIFAR10(datasets.CIFAR10):
         
         self.train_data = datasets.CIFAR10(root=args.data_path, train=True, download=False, transform=transform)
         self.test_data = datasets.CIFAR10(root=args.data_path, train=False, download=False, transform=transform)
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=8)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=8)
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
         self.num_classes = 10
 
@@ -136,8 +136,8 @@ class CIFAR10(datasets.CIFAR10):
             self.test_data = upscaled_test
             
             # update the train and test loaders
-            self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.train_loader.batch_size, shuffle=True, num_workers=8)
-            self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.test_loader.batch_size, shuffle=False, num_workers=8)
+            self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.train_loader.batch_size, shuffle=True, num_workers=4)
+            self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.test_loader.batch_size, shuffle=False, num_workers=4)
         else:
             print("Upscale transform not defined. Skipping dataset upscale.")
       
@@ -164,8 +164,8 @@ class MNIST(datasets.MNIST):
         
         self.train_data = datasets.MNIST(root=args.data_path, train=True, download=False, transform=transform)
         self.test_data = datasets.MNIST(root=args.data_path, train=False, download=False, transform=transform)
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=8)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=8)
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
         self.num_classes = 10
         self.img_size = (1, 28, 28)
