@@ -82,7 +82,7 @@ class AllConvNet(nn.Module):
                 layer_params.update({"channel_ratio": (ch1, ch2)})
                 
                 # --- Check all sub-cases for branching layers ---
-                if self.args.layer == "Conv2d/ConvNN_Branching":
+                if self.args.layer == "Conv2d/ConvNN":
                     layer_params.update({
                         "kernel_size": self.args.kernel_size,
                         "K": self.args.K, "stride": self.args.K,
@@ -92,7 +92,7 @@ class AllConvNet(nn.Module):
                     })
                     layer = Conv2d_ConvNN_Branching(**layer_params)
                 
-                elif self.args.layer == "Conv2d/ConvNN_Attn_Branching":
+                elif self.args.layer == "Conv2d/ConvNN_Attn":
                     layer_params.update({
                         "kernel_size": self.args.kernel_size,
                         "K": self.args.K, "stride": self.args.K,
@@ -103,7 +103,7 @@ class AllConvNet(nn.Module):
                     })
                     layer = Conv2d_ConvNN_Attn_Branching(**layer_params)
                 
-                elif self.args.layer == "Attention/ConvNN_Branching":
+                elif self.args.layer == "Attention/ConvNN":
                     layer_params.update({
                         "num_heads": self.args.num_heads,
                         "K": self.args.K, "stride": self.args.K,
@@ -113,7 +113,7 @@ class AllConvNet(nn.Module):
                     })
                     layer = Attention_ConvNN_Branching(**layer_params)
 
-                elif self.args.layer == "Attention/ConvNN_Attn_Branching":
+                elif self.args.layer == "Attention/ConvNN_Attn":
                     layer_params.update({
                         "num_heads": self.args.num_heads,
                         "K": self.args.K, "stride": self.args.K,
@@ -141,7 +141,7 @@ class AllConvNet(nn.Module):
                 # This is the final else for non-branching types
                 raise ValueError(f"Layer type {self.args.layer} not supported in AllConvNet")
 
-            layers.append(nn.InstanceNorm2d()) # Pre-layer normalization
+            layers.append(nn.InstanceNorm2d(num_features=out_ch)) # Pre-layer normalization
             layers.append(layer)
             layers.append(nn.ReLU(inplace=True))
             

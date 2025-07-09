@@ -1,5 +1,6 @@
 #!/bin/bash
 
+### AllConvNet Test Script ###
 # # 1. Regular Conv2d
 # python allconvnet_main.py --layer Conv2d --kernel_size 3 --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACM/Conv2d
 
@@ -21,7 +22,26 @@
 # # 7. ConvNN_Attn Spatial Samples
 # python allconvnet_main.py --layer ConvNN_Attn --K 9 --sampling_type spatial --num_samples 8 --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACM/ConvNNAttention_Spatial
 
-# ### Branching Networks
+### No Pixel Shuffle ###
+# 2. ConvNN All Samples
+python allconvnet_main.py --layer ConvNN --K 9 --sampling_type all --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACM/ConvNN_All_NoShuf --shuffle_pattern NA
+
+# 3. ConvNN Random Samples
+python allconvnet_main.py --layer ConvNN --K 9 --sampling_type random --num_samples 64 --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACM/ConvNN_Random_NoShuf --shuffle_pattern NA
+
+# 4. ConvNN Spatial Samples
+python allconvnet_main.py --layer ConvNN --K 9 --sampling_type spatial --num_samples 8 --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACM/ConvNN_Spatial_NoShuf --shuffle_pattern NA
+
+# 5. ConvNN_Attn All Samples
+python allconvnet_main.py --layer ConvNN_Attn --K 9 --sampling_type all --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACM/ConvNNAttention_All_NoShuf --shuffle_pattern NA
+
+# 6. ConvNN_Attn Random Samples
+python allconvnet_main.py --layer ConvNN_Attn --K 9 --sampling_type random --num_samples 64 --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACM/ConvNNAttention_Random_NoShuf --shuffle_pattern NA
+
+# 7. ConvNN_Attn Spatial Samples
+python allconvnet_main.py --layer ConvNN_Attn --K 9 --sampling_type spatial --num_samples 8 --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACM/ConvNNAttention_Spatial_NoShuf --shuffle_pattern NA
+
+### Branching Networks ###
 
 # 8. Branching Conv2d + ConvNN All
 python allconvnet_main.py --layer Conv2d/ConvNN --num_layers 3 --K 9 --kernel_size 3 --channels 8 16 32 --sampling_type all --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACN/Conv2d_ConvNN_All
