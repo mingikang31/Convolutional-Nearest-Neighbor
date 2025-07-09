@@ -141,7 +141,7 @@ class AllConvNet(nn.Module):
                 # This is the final else for non-branching types
                 raise ValueError(f"Layer type {self.args.layer} not supported in AllConvNet")
 
-            layers.append(nn.InstanceNorm2d(out_ch)) # Pre-layer normalization
+            layers.append(nn.InstanceNorm2d()) # Pre-layer normalization
             layers.append(layer)
             layers.append(nn.ReLU(inplace=True))
             

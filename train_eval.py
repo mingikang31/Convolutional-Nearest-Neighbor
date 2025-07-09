@@ -51,8 +51,8 @@ def Train_Eval(args,
     criterion.to(device)
     
     if args.use_amp:
-        scaler = torch.cuda.amp.GradScaler()
-    
+        scaler = torch.amp.GradScaler("cuda")
+
     # Training Loop
     epoch_times = [] # Average Epoch Time 
     epoch_results = [] 
@@ -75,7 +75,7 @@ def Train_Eval(args,
             
             # use mixed precision training
             if args.use_amp:
-                with torch.cuda.amp.autocast():
+                with torch.amp.autocast('cuda'):
                     outputs = model(images)
                     loss = criterion(outputs, labels)
                 scaler.scale(loss).backward()
