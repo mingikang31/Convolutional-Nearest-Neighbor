@@ -12,7 +12,7 @@ from typing import cast, Union, Optional
 from utils import *
 
 # 
-from natten import NeighborhoodAttention1D, NeighborhoodAttention2D
+# from natten import NeighborhoodAttention1D, NeighborhoodAttention2D
 
 '''VGG Model Class'''
 class ViT(nn.Module): 
@@ -177,8 +177,8 @@ class TransformerEncoder(nn.Module):
                 "is_causal": False,  # Whether to use causal attention
             }
             
-            self.attention = NeighborhoodAttention1D(embed_dim=d_hidden, num_heads=num_heads, kernel_size=args.K, proj_drop=attention_dropout, **neighborhood_attention_params
-            ) 
+            # self.attention = NeighborhoodAttention1D(embed_dim=d_hidden, num_heads=num_heads, kernel_size=args.K, proj_drop=attention_dropout, **neighborhood_attention_params
+            # ) 
 
         self.norm1 = nn.LayerNorm(d_hidden)
         self.norm2 = nn.LayerNorm(d_hidden)
