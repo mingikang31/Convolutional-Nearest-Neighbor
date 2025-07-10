@@ -5,12 +5,14 @@ __pycache__/*
 Layers/__pycache__
 Testing/data/*
 
+
+
 .DS_Store
 
 Playground/data/*
 Data/* 
 Data
-
+    
 .env
 
 .DS_Store
@@ -23,9 +25,6 @@ tempCodeRunnerFile.python
 */tempCodeRunnerFile.python
 
 .gitignore
-
-KVT/*
-KVT
 
 # Big Notebooks 
 Testing/W9_Image_Shape_Test Denoising.ipynb

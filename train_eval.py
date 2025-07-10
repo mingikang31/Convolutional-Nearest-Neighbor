@@ -63,14 +63,15 @@ def Train_Eval(args,
     for epoch in range(args.num_epochs):
         # Model Training
         model.train() 
-        running_loss = 0.0 
+        train_running_loss = 0.0
+        test_running_loss = 0.0
         epoch_result = ""
         
         start_time = time.time()
-        
+
+        train_top1_5 = [0, 0]
         for images, labels in train_loader: 
             images, labels = images.to(device), labels.to(device)
-            
             optimizer.zero_grad()
             
             # use mixed precision training
@@ -91,15 +92,21 @@ def Train_Eval(args,
                 if hasattr(args, 'clip_grad_norm') and args.clip_grad_norm is not None:
                     torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad_norm)
                 optimizer.step()            
-                
-            running_loss += loss.item()
+
+            top1, top5 = accuracy(outputs, labels, topk=(1, 5))
+            train_top1_5[0] += top1.item()
+            train_top1_5[1] += top5.item()
+            train_running_loss += loss.item()
+
+        train_top1_5[0] /= len(train_loader)
+        train_top1_5[1] /= len(train_loader)
         end_time = time.time()
-        epoch_result += f"[Epoch {epoch+1}] Time: {end_time - start_time:.4f}s, Loss: {running_loss/len(train_loader):.8f} | "
+        epoch_result += f"[Epoch {epoch+1:03d}] Time: {end_time - start_time:.4f}s | [Train] Loss: {train_running_loss/len(train_loader):.8f} Accuracy: Top1: {train_top1_5[0]:.4f}%, Top5: {train_top1_5[1]:.4f}% | "
         epoch_times.append(end_time - start_time)
         
         # Model Evaluation 
         model.eval()
-        top1_5 = [0, 0]
+        test_top1_5 = [0, 0]
         with torch.no_grad():
             for images, labels in test_loader: 
                 images, labels = images.to(device), labels.to(device)
@@ -108,25 +115,29 @@ def Train_Eval(args,
                         outputs = model(images)
                 else: 
                     outputs = model(images)
+                loss = criterion(outputs, labels)
+                test_running_loss += loss.item()
+
+                    
                 top1, top5 = accuracy(outputs, labels, topk=(1, 5))
-                top1_5[0] += top1.item()
-                top1_5[1] += top5.item()
+                test_top1_5[0] += top1.item()
+                test_top1_5[1] += top5.item()
         
-        top1_5[0] /= len(test_loader)
-        top1_5[1] /= len(test_loader)
-        epoch_result += f"Accuracy: Top1: {top1_5[0]:.4f}%, Top5: {top1_5[1]:.4f}%"
+        test_top1_5[0] /= len(test_loader)
+        test_top1_5[1] /= len(test_loader)
+        epoch_result += f"[Test] Loss: {test_running_loss/len(test_loader):.8f} Accuracy: Top1: {test_top1_5[0]:.4f}%, Top5: {test_top1_5[1]:.4f}%"
         print(epoch_result)
         epoch_results.append(epoch_result)
         
         # Max Accuracy Check
-        if top1_5[0] > max_accuracy:
-            max_accuracy = top1_5[0]
+        if test_top1_5[0] > max_accuracy:
+            max_accuracy = test_top1_5[0]
             max_epoch = epoch + 1    
             
         # Learning Rate Scheduler Step
         if scheduler: 
             if isinstance(scheduler, optim.lr_scheduler.ReduceLROnPlateau):
-                scheduler.step(top1_5[0])
+                scheduler.step(test_top1_5[0])
             else:
                 scheduler.step()
                 

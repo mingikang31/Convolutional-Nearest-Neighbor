@@ -101,7 +101,7 @@ def main(args):
     # Check if the output directory exists, if not create it
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
-    
+
     # Dataset 
     if args.dataset == "cifar10":
         dataset = CIFAR10(args)
