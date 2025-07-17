@@ -231,8 +231,8 @@ if __name__ == "__main__":
     print(f"Running tests on device: {device}\n")
 
     base_args = SimpleNamespace(
-        num_layers=2,
-        channels=[8, 16],
+        num_layers=3,
+        channels=[16, 32, 64],
         img_size=(3, 32, 32),
         num_classes=10,
         
@@ -260,105 +260,111 @@ if __name__ == "__main__":
     # Dummy input tensor
     x = torch.randn(4, 3, 32, 32).to(device)
 
+    base_args.layer = "Conv2d"  # Start with Conv2d layer
+    base_args.sampling_type = "N/A"  # Not applicable for Conv2d
+    base_args.num_samples = -1  # Not applicable for Conv2d
+    run_test(base_args, x)
+    
+
     # 2. --- Run Tests for All Layer Variants ---
 
-    # Test (1): Conv2d_NN
-    base_args.layer = "ConvNN"
-    # Test with ALL sampling
-    base_args.sampling_type = "all"
-    base_args.num_samples = -1
-    run_test(base_args, x)
-    # Test with RANDOM sampling
-    base_args.sampling_type = "random"
-    base_args.num_samples = 64
-    run_test(base_args, x)
-    # Test with SPATIAL sampling
-    base_args.sampling_type = "spatial"
-    base_args.num_samples = 8
-    run_test(base_args, x)
+    # # Test (1): Conv2d_NN
+    # base_args.layer = "ConvNN"
+    # # Test with ALL sampling
+    # base_args.sampling_type = "all"
+    # base_args.num_samples = -1
+    # run_test(base_args, x)
+    # # Test with RANDOM sampling
+    # base_args.sampling_type = "random"
+    # base_args.num_samples = 64
+    # run_test(base_args, x)
+    # # Test with SPATIAL sampling
+    # base_args.sampling_type = "spatial"
+    # base_args.num_samples = 8
+    # run_test(base_args, x)
 
-    # Test (2): Conv2d_NN_Attn
-    base_args.layer = "ConvNN_Attn"
-    # Test with ALL sampling
-    base_args.sampling_type = "all"
-    base_args.num_samples = -1
-    run_test(base_args, x)
-    # Test with RANDOM sampling
-    base_args.sampling_type = "random"
-    base_args.num_samples = 64
-    run_test(base_args, x)
-    # Test with SPATIAL sampling
-    base_args.sampling_type = "spatial"
-    base_args.num_samples = 8
-    run_test(base_args, x)
+    # # Test (2): Conv2d_NN_Attn
+    # base_args.layer = "ConvNN_Attn"
+    # # Test with ALL sampling
+    # base_args.sampling_type = "all"
+    # base_args.num_samples = -1
+    # run_test(base_args, x)
+    # # Test with RANDOM sampling
+    # base_args.sampling_type = "random"
+    # base_args.num_samples = 64
+    # run_test(base_args, x)
+    # # Test with SPATIAL sampling
+    # base_args.sampling_type = "spatial"
+    # base_args.num_samples = 8
+    # run_test(base_args, x)
 
-    # Test (3): Attention2d (no sampling variants)
-    base_args.layer = "Attention"
-    base_args.sampling_type = "N/A" # Not applicable
-    base_args.num_samples = -1
-    run_test(base_args, x)
+    # # Test (3): Attention2d (no sampling variants)
+    # base_args.layer = "Attention"
+    # base_args.sampling_type = "N/A" # Not applicable
+    # base_args.num_samples = -1
+    # run_test(base_args, x)
 
-    # Test (4): Conv2d_ConvNN_Branching
-    base_args.layer = "Conv2d/ConvNN_Branching"
-    # Test with ALL sampling
-    base_args.sampling_type = "all"
-    base_args.num_samples = -1
-    run_test(base_args, x)
-    # Test with RANDOM sampling
-    base_args.sampling_type = "random"
-    base_args.num_samples = 64
-    run_test(base_args, x)
-    # Test with SPATIAL sampling
-    base_args.sampling_type = "spatial"
-    base_args.num_samples = 8
-    run_test(base_args, x)
+    # # Test (4): Conv2d_ConvNN_Branching
+    # base_args.layer = "Conv2d/ConvNN_Branching"
+    # # Test with ALL sampling
+    # base_args.sampling_type = "all"
+    # base_args.num_samples = -1
+    # run_test(base_args, x)
+    # # Test with RANDOM sampling
+    # base_args.sampling_type = "random"
+    # base_args.num_samples = 64
+    # run_test(base_args, x)
+    # # Test with SPATIAL sampling
+    # base_args.sampling_type = "spatial"
+    # base_args.num_samples = 8
+    # run_test(base_args, x)
 
-    # Test (5): Conv2d_ConvNN_Attn_Branching
-    base_args.layer = "Conv2d/ConvNN_Attn_Branching"
-    # Test with ALL sampling
-    base_args.sampling_type = "all"
-    base_args.num_samples = -1
-    run_test(base_args, x)
-    # Test with RANDOM sampling
-    base_args.sampling_type = "random"
-    base_args.num_samples = 64
-    run_test(base_args, x)
-    # Test with SPATIAL sampling
-    base_args.sampling_type = "spatial"
-    base_args.num_samples = 8
-    run_test(base_args, x)
+    # # Test (5): Conv2d_ConvNN_Attn_Branching
+    # base_args.layer = "Conv2d/ConvNN_Attn_Branching"
+    # # Test with ALL sampling
+    # base_args.sampling_type = "all"
+    # base_args.num_samples = -1
+    # run_test(base_args, x)
+    # # Test with RANDOM sampling
+    # base_args.sampling_type = "random"
+    # base_args.num_samples = 64
+    # run_test(base_args, x)
+    # # Test with SPATIAL sampling
+    # base_args.sampling_type = "spatial"
+    # base_args.num_samples = 8
+    # run_test(base_args, x)
 
-    # Test (6): Attention_ConvNN_Branching
-    base_args.layer = "Attention/ConvNN_Branching"
-    # Test with ALL sampling
-    base_args.sampling_type = "all"
-    base_args.num_samples = -1
-    run_test(base_args, x)
-    # Test with RANDOM sampling
-    base_args.sampling_type = "random"
-    base_args.num_samples = 64
-    run_test(base_args, x)
-    # Test with SPATIAL sampling
-    base_args.sampling_type = "spatial"
-    base_args.num_samples = 8
-    run_test(base_args, x)
+    # # Test (6): Attention_ConvNN_Branching
+    # base_args.layer = "Attention/ConvNN_Branching"
+    # # Test with ALL sampling
+    # base_args.sampling_type = "all"
+    # base_args.num_samples = -1
+    # run_test(base_args, x)
+    # # Test with RANDOM sampling
+    # base_args.sampling_type = "random"
+    # base_args.num_samples = 64
+    # run_test(base_args, x)
+    # # Test with SPATIAL sampling
+    # base_args.sampling_type = "spatial"
+    # base_args.num_samples = 8
+    # run_test(base_args, x)
 
-    # Test (7): Attention_ConvNN_Attn_Branching
-    base_args.layer = "Attention/ConvNN_Attn_Branching"
-    # Test with ALL sampling
-    base_args.sampling_type = "all"
-    base_args.num_samples = -1
-    run_test(base_args, x)
-    # Test with RANDOM sampling
-    base_args.sampling_type = "random"
-    base_args.num_samples = 64
-    run_test(base_args, x)
-    # Test with SPATIAL sampling
-    base_args.sampling_type = "spatial"
-    base_args.num_samples = 8
-    run_test(base_args, x)
+    # # Test (7): Attention_ConvNN_Attn_Branching
+    # base_args.layer = "Attention/ConvNN_Attn_Branching"
+    # # Test with ALL sampling
+    # base_args.sampling_type = "all"
+    # base_args.num_samples = -1
+    # run_test(base_args, x)
+    # # Test with RANDOM sampling
+    # base_args.sampling_type = "random"
+    # base_args.num_samples = 64
+    # run_test(base_args, x)
+    # # Test with SPATIAL sampling
+    # base_args.sampling_type = "spatial"
+    # base_args.num_samples = 8
+    # run_test(base_args, x)
 
-    # Test (8): Attention_Conv2d_Branching (no sampling variants)
-    base_args.layer = "Conv2d/Attention"
-    base_args.num_samples = -1
-    run_test(base_args, x)
+    # # Test (8): Attention_Conv2d_Branching (no sampling variants)
+    # base_args.layer = "Conv2d/Attention"
+    # base_args.num_samples = -1
+    # run_test(base_args, x)

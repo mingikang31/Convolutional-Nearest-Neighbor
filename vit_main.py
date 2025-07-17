@@ -37,7 +37,8 @@ def args_parser():
     parser.add_argument("--sampling_type", type=str, default="all", choices=["all", "random", "spatial"], help="Sampling type for ConvNN Models")
     parser.add_argument("--sample_padding", type=int, default=0, help="Padding for spatial sampling in ConvNN Models")
     parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
-
+    parser.add_argument("--coordinate_encoding", action="store_true", help="Use coordinate encoding in ConvNN Models")
+    parser.set_defaults(coordinate_encoding=False)    
     
     # Arguments for Data 
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", 'imagenet'], help="Dataset to use for training and evaluation")

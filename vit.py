@@ -143,10 +143,10 @@ class TransformerEncoder(nn.Module):
         
         if args.layer == "Attention":
             self.attention = MultiHeadAttention(d_hidden, num_heads, attention_dropout)
-        elif args.layer == "ConvNN": 
-            self.attention = MultiHeadConvNN(d_hidden, num_heads, args.K, args.sampling_type, args.num_samples, args.sample_padding, args.magnitude_type)
-        elif args.layer == "ConvNNAttention": 
-            self.attention = MultiHeadConvNNAttention(d_hidden, num_heads, args.K, args.sampling_type, args.num_samples, args.sample_padding, args.magnitude_type)
+        elif args.layer == "ConvNN":
+            self.attention = MultiHeadConvNN(d_hidden, num_heads, args.K, args.sampling_type, args.num_samples, args.sample_padding, args.magnitude_type, coordinate_encoding=args.coordinate_encoding)
+        elif args.layer == "ConvNNAttention":
+            self.attention = MultiHeadConvNNAttention(d_hidden, num_heads, args.K, args.sampling_type, args.num_samples, args.sample_padding, args.magnitude_type, coordinate_encoding=args.coordinate_encoding)
         elif args.layer == "Conv1d":
             self.attention = MultiHeadConv1d(d_hidden, num_heads, args.K)
         elif args.layer == "Conv1dAttention":
@@ -249,7 +249,7 @@ class MultiHeadAttention(nn.Module):
         return output
 
 class MultiHeadConvNNAttention(nn.Module):
-    def __init__(self, d_hidden, num_heads, K, sampling_type, num_samples, sample_padding, magnitude_type, seq_length=197):
+    def __init__(self, d_hidden, num_heads, K, sampling_type, num_samples, sample_padding, magnitude_type, seq_length=197, coordinate_encoding=False):
         super(MultiHeadConvNNAttention, self).__init__()
         assert d_hidden % num_heads == 0, "d_hidden must be divisible by num_heads"
         self.d_hidden = d_hidden
@@ -263,16 +263,20 @@ class MultiHeadConvNNAttention(nn.Module):
         self.sample_padding = sample_padding if sampling_type == 'spatial' else 0    
         self.magnitude_type = magnitude_type
         self.maximum = True if self.magnitude_type == 'similarity' else False
+
+        # Coordinate Encoding (optional) 
+        self.coordinate_encoding = coordinate_encoding
+        self.coordinate_cache = {}
         
         # Linear projections for query, key, value
         self.W_q = nn.Linear(d_hidden, d_hidden)
         self.W_k = nn.Linear(d_hidden, d_hidden)
         self.W_v = nn.Linear(d_hidden, d_hidden)
         self.W_o = nn.Linear(d_hidden, d_hidden)   
-        
-        
-        self.in_channels = d_hidden // num_heads
-        self.out_channels = d_hidden // num_heads
+
+
+        self.in_channels = (d_hidden // num_heads) + 1 if coordinate_encoding else d_hidden // num_heads
+        self.out_channels = (d_hidden // num_heads) + 1 if coordinate_encoding else d_hidden // num_heads
         self.kernel_size = K
         self.stride = K
         
@@ -282,6 +286,12 @@ class MultiHeadConvNNAttention(nn.Module):
             kernel_size=self.kernel_size,
             stride=self.stride,
             padding=0,
+        )
+        
+        self.pointwise_conv = nn.Conv1d(
+            in_channels=self.in_channels,
+            out_channels=self.out_channels - 1,
+            kernel_size=1
         )
         
     def split_head(self, x): 
@@ -304,38 +314,29 @@ class MultiHeadConvNNAttention(nn.Module):
         return x.view(-1, self.d_k, seq_length)
         
     def forward(self, x):
+    
         k = self.batch_combine(self.split_head(self.W_k(x)))
         v = self.batch_combine(self.split_head(self.W_v(x)))
 
+        # Coordinate Encoding (optional)
+        k = self._add_coordinate_encoding(k) if self.coordinate_encoding else k
+        v = self._add_coordinate_encoding(v) if self.coordinate_encoding else v
         
         if self.sampling_type == 'all': # All Samples
             q = self.batch_combine(self.split_head(self.W_q(x)))
+            q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
+
+            # ConvNN Algorithm
             matrix_magnitude = self._calculate_distance_matrix(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix(k, q)
-                
             prime = self._prime(v, matrix_magnitude, self.K, self.maximum) 
 
         elif self.sampling_type == 'random': # Random Samples
-            ### OLD CODE BELOW ###
-            # # Sample after linear projection
-            # q = self.batch_combine(self.split_head(self.W_q(x)))
-            
-            # # Select random samples from q
-            # rand_idx = torch.randperm(q.shape[2], device=q.device)[:self.num_samples]
-            # q = q[:, :, rand_idx]
-            ### END OF OLD CODE ###
-
-
-
-            ### NEW CODE BELOW ###
-            # Sampling Before linear projection
+            # Sampling
             rand_idx = torch.randperm(x.shape[1], device=x.device)[:self.num_samples]
             x_sample = x[:, rand_idx, :]  
             q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
-            ### END OF NEW CODE ###
+            q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
 
-            
-
-            
             # ConvNN Algorithm 
             matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
             range_idx = torch.arange(len(rand_idx), device=q.device)
@@ -343,25 +344,11 @@ class MultiHeadConvNNAttention(nn.Module):
             prime = self._prime_N(v, matrix_magnitude, self.K, rand_idx, self.maximum)
 
         elif self.sampling_type == 'spatial': # Spatial Samples
-            ### OLD CODE BELOW ###
-            # # Sampling After Linear Projection
-            # q = self.batch_combine(self.split_head(self.W_q(x)))
-
-            # # Select spatial samples from q
-            # spat_idx = torch.linspace(0 + self.sample_padding, q.shape[2] - self.sample_padding - 1, self.num_samples, device=q.device).long()
-            # q = q[:, :, spat_idx]
-            ### END OF OLD CODE ###
-
-
-
-            ### NEW CODE BELOW ###
-            # Sampling Before Linear Projection
+            # Sampling 
             spat_idx = torch.linspace(0 + self.sample_padding, x.shape[1] - self.sample_padding - 1, self.num_samples, device=x.device).long()
             x_sample = x[:, spat_idx, :]
             q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
-            ### END OF NEW CODE ###
-
-
+            q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
 
             # ConvNN Algorithm 
             matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
@@ -372,6 +359,7 @@ class MultiHeadConvNNAttention(nn.Module):
             raise ValueError("Invalid sampling_type. Must be one of ['all', 'random', 'spatial']")
 
         x = self.conv(prime)  
+        x = self.pointwise_conv(x) if self.coordinate_encoding else x        
         x = self.W_o(self.combine_heads(self.batch_split(x.permute(0, 2, 1))))
         return x       
 
@@ -430,8 +418,21 @@ class MultiHeadConvNNAttention(nn.Module):
         prime = prime.reshape(b, c, -1)
         return prime
 
+    def _add_coordinate_encoding(self, x):
+        b, c, t = x.shape 
+        cache_key = f"{b}_{t}_{x.device}"
+        if cache_key in self.coordinate_cache:
+            expanded_coords = self.coordinate_cache[cache_key]
+        else:
+            coords_vec = torch.linspace(start=-1, end=1, steps=t, device=x.device).unsqueeze(0).expand(b, -1)
+            expanded_coords = coords_vec.unsqueeze(1).expand(b, -1, -1)
+            self.coordinate_cache[cache_key] = expanded_coords
+            
+        x_with_coords = torch.cat((x, expanded_coords), dim=1)  
+        return x_with_coords
+
 class MultiHeadConvNN(nn.Module):
-    def __init__(self, d_hidden, num_heads, K, sampling_type, num_samples, sample_padding, magnitude_type, seq_length=197):
+    def __init__(self, d_hidden, num_heads, K, sampling_type, num_samples, sample_padding, magnitude_type, seq_length=197, coordinate_encoding=False):
         super(MultiHeadConvNN, self).__init__() 
         
         assert d_hidden % num_heads == 0, "d_hidden must be divisible by num_heads"   
@@ -448,6 +449,10 @@ class MultiHeadConvNN(nn.Module):
         self.magnitude_type = magnitude_type
         self.maximum = True if self.magnitude_type == 'similarity' else False
         self.seq_length = seq_length
+
+        # Coordinate Encoding (optional)
+        self.coordinate_encoding = coordinate_encoding
+        self.coordinate_cache = {}
         
         # Linear projections for query, key, value        
         self.W_q = nn.Linear(self.seq_length, self.seq_length) if sampling_type == 'all' else nn.Linear(self.num_samples, self.num_samples)
@@ -455,8 +460,8 @@ class MultiHeadConvNN(nn.Module):
         self.W_v = nn.Linear(self.seq_length, self.seq_length)
         self.W_o = nn.Linear(self.seq_length, self.seq_length)
         
-        self.in_channels = d_hidden // num_heads
-        self.out_channels = d_hidden // num_heads
+        self.in_channels = (d_hidden // num_heads) + 1 if coordinate_encoding else d_hidden // num_heads
+        self.out_channels = (d_hidden // num_heads) + 1 if coordinate_encoding else d_hidden // num_heads
         self.kernel_size = K
         self.stride = K
         self.padding = 0 
@@ -467,6 +472,12 @@ class MultiHeadConvNN(nn.Module):
             kernel_size=self.kernel_size,
             stride=self.stride,
             padding=self.padding,
+        )
+
+        self.pointwise_conv = nn.Conv1d(
+            in_channels=self.in_channels,
+            out_channels=self.out_channels - 1 ,
+            kernel_size=1
         )
 
     def split_head(self, x):
@@ -492,28 +503,38 @@ class MultiHeadConvNN(nn.Module):
 
         k = self.batch_combine(self.split_head(self.W_k(x)))
         v = self.batch_combine(self.split_head(self.W_v(x)))
+
+        # Coordinate Encoding (optional)
+        k = self._add_coordinate_encoding(k) if self.coordinate_encoding else k
+        v = self._add_coordinate_encoding(v) if self.coordinate_encoding else v
         
         if self.sampling_type == 'all': # All Samples
             q = self.batch_combine(self.split_head(self.W_q(x)))
+            q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
+
+            # ConvNN Algorithm
             matrix_magnitude = self._calculate_distance_matrix(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix(k, q)
-                
             prime = self._prime(v, matrix_magnitude, self.K, self.maximum) 
 
         elif self.sampling_type == 'random': # Random Samples
+            # Sampling 
             rand_idx = torch.randperm(x.shape[2], device=x.device)[:self.num_samples]
             x_sample = x[:, :, rand_idx]  
             q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
 
-            # ConvNN Algorithm 
+            # ConvNN Algorithm
             matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
             range_idx = torch.arange(len(rand_idx), device=q.device)
             matrix_magnitude[:, rand_idx, range_idx] = float('inf') if self.magnitude_type == 'distance' else float('-inf')
             prime = self._prime_N(v, matrix_magnitude, self.K, rand_idx, self.maximum)
 
         elif self.sampling_type == 'spatial': # Spatial Samples
+            # Sampling
             spat_idx = torch.linspace(0 + self.sample_padding, x.shape[2] - self.sample_padding - 1, self.num_samples, device=x.device).long()
             x_sample = x[:, :, spat_idx]
             q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
             
             # ConvNN Algorithm 
             matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
@@ -524,6 +545,7 @@ class MultiHeadConvNN(nn.Module):
             raise ValueError("Invalid sampling_type. Must be one of ['all', 'random', 'spatial']")
 
         x = self.conv(prime)  
+        x = self.pointwise_conv(x)  if self.coordinate_encoding else x
         x = self.W_o(self.combine_heads(self.batch_split(x))).permute(0, 2, 1)
         return x
 
@@ -581,6 +603,19 @@ class MultiHeadConvNN(nn.Module):
         prime = torch.gather(v_expanded, dim=2, index=indices_expanded) 
         prime = prime.reshape(b, c, -1)
         return prime
+    
+    def _add_coordinate_encoding(self, x):
+        b, c, t = x.shape 
+        cache_key = f"{b}_{t}_{x.device}"
+        if cache_key in self.coordinate_cache:
+            expanded_coords = self.coordinate_cache[cache_key]
+        else:
+            coords_vec = torch.linspace(start=-1, end=1, steps=t, device=x.device).unsqueeze(0).expand(b, -1)
+            expanded_coords = coords_vec.unsqueeze(1).expand(b, -1, -1)
+            self.coordinate_cache[cache_key] = expanded_coords
+            
+        x_with_coords = torch.cat((x, expanded_coords), dim=1)  
+        return x_with_coords
     
 class MultiHeadConv1dAttention(nn.Module):
     def __init__(self, d_hidden, num_heads, kernel_size): 
@@ -863,16 +898,16 @@ if __name__ == "__main__":
     args = SimpleNamespace(
         img_size = (3, 224, 224),       # (channels, height, width)
         patch_size = 16,                # 16x16 patches
-        num_layers = 3,                 # 8 transformer layers
-        num_heads = 4,                  # 8 attention heads
-        d_hidden = 512,                 # Hidden dimension
-        d_mlp = 512,                   # MLP dimension
+        num_layers = 4,                 # 4 transformer layers
+        num_heads = 3,                  # 3 attention heads
+        d_hidden = 48,                 # Hidden dimension
+        d_mlp = 192,                  # MLP dimension
         num_classes = 100,              # CIFAR-100 classes
         K = 9,                          # For nearest neighbor operations
         kernel_size = 9,                # Kernel size for ConvNN
         dropout = 0.1,                  # Dropout rate
         attention_dropout = 0.1,        # Attention dropout
-        sampling_type = "random",          # Sampling type: 'all', 'random', or 'spatial'
+        sampling_type = "all",          # Sampling type: 'all', 'random', or 'spatial'
         sample_padding = 3,             # Padding for spatial sampling
         num_samples = 32,               # Number of samples for random or spatial sampling; -
         magnitude_type = "similarity",  # Or "distance"
@@ -880,6 +915,7 @@ if __name__ == "__main__":
         shuffle_scale = 1,              # Default scale
         layer = "Attention",            # Attention or ConvNN
         device = torch.device("cpu"),
+        coordinate_encoding = False,   # Whether to use coordinate embedding
         model = "ViT"                   # Model type
     )
     

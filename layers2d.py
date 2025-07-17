@@ -215,19 +215,19 @@ class Conv2d_NN(nn.Module):
 
     def _add_coordinate_encoding(self, x):
         b, _, h, w = x.shape
-        cache_key = f"{h}_{w}_{x.device}"
+        cache_key = f"{b}_{h}_{w}_{x.device}"
 
         if cache_key in self.coordinate_cache:
-            grid = self.coordinate_cache[cache_key]
+            expanded_grid = self.coordinate_cache[cache_key]
         else:
             y_coords_vec = torch.linspace(start=-1, end=1, steps=h, device=x.device)
             x_coords_vec = torch.linspace(start=-1, end=1, steps=w, device=x.device)
 
             y_grid, x_grid = torch.meshgrid(y_coords_vec, x_coords_vec, indexing='ij')
             grid = torch.stack((x_grid, y_grid), dim=0).unsqueeze(0)
-            self.coordinate_cache[cache_key] = grid
+            expanded_grid = grid.expand(b, -1, -1, -1)
+            self.coordinate_cache[cache_key] = expanded_grid
 
-        expanded_grid = grid.expand(b, -1, -1, -1)
         x_with_coords = torch.cat((x, expanded_grid), dim=1)
         return x_with_coords
 
@@ -449,19 +449,19 @@ class Conv2d_NN_Attn(nn.Module):
 
     def _add_coordinate_encoding(self, x):
         b, _, h, w = x.shape
-        cache_key = f"{h}_{w}_{x.device}"
+        cache_key = f"{b}_{h}_{w}_{x.device}"
 
         if cache_key in self.coordinate_cache:
-            grid = self.coordinate_cache[cache_key]
+            expanded_grid = self.coordinate_cache[cache_key]
         else:
             y_coords_vec = torch.linspace(start=-1, end=1, steps=h, device=x.device)
             x_coords_vec = torch.linspace(start=-1, end=1, steps=w, device=x.device)
 
             y_grid, x_grid = torch.meshgrid(y_coords_vec, x_coords_vec, indexing='ij')
             grid = torch.stack((x_grid, y_grid), dim=0).unsqueeze(0)
-            self.coordinate_cache[cache_key] = grid
+            expanded_grid = grid.expand(b, -1, -1, -1)
+            self.coordinate_cache[cache_key] = expanded_grid
 
-        expanded_grid = grid.expand(b, -1, -1, -1)
         x_with_coords = torch.cat((x, expanded_grid), dim=1)
         return x_with_coords
     
@@ -531,22 +531,22 @@ class Attention2d(nn.Module):
         x = self.pointwise_conv(x) if self.coordinate_encoding else x
         return x 
     def _add_coordinate_encoding(self, x):
-            b, _, h, w = x.shape
-            cache_key = f"{h}_{w}_{x.device}"
+        b, _, h, w = x.shape
+        cache_key = f"{b}_{h}_{w}_{x.device}"
 
-            if cache_key in self.coordinate_cache:
-                grid = self.coordinate_cache[cache_key]
-            else:
-                y_coords_vec = torch.linspace(start=-1, end=1, steps=h, device=x.device)
-                x_coords_vec = torch.linspace(start=-1, end=1, steps=w, device=x.device)
+        if cache_key in self.coordinate_cache:
+            expanded_grid = self.coordinate_cache[cache_key]
+        else:
+            y_coords_vec = torch.linspace(start=-1, end=1, steps=h, device=x.device)
+            x_coords_vec = torch.linspace(start=-1, end=1, steps=w, device=x.device)
 
-                y_grid, x_grid = torch.meshgrid(y_coords_vec, x_coords_vec, indexing='ij')
-                grid = torch.stack((x_grid, y_grid), dim=0).unsqueeze(0)
-                self.coordinate_cache[cache_key] = grid
-
+            y_grid, x_grid = torch.meshgrid(y_coords_vec, x_coords_vec, indexing='ij')
+            grid = torch.stack((x_grid, y_grid), dim=0).unsqueeze(0)
             expanded_grid = grid.expand(b, -1, -1, -1)
-            x_with_coords = torch.cat((x, expanded_grid), dim=1)
-            return x_with_coords
+            self.coordinate_cache[cache_key] = expanded_grid
+
+        x_with_coords = torch.cat((x, expanded_grid), dim=1)
+        return x_with_coords
     
 """(4) Conv2d_ConvNN_Branching"""
 class Conv2d_ConvNN_Branching(nn.Module):
