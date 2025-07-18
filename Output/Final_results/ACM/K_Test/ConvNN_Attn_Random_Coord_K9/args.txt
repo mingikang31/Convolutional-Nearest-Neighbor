@@ -10,7 +10,7 @@ num_heads: 4
 shuffle_pattern: BA
 shuffle_scale: 2
 magnitude_type: similarity
-coordinate_encoding: False
+coordinate_encoding: True
 dataset: cifar10
 data_path: ./Data
 batch_size: 64
@@ -31,5 +31,5 @@ output_dir: ./Output/Final_results/ACM/K_Test/ConvNN_Attn_Random_Coord_K9
 resize: False
 num_classes: 10
 img_size: (3, 32, 32)
-total_params: 984020
-trainable_params: 984020
+total_params: 1033170
+trainable_params: 1033170
