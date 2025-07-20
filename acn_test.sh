@@ -14,13 +14,13 @@
 # python allconvnet_main.py --layer ConvNN --K 9 --sampling_type spatial --num_samples 8 --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACM/ConvNN_Spatial
 
 # # 5. ConvNN_Attn All Samples
-# python allconvnet_main.py --layer ConvNN_Attn --K 9 --sampling_type all --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --attention_dropout 0.1 --output_dir ./Output/TESTING/ACM/ConvNNAttention_All
+# python allconvnet_main.py --layer ConvNN_Attn --K 9 --sampling_type all --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --attention_dropout 0.3 --output_dir ./Output/TESTING/ACM/ConvNNAttention_All_dropout_3
 
 # # 6. ConvNN_Attn Random Samples
-# python allconvnet_main.py --layer ConvNN_Attn --K 9 --sampling_type random --num_samples 64 --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACM/ConvNNAttention_Random
+# python allconvnet_main.py --layer ConvNN_Attn --K 9 --sampling_type random --num_samples 64 --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --attention_dropout 0.1 --output_dir ./Output/TESTING/ACM/ConvNNAttention_Random_dropout_1
 
 # # 7. ConvNN_Attn Spatial Samples
-# python allconvnet_main.py --layer ConvNN_Attn --K 9 --sampling_type spatial --num_samples 8 --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --output_dir ./Output/ACM/ConvNNAttention_Spatial
+# python allconvnet_main.py --layer ConvNN_Attn --K 9 --sampling_type spatial --num_samples 8 --num_layers 3 --channels 16 32 64 --dataset cifar10  --seed 0 --num_epochs 50 --device cuda --attention_dropout 0.1 --output_dir ./Output/TESTING/ACM/ConvNNAttention_Spatial_dropout_1
 
 ### No Pixel Shuffle ###
 # 2. ConvNN All Samples

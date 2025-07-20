@@ -23,7 +23,7 @@
 # python vit_main.py --layer ConvNN --patch_size 16 --num_layers 12 --K 9 --sampling_type all --num_heads 3 --d_hidden 192 --d_mlp 768 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --seed 0 --output_dir ./Output/VIT-Tiny/ConvNN_All
 
 # # ConvNN Random
-# python vit_main.py --layer ConvNN --patch_size 16 --num_layers 12 --K 9 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 192 --d_mlp 768 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --seed 0 --output_dir ./Output/VIT-Tiny/ConvNN_Random
+# python vit_main.py --layer ConvNN --patch_size 16 --num_layers 12 --K 9 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 192 --d_mlp 768 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --seed 0 --output_dir ./Output/TEST/VIT-Tiny/ConvNN_Random
 
 # # ConvNN Spatial
 # python vit_main.py --layer ConvNN --patch_size 16 --num_layers 12 --K 9 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 192 --d_mlp 768 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 10 --seed 0 --output_dir ./Output/ViT-Tiny/ConvNN_Spatial
