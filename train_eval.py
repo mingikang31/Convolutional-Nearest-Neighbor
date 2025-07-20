@@ -21,7 +21,10 @@ def Train_Eval(args,
         set_seed(args.seed)
     
     if args.criterion == 'CrossEntropy':
-        criterion = nn.CrossEntropyLoss()
+        if args.layer == "ConvNNAttention" or args.layer == "ConvNN":
+            criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+        else: 
+            criterion = nn.CrossEntropyLoss()
     elif args.criterion == 'MSE':
         criterion = nn.MSELoss()
 

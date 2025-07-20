@@ -6,60 +6,61 @@
 # d_mlp: 192
 # num_heads: 3
 
-### Baseline Models ###
-# Attention
-python vit_main.py --layer Attention --patch_size 16 --num_layers 4 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/Attention
+# ### Baseline Models ###
+# # Attention
+# python vit_main.py --layer Attention --patch_size 16 --num_layers 4 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/Attention
 
-# Conv1d
-python vit_main.py --layer Conv1d --patch_size 16 --num_layers 4 --K 3 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/Conv1d
+# # Conv1d
+# python vit_main.py --layer Conv1d --patch_size 16 --num_layers 4 --K 3 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/Conv1d
 
-# Conv1d Attention
-python vit_main.py --layer Conv1dAttention --patch_size 16 --num_layers 4 --K 3 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/Conv1dAttention
+# # Conv1d Attention
+# python vit_main.py --layer Conv1dAttention --patch_size 16 --num_layers 4 --K 3 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/Conv1dAttention
 
-# KVT Attention
-python vit_main.py --layer KvtAttention --patch_size 16 --num_layers 4 --K 3 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/KvtAttention
+# # KVT Attention
+# python vit_main.py --layer KvtAttention --patch_size 16 --num_layers 4 --K 3 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/KvtAttention
 
 # ConvNN All
-python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_All
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_All_Decay_005 --weight_decay 0.05
 
 # ConvNN Random
-python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_Random
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_Random_Decay_005 --weight_decay 0.05
 
 # ConvNN Spatial
-python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_Spatial
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_Spatial_Decay_005 --weight_decay 0.05
 
 # ConvNNAttention All
-python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_All
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_All_Decay_005 --weight_decay 0.05
 
 # ConvNNAttention Random
-python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_Random
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_Random_Decay_005 --weight_decay 0.05
 
 # ConvNNAttention Spatial
-python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_Spatial
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_Spatial_Decay_005 --weight_decay 0.05
 
 # ConvNN All Coord
-python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_All_Coord --coordinate_encoding
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_All_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05
 
 # ConvNN Random Coord
-python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_Random_Coord --coordinate_encoding
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_Random_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05
 
 # ConvNN Spatial Coord
-python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_Spatial_Coord --coordinate_encoding
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNN_Spatial_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05
 
 # ConvNNAttention All Coord
-python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_All_Coord --coordinate_encoding
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_All_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05
 
 # ConvNNAttention Random Coord
-python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_Random_Coord --coordinate_encoding
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_Random_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05
 
 # ConvNNAttention Spatial Coord
-python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_Spatial_Coord --coordinate_encoding
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/ConvNNAttention_Spatial_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05
 
-# Local Attention
-python vit_main.py --layer LocalAttention --patch_size 16 --num_layers 4 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/LocalAttention
+# # Local Attention
+# python vit_main.py --layer LocalAttention --patch_size 16 --num_layers 4 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/LocalAttention 
 
 # # NeighborhoodAttention
 # python vit_main.py --layer NeighborhoodAttention --patch_size 16 --num_layers 4 --K 3 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar10 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR10/NeighborhoodAttention
+
 
 
 # Attention
@@ -115,3 +116,46 @@ python vit_main.py --layer LocalAttention --patch_size 16 --num_layers 4 --num_h
 
 # # NeighborhoodAttention
 # python vit_main.py --layer NeighborhoodAttention --patch_size 16 --num_layers 4 --K 3 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/NeighborhoodAttention
+
+
+
+
+
+
+
+
+# ConvNN All
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNN_All_Decay_005 --weight_decay 0.05
+
+# ConvNN Random
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNN_Random_Decay_005 --weight_decay 0.05
+
+# ConvNN Spatial
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNN_Spatial_Decay_005 --weight_decay 0.05
+
+# ConvNNAttention All
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNNAttention_All_Decay_005 --weight_decay 0.05
+
+# ConvNNAttention Random
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNNAttention_Random_Decay_005 --weight_decay 0.05
+
+# ConvNNAttention Spatial
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNNAttention_Spatial_Decay_005 --weight_decay 0.05
+
+# ConvNN All Coord
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNN_All_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05
+
+# ConvNN Random Coord
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNN_Random_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05
+
+# ConvNN Spatial Coord
+python vit_main.py --layer ConvNN --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNN_Spatial_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05
+
+# ConvNNAttention All Coord
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type all --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNNAttention_All_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05
+
+# ConvNNAttention Random Coord
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type random --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNNAttention_Random_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05
+
+# ConvNNAttention Spatial Coord
+python vit_main.py --layer ConvNNAttention --patch_size 16 --num_layers 4 --K 3 --sampling_type spatial --num_samples 32 --num_heads 3 --d_hidden 48 --d_mlp 192 --dropout 0.1 --attention_dropout 0.1 --dataset cifar100 --num_epochs 50 --seed 0 --output_dir ./Output/Final_results/ViT-Tiny-Tiny-Tiny/CIFAR100/ConvNNAttention_Spatial_Coord_Decay_005 --coordinate_encoding --weight_decay 0.05

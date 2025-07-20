@@ -14,7 +14,7 @@ class ImageNet(datasets.ImageNet):
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
         
-        self.train_data = datasets.ImageNet(root=args.data_path, split='train', download=False, transform=transform)
+        self.train_data = datasets.ImageNet(root=args.data_path, split='train', download=True, transform=transform)
         self.test_data = datasets.ImageNet(root=args.data_path, split='val', download=False, transform=transform)
         
         self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
