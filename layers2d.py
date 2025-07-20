@@ -246,6 +246,7 @@ class Conv2d_NN_Attn(nn.Module):
                 shuffle_scale, 
                 magnitude_type,
                 img_size, 
+                attention_dropout,
                 coordinate_encoding=False
                 ): 
         """
@@ -301,6 +302,9 @@ class Conv2d_NN_Attn(nn.Module):
         self.in_channels_1d = self.in_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["B", "BA"] else self.in_channels
         self.out_channels_1d = self.out_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["A", "BA"] else self.out_channels
 
+        # Dropout Layer
+        self.attention_dropout = attention_dropout
+        self.dropout = nn.Dropout(p=self.attention_dropout)
         # Conv1d Layer
         self.conv1d_layer = nn.Conv1d(in_channels=self.in_channels_1d, 
                                       out_channels=self.out_channels_1d, 
@@ -380,8 +384,9 @@ class Conv2d_NN_Attn(nn.Module):
 
         # Post-Processing 
         x_conv = self.conv1d_layer(prime) 
-        x_out = self.w_o(x_conv)  
-        
+        x_drop = self.dropout(x_conv)  # Apply dropout
+        x_out = self.w_o(x_drop)  
+
         # Unflatten + Shuffle
         unflatten = nn.Unflatten(dim=2, unflattened_size=x_2d.shape[2:])
         x = unflatten(x_out)  # [batch_size, out_channels
@@ -945,88 +950,93 @@ if __name__ == "__main__":
     ex = torch.randn(2, 3, 32, 32)  # Example input tensor
     
     print("Conv2d_NN")
-    conv2d_nn = Conv2d_NN(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='spatial', num_samples=8, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', coordinate_encoding=True)
+    conv2d_nn = Conv2d_NN(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='spatial', num_samples=32, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', coordinate_encoding=True)
     output = conv2d_nn(ex)
     print(output.shape)  # Should print the shape of the output tensor after Conv2d
 
-    print("Conv2d_NN_Attn")
-    conv2d_nn_attn = Conv2d_NN_Attn(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='spatial', num_samples=8, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', img_size=(32, 32), coordinate_encoding=True)
-    output = conv2d_nn_attn(ex)
-    print(output.shape)  # Should print the shape of the output tensor after Conv2d_NN_Attn
+    print("Conv2d_NN")
+    conv2d_nn = Conv2d_NN(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='random', num_samples=512, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', coordinate_encoding=True)
+    output = conv2d_nn(ex)
+    print(output.shape)  # Should print the shape of the output tensor after Conv2d
 
-    print("Attention2d")
-    attention2d = Attention2d(in_channels=3, out_channels=16, num_heads=4, shuffle_pattern='BA', shuffle_scale=2, coordinate_encoding=True)
-    output = attention2d(ex)
-    print(output.shape)  # Should print the shape of the output tensor after Attention2d
+    # print("Conv2d_NN_Attn")
+    # conv2d_nn_attn = Conv2d_NN_Attn(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='spatial', num_samples=8, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', img_size=(32, 32), coordinate_encoding=True)
+    # output = conv2d_nn_attn(ex)
+    # print(output.shape)  # Should print the shape of the output tensor after Conv2d_NN_Attn
 
-    print("Conv2d_ConvNN_Branching")
-    conv2d_convnn_branching = Conv2d_ConvNN_Branching(
-        in_channels=3, 
-        out_channels=16,        
-        channel_ratio=(8, 8),
-        kernel_size=3,
-        K=9,
-        stride=9,
-        sampling_type='spatial',
-        num_samples=8,
-        sample_padding=0,
-        shuffle_pattern='BA',
-        shuffle_scale=2,
-        magnitude_type='similarity', 
-        coordinate_encoding=True)
+    # print("Attention2d")
+    # attention2d = Attention2d(in_channels=3, out_channels=16, num_heads=4, shuffle_pattern='BA', shuffle_scale=2, coordinate_encoding=True)
+    # output = attention2d(ex)
+    # print(output.shape)  # Should print the shape of the output tensor after Attention2d
+
+    # print("Conv2d_ConvNN_Branching")
+    # conv2d_convnn_branching = Conv2d_ConvNN_Branching(
+    #     in_channels=3, 
+    #     out_channels=16,        
+    #     channel_ratio=(8, 8),
+    #     kernel_size=3,
+    #     K=9,
+    #     stride=9,
+    #     sampling_type='spatial',
+    #     num_samples=8,
+    #     sample_padding=0,
+    #     shuffle_pattern='BA',
+    #     shuffle_scale=2,
+    #     magnitude_type='similarity', 
+    #     coordinate_encoding=True)
     
-    output = conv2d_convnn_branching(ex)
-    print(output.shape)  # Should print the shape of the output tensor after Conv2d
-    print("Conv2d_ConvNN_Attn_Branching")
-    conv2d_convnn_attn_branching = Conv2d_ConvNN_Attn_Branching(
-        in_channels=3, 
-        out_channels=16,        
-        channel_ratio=(8, 8),   
-        kernel_size=3,
-        K=9,
-        stride=9,
-        sampling_type='spatial',
-        num_samples=8,
-        sample_padding=0,
-        shuffle_pattern='BA',
-        shuffle_scale=2,
-        magnitude_type='similarity',
-        img_size=(32, 32), 
-        coordinate_encoding=True
-    )
-    output = conv2d_convnn_attn_branching(ex)
-    print(output.shape)  # Should print the shape of the output tensor after Conv2d
-    print("Attention_ConvNN_Branching")
-    attention_convnn_branching = Attention_ConvNN_Branching(
-        in_channels=3,
-        out_channels=16,
-        channel_ratio=(8, 8),
-        num_heads=4,
-        K=9,
-        stride=9,
-        sampling_type='spatial',
-        num_samples=8,
-        sample_padding=0,
-        shuffle_pattern='BA',
-        shuffle_scale=2,
-        magnitude_type='similarity', 
-        coordinate_encoding=True
-    )
-    output = attention_convnn_branching(ex)
-    print(output.shape)  # Should print the shape of the output tensor after Attention_Conv
+    # output = conv2d_convnn_branching(ex)
+    # print(output.shape)  # Should print the shape of the output tensor after Conv2d
+    # print("Conv2d_ConvNN_Attn_Branching")
+    # conv2d_convnn_attn_branching = Conv2d_ConvNN_Attn_Branching(
+    #     in_channels=3, 
+    #     out_channels=16,        
+    #     channel_ratio=(8, 8),   
+    #     kernel_size=3,
+    #     K=9,
+    #     stride=9,
+    #     sampling_type='spatial',
+    #     num_samples=8,
+    #     sample_padding=0,
+    #     shuffle_pattern='BA',
+    #     shuffle_scale=2,
+    #     magnitude_type='similarity',
+    #     img_size=(32, 32), 
+    #     coordinate_encoding=True
+    # )
+    # output = conv2d_convnn_attn_branching(ex)
+    # print(output.shape)  # Should print the shape of the output tensor after Conv2d
+    # print("Attention_ConvNN_Branching")
+    # attention_convnn_branching = Attention_ConvNN_Branching(
+    #     in_channels=3,
+    #     out_channels=16,
+    #     channel_ratio=(8, 8),
+    #     num_heads=4,
+    #     K=9,
+    #     stride=9,
+    #     sampling_type='spatial',
+    #     num_samples=8,
+    #     sample_padding=0,
+    #     shuffle_pattern='BA',
+    #     shuffle_scale=2,
+    #     magnitude_type='similarity', 
+    #     coordinate_encoding=True
+    # )
+    # output = attention_convnn_branching(ex)
+    # print(output.shape)  # Should print the shape of the output tensor after Attention_Conv
 
-    print("Attention_Conv2d_Branching")
-    attention_conv2d_branching = Attention_Conv2d_Branching(
-        in_channels=3,
-        out_channels=16,
-        channel_ratio=(8, 8),
-        num_heads=4,
-        kernel_size=3,
-        shuffle_pattern='BA',
-        shuffle_scale=2, 
-        coordinate_encoding=True
+    # print("Attention_Conv2d_Branching")
+    # attention_conv2d_branching = Attention_Conv2d_Branching(
+    #     in_channels=3,
+    #     out_channels=16,
+    #     channel_ratio=(8, 8),
+    #     num_heads=4,
+    #     kernel_size=3,
+    #     shuffle_pattern='BA',
+    #     shuffle_scale=2, 
+    #     coordinate_encoding=True
 
-    )
-    output = attention_conv2d_branching(ex)
-    print(output.shape)  # Should print the shape of the output tensor after Attention_Conv2d_Branching
+    # )
+    # output = attention_conv2d_branching(ex)
+    # print(output.shape)  # Should print the shape of the output tensor after Attention_Conv2d_Branching
     

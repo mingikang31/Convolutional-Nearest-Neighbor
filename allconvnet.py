@@ -66,6 +66,7 @@ class AllConvNet(nn.Module):
                     "sample_padding": self.args.sample_padding,
                     "magnitude_type": self.args.magnitude_type,
                     "img_size": self.args.img_size[1:], # Pass H, W
+                    "attention_dropout": self.args.attention_dropout,
                     "coordinate_encoding": self.args.coordinate_encoding
                 })
                 layer = Conv2d_NN_Attn(**layer_params)
