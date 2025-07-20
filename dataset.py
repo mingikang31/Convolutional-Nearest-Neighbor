@@ -57,7 +57,7 @@ class CIFAR100(datasets.CIFAR100):
         
         
         
-        self.train_data = datasets.CIFAR100(root=args.data_path, train=True, download=False, transform=transform)
+        self.train_data = datasets.CIFAR100(root=args.data_path, train=True, download=True, transform=transform)
         self.test_data = datasets.CIFAR100(root=args.data_path, train=False, download=False, transform=transform)
         
         self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)

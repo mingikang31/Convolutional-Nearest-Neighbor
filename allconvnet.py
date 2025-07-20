@@ -145,7 +145,7 @@ class AllConvNet(nn.Module):
             layers.append(nn.InstanceNorm2d(num_features=out_ch)) # Pre-layer normalization
             layers.append(layer)
             if self.args.layer == "ConvNN_Attn":
-                layers.append(nn.Dropout(p=self.args.attention_dropout))
+                pass #layers.append(nn.Dropout(p=self.args.attention_dropout))
             layers.append(nn.ReLU(inplace=True))
             
             # Update in_ch for the next layer
