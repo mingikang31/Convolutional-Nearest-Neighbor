@@ -318,15 +318,19 @@ class MultiHeadConvNNAttention(nn.Module):
         
     def forward(self, x):
     
-        k = self.batch_combine(self.split_head(self.W_k(x)))
-        v = self.batch_combine(self.split_head(self.W_v(x)))
+        # k = self.batch_combine(self.split_head(self.W_k(x)))
+        # v = self.batch_combine(self.split_head(self.W_v(x)))
+
+        k = self.batch_combine(self.split_head(x))
+        v = self.batch_combine(self.split_head(x))
 
         # Coordinate Encoding (optional)
         k = self._add_coordinate_encoding(k) if self.coordinate_encoding else k
         v = self._add_coordinate_encoding(v) if self.coordinate_encoding else v
         
         if self.sampling_type == 'all': # All Samples
-            q = self.batch_combine(self.split_head(self.W_q(x)))
+            # q = self.batch_combine(self.split_head(self.W_q(x)))
+            q = self.batch_combine(self.split_head(x))
             q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
 
             # ConvNN Algorithm
@@ -337,7 +341,8 @@ class MultiHeadConvNNAttention(nn.Module):
             # Sampling
             rand_idx = torch.randperm(x.shape[1], device=x.device)[:self.num_samples]
             x_sample = x[:, rand_idx, :]  
-            q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            # q = self.batch_combine(self.split_head(self.W_q(x_sample))) 
+            q = self.batch_combine(self.split_head(x_sample))
             q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
 
             # ConvNN Algorithm 
@@ -350,7 +355,8 @@ class MultiHeadConvNNAttention(nn.Module):
             # Sampling 
             spat_idx = torch.linspace(0 + self.sample_padding, x.shape[1] - self.sample_padding - 1, self.num_samples, device=x.device).long()
             x_sample = x[:, spat_idx, :]
-            q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            # q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            q = self.batch_combine(self.split_head(x_sample))
             q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
 
             # ConvNN Algorithm 
@@ -364,7 +370,8 @@ class MultiHeadConvNNAttention(nn.Module):
         x = self.conv(prime)  
         x = self.dropout(x)
         x = self.pointwise_conv(x) if self.coordinate_encoding else x        
-        x = self.W_o(self.combine_heads(self.batch_split(x.permute(0, 2, 1))))
+        # x = self.W_o(self.combine_heads(self.batch_split(x.permute(0, 2, 1))))
+        x = self.combine_heads(self.batch_split(x.permute(0, 2, 1)))
         return x       
 
     def _calculate_similarity_matrix(self, K, Q):
@@ -507,15 +514,19 @@ class MultiHeadConvNN(nn.Module):
     def forward(self, x):
         x = x.permute(0, 2, 1) 
 
-        k = self.batch_combine(self.split_head(self.W_k(x)))
-        v = self.batch_combine(self.split_head(self.W_v(x)))
+        # k = self.batch_combine(self.split_head(self.W_k(x)))
+        # v = self.batch_combine(self.split_head(self.W_v(x)))
+
+        k = self.batch_combine(self.split_head(x))
+        v = self.batch_combine(self.split_head(x))
 
         # Coordinate Encoding (optional)
         k = self._add_coordinate_encoding(k) if self.coordinate_encoding else k
         v = self._add_coordinate_encoding(v) if self.coordinate_encoding else v
         
         if self.sampling_type == 'all': # All Samples
-            q = self.batch_combine(self.split_head(self.W_q(x)))
+            # q = self.batch_combine(self.split_head(self.W_q(x)))
+            q = self.batch_combine(self.split_head(x))
             q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
 
             # ConvNN Algorithm
@@ -526,7 +537,8 @@ class MultiHeadConvNN(nn.Module):
             # Sampling 
             rand_idx = torch.randperm(x.shape[2], device=x.device)[:self.num_samples]
             x_sample = x[:, :, rand_idx]  
-            q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            # q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            q = self.batch_combine(self.split_head(x_sample))
             q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
 
             # ConvNN Algorithm
@@ -539,7 +551,8 @@ class MultiHeadConvNN(nn.Module):
             # Sampling
             spat_idx = torch.linspace(0 + self.sample_padding, x.shape[2] - self.sample_padding - 1, self.num_samples, device=x.device).long()
             x_sample = x[:, :, spat_idx]
-            q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            # q = self.batch_combine(self.split_head(self.W_q(x_sample)))  
+            q = self.batch_combine(self.split_head(x_sample))
             q = self._add_coordinate_encoding(q) if self.coordinate_encoding else q
             
             # ConvNN Algorithm 
@@ -553,7 +566,8 @@ class MultiHeadConvNN(nn.Module):
         x = self.conv(prime)  
         x = self.dropout(x)
         x = self.pointwise_conv(x)  if self.coordinate_encoding else x
-        x = self.W_o(self.combine_heads(self.batch_split(x))).permute(0, 2, 1)
+        # x = self.W_o(self.combine_heads(self.batch_split(x))).permute(0, 2, 1)
+        x = self.combine_heads(self.batch_split(x)).permute(0, 2, 1)
         return x
 
     def _calculate_similarity_matrix(self, K, Q):
