@@ -301,7 +301,7 @@ class MultiHeadConvNNAttention(nn.Module):
         batch_size, seq_length, d_hidden = x.size()
         self.batch_size = batch_size
         # self.seq_length = seq_length
-        return x.view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2) # (B, num_heads, seq_length, d_k)
+        return x.contiguous().view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2) # (B, num_heads, seq_length, d_k)
         
     def combine_heads(self, x): 
         batch_size, _, seq_length, d_k = x.size()
@@ -496,7 +496,7 @@ class MultiHeadConvNN(nn.Module):
     def split_head(self, x):
         batch_size, d_hidden, seq_length = x.size()
         self.batch_size = batch_size
-        return x.view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2) 
+        return x.contiguous().view(batch_size, seq_length, self.num_heads, self.d_k).transpose(1, 2) 
     
     def combine_heads(self, x): 
         batch_size, _, seq_length, d_k = x.size()
