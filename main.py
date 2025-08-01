@@ -1,45 +1,44 @@
-"""Main File for VIT model"""
+"""Main File for the project"""
 
 import argparse 
-from pathlib import Path 
-import os
+from pathlib import Path
+import os 
 
 # Datasets 
 from dataset import ImageNet, CIFAR10, CIFAR100
 from train_eval import Train_Eval
 
-# Models
-from vit import ViT
+# Models 
+from models.allconvnet import AllConvNet 
 
+# Utilities 
 from utils import write_to_file, set_seed
+
 
 def args_parser():
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", add_help=False) 
     
     # Model Arguments
-    parser.add_argument("--layer", type=str, default="Attention", choices=["Attention", "ConvNN", "ConvNNAttention", "Conv1d", "Conv1dAttention", "KvtAttention", "LocalAttention", "NeighborhoodAttention"], help="Layer to use for training and evaluation")
+    parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], help="Type of Convolution or Attention layer to use")
+    parser.add_argument("--num_layers", type=int, default=5, help="Number of layers.")   
+    parser.add_argument("--channels", nargs='+', type=int, default=[32, 64, 128, 256, 512], help="Channel sizes for each layer.")
     
-    parser.add_argument("--patch_size", type=int, default=16, help="Patch size for Attention Models")
-    parser.add_argument("--num_layers", type=int, default=8, help="Number of layers in the model")   
-    parser.add_argument("--num_heads", type=int, default=4, help="Number of heads for Attention Models")
-
-    # Model Dimension Arguments
-    parser.add_argument("--d_hidden", type=int, default=512, help="Hidden dimension for the model")
-    parser.add_argument("--d_mlp", type=int, default=2048, help="MLP dimension for the model")
-
-    # Dropout Arguments
-    parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate for the model")
-    parser.add_argument("--attention_dropout", type=float, default=0.1, help="Dropout rate for the model")    
-    
-    # Additional Layer Arguments for ConvNN
-    parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN Layer")
-    parser.add_argument("--num_samples", type=int, default=-1, help="Number of samples for ConvNN Layer, -1 for all samples")
-    parser.add_argument("--sampling_type", type=str, default="all", choices=["all", "random", "spatial"], help="Sampling type for ConvNN Models")
+    # Additional Layer Arguments
+    parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN")
+    parser.add_argument("--kernel_size", type=int, default=3, help="Kernel Size for Conv2d")        
+    parser.add_argument("--sampling_type", type=str, default='all', choices=["all", "random", "spatial"], help="Sampling method for ConvNN Models")
+    parser.add_argument("--num_samples", type=int, default=-1, help="Number of samples for ConvNN Models")
     parser.add_argument("--sample_padding", type=int, default=0, help="Padding for spatial sampling in ConvNN Models")
+    
+    parser.add_argument("--num_heads", type=int, default=4, help="Number of heads for Attention Models")    
+    parser.add_argument("--attention_dropout", type=float, default=0.1, help="Dropout rate for the model")    
+
+    parser.add_argument("--shuffle_pattern", type=str, default="BA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")
+    parser.add_argument("--shuffle_scale", type=int, default=2, help="Shuffle scale for ConvNN Models")
     parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
     parser.add_argument("--coordinate_encoding", action="store_true", help="Use coordinate encoding in ConvNN Models")
-    parser.set_defaults(coordinate_encoding=False)    
-    
+    parser.set_defaults(coordinate_encoding=False)
+
     # Arguments for Data 
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", 'imagenet'], help="Dataset to use for training and evaluation")
     parser.add_argument("--data_path", type=str, default="./Data", help="Path to the dataset")
@@ -71,16 +70,39 @@ def args_parser():
     parser.add_argument('--seed', default=0, type=int)
     
     # Output Arguments 
-    parser.add_argument("--output_dir", type=str, default="./Output/VIT/VIT_Attention", help="Directory to save the output files")
+    parser.add_argument("--output_dir", type=str, default="./Output/Simple/ConvNN", help="Directory to save the output files")
     
     return parser
+
+def check_args(args):
+    # Check the arguments based on the model 
+    print("Checking arguments based on the model...")    
+    
+    assert args.layer in ["Conv2d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], f"Model {args.layer} not supported"
+    assert args.dataset in ["cifar10", "cifar100", 'imagenet'], f"Dataset {args.dataset} not supported"
+    assert args.criterion in ["CrossEntropy", "MSE"], f"Criterion {args.criterion} not supported"
+    assert args.optimizer in ['adam', 'sgd', 'adamw'], f"Optimizer {args.optimizer} not supported"
+    assert args.scheduler in ['step', 'cosine', 'plateau'], f"Scheduler {args.scheduler} not supported"
+    
+    assert args.num_layers == len(args.channels), f"Number of layers {args.num_layers} does not match the number of channels {len(args.channels)}"
+        
+    if args.sampling_type == "all": # only for Conv2d_NN, Conv2d_NN_Attn
+        args.num_samples = -1
+    if args.num_samples == -1:
+        args.sampling_type = "all"
+
+    args.resize = False
+    return args
+    
     
 def main(args):
+
+    args = check_args(args)
+    
     # Check if the output directory exists, if not create it
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
 
-    args.resize = True
     # Dataset 
     if args.dataset == "cifar10":
         dataset = CIFAR10(args)
@@ -97,7 +119,8 @@ def main(args):
     else:
         raise ValueError("Dataset not supported")
     
-    model = ViT(args)
+    # Model 
+    model = AllConvNet(args)
     print(f"Model: {model.name}")
     
     # Parameters
@@ -109,6 +132,7 @@ def main(args):
     
     # Set the seed for reproducibility
     set_seed(args.seed)
+    
     
     # Training Modules 
     train_eval_results = Train_Eval(args, 
@@ -128,4 +152,6 @@ if __name__ == '__main__':
 
     main(args)
 
-    
+# python allconvnet_main.py --layer Conv2d --num_layers 3 --channels 8 16 32 --dataset cifar10 --num_epochs 10 --device cuda --output_dir ./Output/Simple/Conv2d 
+
+# python allconvnet_main.py --layer Conv2d/ConvNN --num_layers 3 --channels 8 16 32 --sampling Spatial --num_samples 8 --dataset cifar10 --num_epochs 10 --device cuda --output_dir ./Output/Simple/Conv2d_ConvNN_Spatial

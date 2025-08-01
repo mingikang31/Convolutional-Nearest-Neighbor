@@ -17,7 +17,7 @@ Branching Layers 2D:
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
-from layers1d import Attention1d
+from models.layers1d import Attention1d
 
 """(1) Conv2d_NN (All, Random, Spatial Sampling)"""
 class Conv2d_NN(nn.Module): 

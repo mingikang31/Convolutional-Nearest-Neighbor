@@ -27,7 +27,8 @@ class Conv1d_NN(nn.Module):
                  sample_padding, 
                  shuffle_pattern, 
                  shuffle_scale, 
-                 magnitude_type 
+                 magnitude_type, 
+                 coordinate_encoding
                  ):
         """
         Parameters: 
@@ -64,6 +65,12 @@ class Conv1d_NN(nn.Module):
         self.magnitude_type = magnitude_type
         self.maximum = True if self.magnitude_type == 'similarity' else False
 
+        # Positional Encoding
+        self.coordinate_cache = {}  # Cache for coordinate encoding
+        self.coordinate_encoding = coordinate_encoding
+        self.in_channels = in_channels + 1 if self.coordinate_encoding else in_channels  # Add 1 for coordinate encoding
+        self.out_channels = out_channels + 1 if self.coordinate_encoding else out_channels  # Add 1 for coordinate encoding
+
         # Shuffle1D/Unshuffle1D Layer
         self.shuffle_layer = PixelShuffle1D(upscale_factor=self.shuffle_scale)
         self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
@@ -79,7 +86,14 @@ class Conv1d_NN(nn.Module):
                                       stride=self.stride, 
                                       padding=0)
 
+        self.pointwise_conv = nn.Conv1d(in_channels=self.out_channels, 
+                                        out_channels=self.out_channels - 1, 
+                                        kernel_size=1, 
+                                        stride=1, 
+                                        padding=0) 
+
     def forward(self, x):
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
         x = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
 
         
@@ -116,6 +130,7 @@ class Conv1d_NN(nn.Module):
 
         x = self.conv1d_layer(prime)
         x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
+        x = self.pointwise_conv(x) if self.coordinate_encoding else x  
         return x
     
     def _calculate_distance_matrix(self, matrix, sqrt=False):
@@ -177,6 +192,21 @@ class Conv1d_NN(nn.Module):
         prime = torch.gather(matrix_expanded, dim=2, index=indices_expanded)  
         prime = prime.view(b, c, -1)
         return prime
+
+    def _add_coordinate_encoding(self, x):
+        b, c, t = x.shape 
+        cache_key = f"{b}_{t}_{x.device}"
+        if cache_key in self.coordinate_cache: 
+            expanded_coords = self.coordinate_cache[cache_key]
+        else: 
+            coords_vec = torch.linspace(start=-1, end=1, steps=t, device=x.device).unsqueeze(0).expand(b, -1) 
+            expanded_coords = coords_vec.unsqueeze(1).expand(b, -1, -1) 
+            self.coordinate_cache[cache_key] = expanded_coords
+
+        x_with_coords = torch.cat([x, expanded_coords], dim=1) 
+        return x_with_coords
+
+        
         
 """(2) Conv1d_NN_Attn (All, Random, Spatial Sampling)"""
 class Conv1d_NN_Attn(nn.Module):
@@ -192,7 +222,8 @@ class Conv1d_NN_Attn(nn.Module):
                  shuffle_pattern, 
                  shuffle_scale, 
                  num_tokens, 
-                 magnitude_type 
+                 magnitude_type, 
+                 coordinate_encoding
                  ):
         """
         Parameters: 
@@ -232,6 +263,12 @@ class Conv1d_NN_Attn(nn.Module):
         self.magnitude_type = magnitude_type
         self.maximum = True if self.magnitude_type == 'similarity' else False
 
+        # Positional Encoding
+        self.coordinate_cache = {}  # Cache for coordinate encoding
+        self.coordinate_encoding = coordinate_encoding
+        self.in_channels = in_channels + 1 if self.coordinate_encoding else in_channels  # Add 1 for coordinate encoding
+        self.out_channels = out_channels + 1 if self.coordinate_encoding else out_channels  # Add 1 for coordinate encoding
+        
         # Shuffle1D/Unshuffle1D Layer
         self.shuffle_layer = PixelShuffle1D(upscale_factor=self.shuffle_scale)
         self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
@@ -253,8 +290,16 @@ class Conv1d_NN_Attn(nn.Module):
         self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False) 
         self.w_o = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
 
+        # Pointwise Conv1d Layer
+        self.pointwise_conv = nn.Conv1d(in_channels=self.out_channels, 
+                                        out_channels=self.out_channels - 1, 
+                                        kernel_size=1, 
+                                        stride=1, 
+                                        padding=0)
+
     def forward(self, x):
         # Unshuffle 
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
         x = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
 
         # K, V Projections 
@@ -303,6 +348,7 @@ class Conv1d_NN_Attn(nn.Module):
         x = self.conv1d_layer(prime)
         x = self.w_o(x)
         x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
+        x = self.pointwise_conv(x) if self.coordinate_encoding else x
         return x 
 
     def _calculate_similarity_matrix(self, K, Q):
@@ -363,6 +409,20 @@ class Conv1d_NN_Attn(nn.Module):
         prime = prime.reshape(b, c, -1)
         return prime
     
+    def _add_coordinate_encoding(self, x):
+        b, c, t = x.shape 
+        cache_key = f"{b}_{t}_{x.device}"
+        if cache_key in self.coordinate_cache: 
+            expanded_coords = self.coordinate_cache[cache_key]
+        else: 
+            coords_vec = torch.linspace(start=-1, end=1, steps=t, device=x.device).unsqueeze(0).expand(b, -1) 
+            expanded_coords = coords_vec.unsqueeze(1).expand(b, -1, -1) 
+            self.coordinate_cache[cache_key] = expanded_coords
+
+        x_with_coords = torch.cat([x, expanded_coords], dim=1) 
+        return x_with_coords
+
+
 """(3) Attention1d"""
 class Attention1d(nn.Module):
     def __init__(self, 

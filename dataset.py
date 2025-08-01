@@ -182,4 +182,7 @@ class MNIST(datasets.MNIST):
         plt.figure(figsize=(6, 3))
         plt.imshow(img, cmap='gray')
         plt.show()
+
+
+
         
