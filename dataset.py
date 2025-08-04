@@ -69,7 +69,7 @@ class CIFAR100(datasets.CIFAR100):
     
     def upscale_dataset(self):  
         if self.upscale_transform:
-            upscaled_train = datasets.CIFAR100(root=self.train_data.root, train=True, download=False, transform=self.upscale_transform)
+            upscaled_train = datasets.CIFAR100(root=self.train_data.root, train=True, download=True, transform=self.upscale_transform)
             upscaled_test = datasets.CIFAR100(root=self.test_data.root, train=False, download=False, transform=self.upscale_transform)
             
             # update the train and test data
@@ -117,7 +117,7 @@ class CIFAR10(datasets.CIFAR10):
       
       
         
-        self.train_data = datasets.CIFAR10(root=args.data_path, train=True, download=False, transform=transform)
+        self.train_data = datasets.CIFAR10(root=args.data_path, train=True, download=True, transform=transform)
         self.test_data = datasets.CIFAR10(root=args.data_path, train=False, download=False, transform=transform)
         self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
@@ -162,7 +162,7 @@ class MNIST(datasets.MNIST):
             transforms.Normalize(mean=[0.1307], std=[0.3081])
         ])
         
-        self.train_data = datasets.MNIST(root=args.data_path, train=True, download=False, transform=transform)
+        self.train_data = datasets.MNIST(root=args.data_path, train=True, download=True, transform=transform)
         self.test_data = datasets.MNIST(root=args.data_path, train=False, download=False, transform=transform)
         self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
