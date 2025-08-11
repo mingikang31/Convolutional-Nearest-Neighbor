@@ -3,7 +3,8 @@ import torch.nn as nn
 from torchsummary import summary
 
 
-from models.layers2d import (
+from layers2d import (
+    Conv2d_New,
     Conv2d_NN, 
     Conv2d_NN_Attn, 
     Attention2d, 
@@ -44,7 +45,17 @@ class AllConvNet(nn.Module):
                     stride=1, 
                     padding='same'
                 )
-            
+            elif self.args.layer == "Conv2d_New":
+                layer = Conv2d_New(
+                    in_channels=in_ch,
+                    out_channels=out_ch,
+                    kernel_size=self.args.kernel_size,
+                    stride=1,
+                    shuffle_pattern=self.args.shuffle_pattern,
+                    shuffle_scale=self.args.shuffle_scale,
+                    coordinate_encoding=self.args.coordinate_encoding
+                )
+
             elif self.args.layer == "ConvNN":
                 layer_params.update({
                     "K": self.args.K,
@@ -263,13 +274,17 @@ if __name__ == "__main__":
     # Dummy input tensor
     x = torch.randn(4, 3, 32, 32).to(device)
 
-    base_args.layer = "Conv2d"  # Start with Conv2d layer
-    base_args.sampling_type = "N/A"  # Not applicable for Conv2d
-    base_args.num_samples = -1  # Not applicable for Conv2d
-    run_test(base_args, x)
-    
+    # base_args.layer = "Conv2d"  # Start with Conv2d layer
+    # base_args.sampling_type = "N/A"  # Not applicable for Conv2d
+    # base_args.num_samples = -1  # Not applicable for Conv2d
+    # run_test(base_args, x)
 
-    # 2. --- Run Tests for All Layer Variants ---
+    # base_args.layer = "Conv2d_New"  # Test Conv2d_New layer
+    # base_args.sampling_type = "N/A"  # Not applicable for Conv2d_New
+    # base_args.num_samples = -1  # Not applicable for Conv2d_New
+    # run_test(base_args, x)
+
+    # # 2. --- Run Tests for All Layer Variants ---
 
     # # Test (1): Conv2d_NN
     # base_args.layer = "ConvNN"

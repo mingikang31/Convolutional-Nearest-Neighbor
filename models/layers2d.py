@@ -17,7 +17,92 @@ Branching Layers 2D:
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
-from models.layers1d import Attention1d
+# from models.layers1d import Attention1d
+
+class Conv2d_New(nn.Module): 
+    """Convolution 2D Nearest Neighbor Layer"""
+    def __init__(self, 
+                in_channels, 
+                out_channels, 
+                kernel_size,
+                stride, 
+                shuffle_pattern, 
+                shuffle_scale, 
+                coordinate_encoding
+                ): 
+        
+        super(Conv2d_New, self).__init__()
+        
+        # Assertions 
+        assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
+        
+        # Initialize parameters
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+
+        # Positional Encoding (optional)
+        self.coordinate_encoding = coordinate_encoding
+        self.coordinate_cache = {} 
+        self.in_channels = in_channels + 2 if self.coordinate_encoding else in_channels
+        self.out_channels = out_channels + 2 if self.coordinate_encoding else out_channels
+
+        # Shuffle2D/Unshuffle2D Layers
+        self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
+        self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
+        
+        # Adjust Channels for PixelShuffle
+        self.in_channels_shuff = self.in_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["B", "BA"] else self.in_channels
+        self.out_channels_shuff = self.out_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["A", "BA"] else self.out_channels
+
+        # Conv2d Layer
+        self.conv2d_layer = nn.Conv2d(in_channels=self.in_channels_shuff, 
+                                      out_channels=self.out_channels_shuff, 
+                                      kernel_size=self.kernel_size, 
+                                      stride=self.stride, 
+                                      padding="same")
+
+
+        # Pointwise Convolution Layer
+        self.pointwise_conv = nn.Conv2d(in_channels=self.out_channels,
+                                         out_channels=self.out_channels - 2,
+                                         kernel_size=1,
+                                         stride=1,
+                                         padding=0)
+        
+        
+    def forward(self, x): 
+        # Coordinate Channels (optional) + Unshuffle + Flatten 
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
+        x_2d = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
+
+        # Conv2d Layer
+        x = self.conv2d_layer(x_2d)
+
+        x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
+        x = self.pointwise_conv(x) if self.coordinate_encoding else x
+        return x
+
+    def _add_coordinate_encoding(self, x):
+        b, _, h, w = x.shape
+        cache_key = f"{b}_{h}_{w}_{x.device}"
+
+        if cache_key in self.coordinate_cache:
+            expanded_grid = self.coordinate_cache[cache_key]
+        else:
+            y_coords_vec = torch.linspace(start=-1, end=1, steps=h, device=x.device)
+            x_coords_vec = torch.linspace(start=-1, end=1, steps=w, device=x.device)
+
+            y_grid, x_grid = torch.meshgrid(y_coords_vec, x_coords_vec, indexing='ij')
+            grid = torch.stack((x_grid, y_grid), dim=0).unsqueeze(0)
+            expanded_grid = grid.expand(b, -1, -1, -1)
+            self.coordinate_cache[cache_key] = expanded_grid
+
+        x_with_coords = torch.cat((x, expanded_grid), dim=1)
+        return x_with_coords
 
 """(1) Conv2d_NN (All, Random, Spatial Sampling)"""
 class Conv2d_NN(nn.Module): 
@@ -33,7 +118,7 @@ class Conv2d_NN(nn.Module):
                 shuffle_pattern, 
                 shuffle_scale, 
                 magnitude_type,
-                coordinate_encoding=False
+                coordinate_encoding
                 ): 
         """
         Parameters: 
@@ -247,7 +332,7 @@ class Conv2d_NN_Attn(nn.Module):
                 magnitude_type,
                 img_size, 
                 attention_dropout,
-                coordinate_encoding=False
+                coordinate_encoding
                 ): 
         """
         Parameters: 
@@ -948,7 +1033,12 @@ class Attention_Conv2d_Branching(nn.Module):
 
 if __name__ == "__main__":
     ex = torch.randn(2, 3, 32, 32)  # Example input tensor
-    
+
+    print("Conv2d_New")
+    conv2d_new = Conv2d_New(in_channels=3, out_channels=16, kernel_size=3, stride=1, shuffle_pattern='BA', shuffle_scale=2, coordinate_encoding=True)
+    output = conv2d_new(ex)
+    print(output.shape)  # Should print the shape of the output tensor after Conv2d_New
+
     print("Conv2d_NN")
     conv2d_nn = Conv2d_NN(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='spatial', num_samples=32, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', coordinate_encoding=True)
     output = conv2d_nn(ex)

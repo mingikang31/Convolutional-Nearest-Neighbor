@@ -10,6 +10,8 @@ from train_eval import Train_Eval
 
 # Models 
 from models.allconvnet import AllConvNet 
+from models.vgg import VGG 
+from models.resnet import resnet18, resnet34
 
 # Utilities 
 from utils import write_to_file, set_seed
@@ -19,6 +21,7 @@ def args_parser():
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", add_help=False) 
     
     # Model Arguments
+    parser.add_argument("--model", type=str, default="AllConvNet", choices=["AllConvNet", "VGG", "ResNet"])
     parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], help="Type of Convolution or Attention layer to use")
     parser.add_argument("--num_layers", type=int, default=5, help="Number of layers.")   
     parser.add_argument("--channels", nargs='+', type=int, default=[32, 64, 128, 256, 512], help="Channel sizes for each layer.")
@@ -120,9 +123,15 @@ def main(args):
         raise ValueError("Dataset not supported")
     
     # Model 
-    model = AllConvNet(args)
+    if args.model == "AllConvNet":
+        model = AllConvNet(args)
+    elif args.model == "VGG": 
+        model = VGG(args, features_config="A")
+    elif args.model == "ResNet":
+        model = resent18(args)
+
     print(f"Model: {model.name}")
-    
+
     # Parameters
     total_params, trainable_params = model.parameter_count()
     print(f"Total Parameters: {total_params}")
