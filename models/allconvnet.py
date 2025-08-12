@@ -3,7 +3,7 @@ import torch.nn as nn
 from torchsummary import summary
 
 
-from layers2d import (
+from models.layers2d import (
     Conv2d_New,
     Conv2d_NN, 
     Conv2d_NN_Attn, 

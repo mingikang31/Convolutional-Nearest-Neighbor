@@ -24,7 +24,7 @@ def args_parser():
     parser.add_argument("--model", type=str, default="AllConvNet", choices=["AllConvNet", "VGG", "ResNet"])
     parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], help="Type of Convolution or Attention layer to use")
     parser.add_argument("--num_layers", type=int, default=5, help="Number of layers.")   
-    parser.add_argument("--channels", nargs='+', type=int, default=[32, 64, 128, 256, 512], help="Channel sizes for each layer.")
+    parser.add_argument("--channels", nargs='+', type=int, default=[8, 16, 32, 64, 128], help="Channel sizes for each layer.")
     
     # Additional Layer Arguments
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN")
