@@ -11,11 +11,12 @@
 
 cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 
+source activate mingi
+
 ### CIFAR10 Experiments
 
 # AllConvNet - Conv2d 
-python main.py \
-    --epochs 100 \ 
+python main.py 
 
 # AllConvNet - ConvNN All Samples 
 
