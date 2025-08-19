@@ -5,7 +5,7 @@ __pycache__/*
 Layers/__pycache__
 Testing/data/*
 
-
+__pycache__
 
 .DS_Store
 

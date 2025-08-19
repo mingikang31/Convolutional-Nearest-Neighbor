@@ -103,7 +103,110 @@ class Conv2d_New(nn.Module):
 
         x_with_coords = torch.cat((x, expanded_grid), dim=1)
         return x_with_coords
+    
+class Conv2d_New_1d(nn.Module): 
+    """Convolution 2D Nearest Neighbor Layer"""
+    def __init__(self, 
+                in_channels, 
+                out_channels, 
+                K,
+                stride, 
+                shuffle_pattern, 
+                shuffle_scale, 
+                coordinate_encoding
+                ): 
+        """
+        Parameters: 
+            in_channels (int): Number of input channels.
+            out_channels (int): Number of output channels.
+            K (int): Number of Nearest Neighbors for consideration.
+            stride (int): Stride size.
+            sampling_type (str): Sampling type: "all", "random", "spatial".
+            num_samples (int): Number of samples to consider. -1 for all samples.
+            shuffle_pattern (str): Shuffle pattern: "B", "A", "BA".
+            shuffle_scale (int): Shuffle scale factor.
+            magnitude_type (str): Distance or Similarity.
+        """
+        super(Conv2d_New_1d, self).__init__()
+        
+        # Assertions 
+        assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
+        
+        # Initialize parameters
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.K = K
+        self.stride = stride
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
 
+        # Positional Encoding (optional)
+        self.coordinate_encoding = coordinate_encoding
+        self.coordinate_cache = {} 
+        self.in_channels = in_channels + 2 if self.coordinate_encoding else in_channels
+        self.out_channels = out_channels + 2 if self.coordinate_encoding else out_channels
+
+        # Shuffle2D/Unshuffle2D Layers
+        self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
+        self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
+        
+        # Adjust Channels for PixelShuffle
+        self.in_channels_1d = self.in_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["B", "BA"] else self.in_channels
+        self.out_channels_1d = self.out_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["A", "BA"] else self.out_channels
+
+        # Conv1d Layer
+        self.conv1d_layer = nn.Conv1d(in_channels=self.in_channels_1d, 
+                                      out_channels=self.out_channels_1d, 
+                                      kernel_size=self.K, 
+                                      stride=self.stride, 
+                                      padding='same')
+
+        # Flatten Layer
+        self.flatten = nn.Flatten(start_dim=2)
+
+        # Pointwise Convolution Layer
+        self.pointwise_conv = nn.Conv2d(in_channels=self.out_channels,
+                                         out_channels=self.out_channels - 2,
+                                         kernel_size=1,
+                                         stride=1,
+                                         padding=0)
+        
+        
+
+    def forward(self, x): 
+        # Coordinate Channels (optional) + Unshuffle + Flatten 
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
+        x_2d = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
+        x = self.flatten(x_2d)
+
+        # Post-Processing 
+        x_conv = self.conv1d_layer(x) 
+
+        # Unflatten + Shuffle
+        unflatten = nn.Unflatten(dim=2, unflattened_size=x_2d.shape[2:])
+        x = unflatten(x_conv)  # [batch_size, out_channels
+        x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
+        x = self.pointwise_conv(x) if self.coordinate_encoding else x
+        return x
+
+    def _add_coordinate_encoding(self, x):
+        b, _, h, w = x.shape
+        cache_key = f"{b}_{h}_{w}_{x.device}"
+
+        if cache_key in self.coordinate_cache:
+            expanded_grid = self.coordinate_cache[cache_key]
+        else:
+            y_coords_vec = torch.linspace(start=-1, end=1, steps=h, device=x.device)
+            x_coords_vec = torch.linspace(start=-1, end=1, steps=w, device=x.device)
+
+            y_grid, x_grid = torch.meshgrid(y_coords_vec, x_coords_vec, indexing='ij')
+            grid = torch.stack((x_grid, y_grid), dim=0).unsqueeze(0)
+            expanded_grid = grid.expand(b, -1, -1, -1)
+            self.coordinate_cache[cache_key] = expanded_grid
+
+        x_with_coords = torch.cat((x, expanded_grid), dim=1)
+        return x_with_coords
+    
 """(1) Conv2d_NN (All, Random, Spatial Sampling)"""
 class Conv2d_NN(nn.Module): 
     """Convolution 2D Nearest Neighbor Layer"""
@@ -272,32 +375,69 @@ class Conv2d_NN(nn.Module):
         similarity_matrix = torch.bmm(norm_matrix.transpose(2, 1), norm_sample)
         return similarity_matrix
 
+    # def _prime(self, matrix, magnitude_matrix, K, maximum):
+    #     b, c, t = matrix.shape
+    #     _, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
+    #     topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
+      
+    #     matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
+    #     prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
+    #     prime = prime.view(b, c, -1)
+    #     return prime
+    
     def _prime(self, matrix, magnitude_matrix, K, maximum):
         b, c, t = matrix.shape
-        _, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
+        topk_values, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
-      
+        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K)    
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
+        prime = topk_values_exp * prime
         prime = prime.view(b, c, -1)
         return prime
     
+    # def _prime_N_old(self, matrix, magnitude_matrix, K, rand_idx, maximum):
+    #     b, c, t = matrix.shape
+    #     _, topk_indices = torch.topk(magnitude_matrix, k=K - 1, dim=2, largest=maximum)
+    #     tk = topk_indices.shape[-1]
+    #     assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
+
+    #     mapped_tensor = rand_idx[topk_indices]
+    #     token_indices = torch.arange(t, device=matrix.device).view(1, t, 1).expand(b, t, 1)
+    #     final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
+    #     indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
+
+    #     matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
+    #     prime = torch.gather(matrix_expanded, dim=2, index=indices_expanded)  
+    #     prime = prime.view(b, c, -1)
+    #     return prime
+    
     def _prime_N(self, matrix, magnitude_matrix, K, rand_idx, maximum):
         b, c, t = matrix.shape
-        _, topk_indices = torch.topk(magnitude_matrix, k=K - 1, dim=2, largest=maximum)
+        
+        # Get both topk_values AND topk_indices (was missing topk_values before)
+        topk_values, topk_indices = torch.topk(magnitude_matrix, k=K - 1, dim=2, largest=maximum)
         tk = topk_indices.shape[-1]
         assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
 
+        # Map sample indices back to original matrix positions
         mapped_tensor = rand_idx[topk_indices]
         token_indices = torch.arange(t, device=matrix.device).view(1, t, 1).expand(b, t, 1)
         final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
         indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
 
+        # Create similarity weights: [1.0 for self, topk_values for neighbors]
+        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K-1)  # Expand for K-1 neighbors
+        ones = torch.ones((b, c, t, 1), device=matrix.device)            # Weight=1.0 for self
+        topk_values_exp = torch.cat((ones, topk_values_exp), dim=-1)     # Combine: [self=1.0, neighbors=similarities]
+
+        # Gather matrix values and apply similarity weighting
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(matrix_expanded, dim=2, index=indices_expanded)  
+        prime = topk_values_exp * prime  # 🔥 KEY ADDITION: Apply similarity weighting
         prime = prime.view(b, c, -1)
         return prime
-
+    
     def _add_coordinate_encoding(self, x):
         b, _, h, w = x.shape
         cache_key = f"{b}_{h}_{w}_{x.device}"
@@ -401,11 +541,16 @@ class Conv2d_NN_Attn(nn.Module):
         self.flatten = nn.Flatten(start_dim=2)
 
         # Linear Projections for Q, K, V, O
-        self.num_samples_projection = self.num_samples**2 if self.sampling_type == "spatial" else self.num_samples
-        self.w_q = nn.Linear(self.num_tokens, self.num_tokens, bias=False) if self.sampling_type == "all" else nn.Linear(self.num_samples_projection, self.num_samples_projection, bias=False)
-        self.w_k = nn.Linear(self.num_tokens, self.num_tokens, bias=False) 
-        self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False) 
-        self.w_o = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
+        # self.num_samples_projection = self.num_samples**2 if self.sampling_type == "spatial" else self.num_samples
+        # self.w_q = nn.Linear(self.num_tokens, self.num_tokens, bias=False) if self.sampling_type == "all" else nn.Linear(self.num_samples_projection, self.num_samples_projection, bias=False)
+        # self.w_k = nn.Linear(self.num_tokens, self.num_tokens, bias=False) 
+        # self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False) 
+        # self.w_o = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
+        # Correct approach - project channels:
+        self.w_q = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, kernel_size=1, bias=False)
+        self.w_k = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, kernel_size=1, bias=False)
+        self.w_v = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, kernel_size=1, bias=False)
+        self.w_o = nn.Conv1d(self.out_channels_1d, self.out_channels_1d, kernel_size=1, bias=False)
         
         # Pointwise Convolution Layer
         self.pointwise_conv = nn.Conv2d(in_channels=self.out_channels,
@@ -421,12 +566,12 @@ class Conv2d_NN_Attn(nn.Module):
         x = self.flatten(x_2d)
 
         # K, V Projections 
-        k = self.w_k(x)
-        v = self.w_v(x)
+        k = self.dropout(self.w_k(x))
+        v = self.dropout(self.w_v(x))
 
         if self.sampling_type == "all":    
             # Q Projection
-            q = self.w_q(x)
+            q = self.dropout(self.w_q(x))
             
             # ConvNN Algorithm 
             matrix_magnitude = self._calculate_distance_matrix(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix(k, q)
@@ -438,7 +583,7 @@ class Conv2d_NN_Attn(nn.Module):
             x_sample = x[:, :, rand_idx]
 
             # Q Projection
-            q = self.w_q(x_sample)
+            q = self.dropout(self.w_q(x_sample))
 
             # ConvNN Algorithm 
             matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
@@ -457,7 +602,7 @@ class Conv2d_NN_Attn(nn.Module):
             x_sample = x[:, :, flat_indices]
 
             # Q Projection
-            q = self.w_q(x_sample)
+            q = self.dropout(self.w_q(x_sample))
 
             # ConvNN Algorithm
             matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
@@ -470,7 +615,7 @@ class Conv2d_NN_Attn(nn.Module):
         # Post-Processing 
         x_conv = self.conv1d_layer(prime) 
         x_drop = self.dropout(x_conv)  # Apply dropout
-        x_out = self.w_o(x_drop)  
+        x_out = self.dropout(self.w_o(x_drop))
 
         # Unflatten + Shuffle
         unflatten = nn.Unflatten(dim=2, unflattened_size=x_2d.shape[2:])
@@ -511,32 +656,69 @@ class Conv2d_NN_Attn(nn.Module):
         dist_matrix = torch.sqrt(dist_matrix) if sqrt else dist_matrix  # take square root if needed
         return dist_matrix
 
-    def _prime(self, v, qk, K, maximum):
-        b, c, t = v.shape 
-        _, topk_indices = torch.topk(qk, k=K, dim=-1, largest = maximum)
-        topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)
+    # def _prime_old(self, v, qk, K, maximum):
+    #     b, c, t = v.shape 
+    #     _, topk_indices = torch.topk(qk, k=K, dim=-1, largest = maximum)
+    #     topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)
         
-        v_expanded = v.unsqueeze(-1).expand(b, c, t, K)
-        prime = torch.gather(v_expanded, dim=2, index=topk_indices_exp)
-        prime = prime.reshape(b, c, -1)
+    #     v_expanded = v.unsqueeze(-1).expand(b, c, t, K)
+    #     prime = torch.gather(v_expanded, dim=2, index=topk_indices_exp)
+    #     prime = prime.reshape(b, c, -1)
+    #     return prime
+    
+    def _prime(self, matrix, magnitude_matrix, K, maximum):
+        b, c, t = matrix.shape
+        topk_values, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
+        topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
+        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K)    
+        matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
+        prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
+        prime = topk_values_exp * prime
+        prime = prime.view(b, c, -1)
         return prime
             
-    def _prime_N(self, v, qk, K, rand_idx, maximum):
-        b, c, t = v.shape
-        _, topk_indices = torch.topk(qk, k=K - 1, dim=2, largest=maximum)
+    # def _prime_N_old(self, v, qk, K, rand_idx, maximum):
+    #     b, c, t = v.shape
+    #     _, topk_indices = torch.topk(qk, k=K - 1, dim=2, largest=maximum)
+    #     tk = topk_indices.shape[-1]
+    #     assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
+    #     mapped_tensor = rand_idx[topk_indices]
+
+    #     token_indices = torch.arange(t, device=v.device).view(1, t, 1).expand(b, t, 1)
+    #     final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
+    #     indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
+
+    #     v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
+    #     prime = torch.gather(v_expanded, dim=2, index=indices_expanded) 
+    #     prime = prime.reshape(b, c, -1)
+    #     return prime
+        
+    def _prime_N(self, matrix, magnitude_matrix, K, rand_idx, maximum):
+        b, c, t = matrix.shape
+        
+        # Get both topk_values AND topk_indices (was missing topk_values before)
+        topk_values, topk_indices = torch.topk(magnitude_matrix, k=K - 1, dim=2, largest=maximum)
         tk = topk_indices.shape[-1]
         assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
-        mapped_tensor = rand_idx[topk_indices]
 
-        token_indices = torch.arange(t, device=v.device).view(1, t, 1).expand(b, t, 1)
+        # Map sample indices back to original matrix positions
+        mapped_tensor = rand_idx[topk_indices]
+        token_indices = torch.arange(t, device=matrix.device).view(1, t, 1).expand(b, t, 1)
         final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
         indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
 
-        v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
-        prime = torch.gather(v_expanded, dim=2, index=indices_expanded) 
-        prime = prime.reshape(b, c, -1)
-        return prime
+        # Create similarity weights: [1.0 for self, topk_values for neighbors]
+        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K-1)  # Expand for K-1 neighbors
+        ones = torch.ones((b, c, t, 1), device=matrix.device)            # Weight=1.0 for self
+        topk_values_exp = torch.cat((ones, topk_values_exp), dim=-1)     # Combine: [self=1.0, neighbors=similarities]
 
+        # Gather matrix values and apply similarity weighting
+        matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
+        prime = torch.gather(matrix_expanded, dim=2, index=indices_expanded)  
+        prime = topk_values_exp * prime  # 🔥 KEY ADDITION: Apply similarity weighting
+        prime = prime.view(b, c, -1)
+        return prime
+    
     def _add_coordinate_encoding(self, x):
         b, _, h, w = x.shape
         cache_key = f"{b}_{h}_{w}_{x.device}"
@@ -1012,8 +1194,6 @@ class Attention_Conv2d_Branching(nn.Module):
                 nn.ReLU()
             )
             
-        
-
         if self.channel_ratio[1] != 0:
             self.branch2 = nn.Sequential(
                 nn.Conv2d(self.in_channels, 
@@ -1030,103 +1210,3 @@ class Attention_Conv2d_Branching(nn.Module):
         x2 = self.branch2(x) if self.channel_ratio[1] != 0 else None
         concat = torch.cat([x1, x2], dim=1) if self.channel_ratio[0] != 0 and self.channel_ratio[1] != 0 else (x1 if self.channel_ratio[0] != 0 else x2)
         return concat
-
-if __name__ == "__main__":
-    ex = torch.randn(2, 3, 32, 32)  # Example input tensor
-
-    print("Conv2d_New")
-    conv2d_new = Conv2d_New(in_channels=3, out_channels=16, kernel_size=3, stride=1, shuffle_pattern='BA', shuffle_scale=2, coordinate_encoding=True)
-    output = conv2d_new(ex)
-    print(output.shape)  # Should print the shape of the output tensor after Conv2d_New
-
-    print("Conv2d_NN")
-    conv2d_nn = Conv2d_NN(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='spatial', num_samples=32, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', coordinate_encoding=True)
-    output = conv2d_nn(ex)
-    print(output.shape)  # Should print the shape of the output tensor after Conv2d
-
-    print("Conv2d_NN")
-    conv2d_nn = Conv2d_NN(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='random', num_samples=512, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', coordinate_encoding=True)
-    output = conv2d_nn(ex)
-    print(output.shape)  # Should print the shape of the output tensor after Conv2d
-
-    # print("Conv2d_NN_Attn")
-    # conv2d_nn_attn = Conv2d_NN_Attn(in_channels=3, out_channels=16, K=3, stride=3, sampling_type='spatial', num_samples=8, sample_padding=0, shuffle_pattern='BA', shuffle_scale=2, magnitude_type='similarity', img_size=(32, 32), coordinate_encoding=True)
-    # output = conv2d_nn_attn(ex)
-    # print(output.shape)  # Should print the shape of the output tensor after Conv2d_NN_Attn
-
-    # print("Attention2d")
-    # attention2d = Attention2d(in_channels=3, out_channels=16, num_heads=4, shuffle_pattern='BA', shuffle_scale=2, coordinate_encoding=True)
-    # output = attention2d(ex)
-    # print(output.shape)  # Should print the shape of the output tensor after Attention2d
-
-    # print("Conv2d_ConvNN_Branching")
-    # conv2d_convnn_branching = Conv2d_ConvNN_Branching(
-    #     in_channels=3, 
-    #     out_channels=16,        
-    #     channel_ratio=(8, 8),
-    #     kernel_size=3,
-    #     K=9,
-    #     stride=9,
-    #     sampling_type='spatial',
-    #     num_samples=8,
-    #     sample_padding=0,
-    #     shuffle_pattern='BA',
-    #     shuffle_scale=2,
-    #     magnitude_type='similarity', 
-    #     coordinate_encoding=True)
-    
-    # output = conv2d_convnn_branching(ex)
-    # print(output.shape)  # Should print the shape of the output tensor after Conv2d
-    # print("Conv2d_ConvNN_Attn_Branching")
-    # conv2d_convnn_attn_branching = Conv2d_ConvNN_Attn_Branching(
-    #     in_channels=3, 
-    #     out_channels=16,        
-    #     channel_ratio=(8, 8),   
-    #     kernel_size=3,
-    #     K=9,
-    #     stride=9,
-    #     sampling_type='spatial',
-    #     num_samples=8,
-    #     sample_padding=0,
-    #     shuffle_pattern='BA',
-    #     shuffle_scale=2,
-    #     magnitude_type='similarity',
-    #     img_size=(32, 32), 
-    #     coordinate_encoding=True
-    # )
-    # output = conv2d_convnn_attn_branching(ex)
-    # print(output.shape)  # Should print the shape of the output tensor after Conv2d
-    # print("Attention_ConvNN_Branching")
-    # attention_convnn_branching = Attention_ConvNN_Branching(
-    #     in_channels=3,
-    #     out_channels=16,
-    #     channel_ratio=(8, 8),
-    #     num_heads=4,
-    #     K=9,
-    #     stride=9,
-    #     sampling_type='spatial',
-    #     num_samples=8,
-    #     sample_padding=0,
-    #     shuffle_pattern='BA',
-    #     shuffle_scale=2,
-    #     magnitude_type='similarity', 
-    #     coordinate_encoding=True
-    # )
-    # output = attention_convnn_branching(ex)
-    # print(output.shape)  # Should print the shape of the output tensor after Attention_Conv
-
-    # print("Attention_Conv2d_Branching")
-    # attention_conv2d_branching = Attention_Conv2d_Branching(
-    #     in_channels=3,
-    #     out_channels=16,
-    #     channel_ratio=(8, 8),
-    #     num_heads=4,
-    #     kernel_size=3,
-    #     shuffle_pattern='BA',
-    #     shuffle_scale=2, 
-    #     coordinate_encoding=True
-
-    # )
-    # output = attention_conv2d_branching(ex)
-    # print(output.shape)  # Should print the shape of the output tensor after Attention_Conv2d_Branching
-    

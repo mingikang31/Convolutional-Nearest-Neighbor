@@ -13,6 +13,8 @@ import torch
 import torch.nn as nn 
 
 from models.layers2d import (
+    Conv2d_New, 
+    Conv2d_New_1d,
     Conv2d_NN, 
     Conv2d_NN_Attn
 )
@@ -40,7 +42,7 @@ class VGG(nn.Module):
         in_channels = self.args.img_size[0] 
         num_classes = self.args.num_classes
 
-        self.name == f"VGG {features_config} {args.layer}"
+        self.name = f"VGG {features_config} {args.layer}"
 
         cfg = {
             "A": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
@@ -61,8 +63,28 @@ class VGG(nn.Module):
                     "shuffle_pattern": self.args.shuffle_pattern,
                     "shuffle_scale": self.args.shuffle_scale,
                 }
+                
                 if self.args.layer == "Conv2d":
                     layer = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
+                    
+                elif args.layer == "Conv2d_New": 
+                    layer_params.update({
+                        "kernel_size": args.kernel_size,
+                        "stride": 1, 
+                        "shuffle_pattern": args.shuffle_pattern, 
+                        "shuffle_scale": args.shuffle_scale,
+                        "coordinate_encoding": args.coordinate_encoding
+                    })
+                    layer = Conv2d_New(**layer_params)
+
+                elif args.layer == "Conv2d_New_1d":
+                    layer_params.update({
+                        "K": args.K, 
+                        "stride": 1, 
+                        "coordinate_encoding": args.coordinate_encoding
+                    })
+                    layer = Conv2d_New_1d(**layer_params)
+
                 elif self.args.layer == "ConvNN":
                     layer_params.update({
                         "K": self.args.K,
@@ -113,7 +135,12 @@ class VGG(nn.Module):
         x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
-
+    
+    def parameter_count(self): 
+        total_params = sum(p.numel() for p in self.parameters())
+        trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
+        return total_params, trainable_params
+        
 if __name__ == "__main__":
     from types import SimpleNamespace
 

@@ -11,17 +11,10 @@ from torch import Tensor
 
 from models.layers2d import (
     Conv2d_New,
+    Conv2d_New_1d,
     Conv2d_NN, 
     Conv2d_NN_Attn
 )
-
-
-__all__ = [
-    "ResNet",
-    "BasicBlock",
-    "resnet18",
-    "resnet34",
-]
 
 
 class BasicBlock(nn.Module):
@@ -39,59 +32,72 @@ class BasicBlock(nn.Module):
         
         
         if args.layer == "Conv2d":
-            # Both self.conv1 and self.downsample layers downsample the input when stride != 1
             self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
-            self.bn1 = nn.InstanceNorm2d(out_channels)
-            self.relu = nn.ReLU(inplace=True)
             self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=1, padding=1, bias=False)
-            self.bn2 = nn.InstanceNorm2d(out_channels)
-            self.downsample = downsample
-            self.stride = stride
+
+        elif args.layer == "Conv2d_New": 
+            layer_params = {
+                "kernel_size": args.kernel_size,
+                "stride": 1, 
+                "shuffle_pattern": args.shuffle_pattern, 
+                "shuffle_scale": args.shuffle_scale,
+                "coordinate_encoding": args.coordinate_encoding
+            }
+
+            self.conv1 = Conv2d_New(in_channels, out_channels, **layer_params)
+            self.conv2 = Conv2d_New(out_channels, out_channels, **layer_params)
             
+        elif args.layer == "Conv2d_New_1d":
+            layer_params = {
+                "K": args.K, 
+                "stride": 1, 
+                "shuffle_pattern": args.shuffle_pattern, 
+                "shuffle_scale": args.shuffle_scale,
+                "coordinate_encoding": args.coordinate_encoding
+            }
+
+            self.conv1 = Conv2d_New_1d(in_channels, out_channels, **layer_params)
+            self.conv2 = Conv2d_New_1d(out_channels, out_channels, **layer_params)
+
         elif args.layer == "ConvNN":
             layer_params = {
-                "shuffle_pattern": args.shuffle_pattern,
-                "shuffle_scale": args.shuffle_scale,
-                "K": args.K,
-                "stride": args.K,  # Use the actual stride parameter, not K
-                "sampling_type": args.sampling_type,
+                "K": args.K, 
+                "stride": args.K, 
+                "sampling_type": args.sampling_type, 
                 "num_samples": args.num_samples,
                 "sample_padding": args.sample_padding,
+                "shuffle_pattern": args.shuffle_pattern,
+                "shuffle_scale": args.shuffle_scale,
                 "magnitude_type": args.magnitude_type,
                 "coordinate_encoding": args.coordinate_encoding
             }
-            self.conv1 = Conv2d_NN(in_channels, out_channels, **layer_params)
-            self.bn1 = nn.InstanceNorm2d(out_channels)
-            self.relu = nn.ReLU(inplace=True)
-            
+
+            self.conv1 = Conv2d_NN(in_channels, out_channels, **layer_params)            
             self.conv2 = Conv2d_NN(out_channels, out_channels, **layer_params)
-            self.bn2 = nn.InstanceNorm2d(out_channels)
-            self.downsample = downsample
-            self.stride = stride
             
         elif args.layer == "ConvNN_Attn":
             layer_params = {
-                "shuffle_pattern": args.shuffle_pattern,
-                "shuffle_scale": args.shuffle_scale,
-                "K": args.K,
-                "stride": args.K,  # Use the actual stride parameter, not K
-                "sampling_type": args.sampling_type,
-                "num_samples": args.num_samples,
+                "K": args.K, 
+                "stride": args.K, 
+                "sampling_type": args.sampling_type, 
+                "num_samples": args.num_samples, 
                 "sample_padding": args.sample_padding,
-                "magnitude_type": args.magnitude_type,
-                "img_size": args.img_size[1:],  # Pass H, W
-                "attention_dropout": args.attention_dropout,
+                "shuffle_pattern": args.shuffle_pattern,
+                "shuffle_scale": args.shuffle_scale, 
+                "magnitude_type": args.magnitude_type, 
+                "img_size": args.img_size[1:], 
+                "attention_dropout": args.attention_dropout, 
                 "coordinate_encoding": args.coordinate_encoding
             }
-            self.conv1 = Conv2d_NN_Attn(in_channels, out_channels, **layer_params)
-            self.bn1 = nn.InstanceNorm2d(out_channels)
-            self.relu = nn.ReLU(inplace=True)
-            
+
+            self.conv1 = Conv2d_NN_Attn(in_channels, out_channels, **layer_params)            
             self.conv2 = Conv2d_NN_Attn(out_channels, out_channels, **layer_params)
-            self.bn2 = nn.InstanceNorm2d(out_channels)
-            self.downsample = downsample
-            self.stride = stride
-            
+
+        self.bn1 = nn.InstanceNorm2d(out_channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.bn2 = nn.InstanceNorm2d(out_channels)
+        self.downsample = downsample 
+        self.stride = stride
 
     def forward(self, x: Tensor) -> Tensor:
         identity = x
@@ -125,7 +131,7 @@ class ResNet(nn.Module):
         self.args = args 
         self.num_classes = args.num_classes
 
-        self.name == f"ResNet {args.layer}"
+        self.name = f"ResNet {args.layer}"
 
         
         
@@ -185,7 +191,11 @@ class ResNet(nn.Module):
         x = self.fc(x)
 
         return x
-
+    
+    def parameter_count(self): 
+        total_params = sum(p.numel() for p in self.parameters())
+        trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
+        return total_params, trainable_params
 
 # Factory functions for creating different ResNet variants
 def resnet18(args) -> ResNet:
@@ -196,57 +206,3 @@ def resnet18(args) -> ResNet:
 def resnet34(args) -> ResNet:
     """ResNet-34 model"""
     return ResNet(args, BasicBlock, [3, 4, 6, 3])
-
-
-if __name__ == "__main__": 
-    # Example for Conv2d
-    args_conv2d = SimpleNamespace(
-        layer="Conv2d",
-        num_classes=100,
-    )
-    
-    # Example for ConvNN
-    args_convnn = SimpleNamespace(
-        layer="ConvNN",
-        K=3,
-        sampling_type="all",
-        num_samples=-1,
-        sample_padding=0,
-        shuffle_pattern="BA",
-        shuffle_scale=2,
-        magnitude_type="similarity",
-        coordinate_encoding=False, 
-        num_classes=100,
-    )
-    
-    # Example for ConvNN_Attn
-    args_convnn_attn = SimpleNamespace(
-        layer="ConvNN_Attn",
-        K=3,
-        sampling_type="all",
-        num_samples=-1,
-        sample_padding=0,
-        shuffle_pattern="BA",
-        shuffle_scale=2,
-        magnitude_type="similarity",
-        coordinate_encoding=False,
-        img_size=(3, 32, 32), 
-        attention_dropout=0.1,
-        num_classes=100,
-    )
-    
-    # Test different configurations
-    resnet_conv2d = resnet34(args_conv2d)
-    resnet_convnn = resnet18(args_convnn)
-    resnet_convnn_attn = resnet18(args_convnn_attn)
-    
-    print("Conv2d ResNet-18 parameters:", sum(p.numel() for p in resnet_conv2d.parameters() if p.requires_grad))
-    print("ConvNN ResNet-18 parameters:", sum(p.numel() for p in resnet_convnn.parameters() if p.requires_grad))
-    print("ConvNN_Attn ResNet-18 parameters:", sum(p.numel() for p in resnet_convnn_attn.parameters() if p.requires_grad))
-
-
-"""
-Conv2d ResNet-18 parameters: 21,318,948
-ConvNN ResNet-18 parameters: 60,226,052
-ConvNN_Attn ResNet-18 parameters: 64,420,356
-"""
