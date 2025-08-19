@@ -1,8 +1,9 @@
 #! /bin/bash 
 #SBATCH --nodes=1 
 #SBATCH --mem=64G
-#SBATCH -p gpu --gres=gpu:rtx3080:1
-#SBATCH --job-name=allconvnet-exps
+#SBATCH -p gpu --gres=gpu:a100:1
+#SBATCH --cpus-per-task=4
+#SBATCH --job-name=default-exps
 #SBATCH --time=500:00:00
 #SBATCH --output=slurm_out/%j.out
 #SBATCH --error=slurm_out/%j.err
@@ -15,22 +16,28 @@ source activate mingi
 
 ### CIFAR10 Experiments
 
-# AllConvNet - Conv2d 
-python main.py 
 
-# AllConvNet - ConvNN All Samples 
+cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 
-# AllConvNet - ConvNN Random Samples 
+source activate mingi
 
-# AllConvNet - ConvNN Spatial Samples 
+### All Conv Net Experiments
+python allconvnet_main.py --layer Conv2d --num_layers 3 --channels 8 16 32 --kernel_size 3 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/Conv2d 
 
+python allconvnet_main.py --layer Conv2d_New --num_layers 3 --channels 8 16 32 --kernel_size 3 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/Conv2d_New
 
-# AllConvNet - ConvNN_Attn All Samples
+python allconvnet_main.py --layer Conv2d_New_1d --num_layers 3 --channels 8 16 32 --K 9 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/Conv2d_New_1d 
 
-# AllConvNet - ConvNN_Attn Random Samples 
+python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 8 16 32 --K 9 --sampling_type all --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_All
 
-# AllConvNet - ConvNN_Attn Spatial Samples
+python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 8 16 32 --K 9 --sampling_type random --num_samples 64 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_Random
 
-### CIFAR100 Experiments
+python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 8 16 32 --K 9 --sampling_type spatial --num_samples 8 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_Spatial
+
+python allconvnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type all --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_All_Attn
+
+python allconvnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type random --num_samples 64 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_Random_Attn
+
+python allconvnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type spatial --num_samples 8 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_Spatial_Attn
 
 
