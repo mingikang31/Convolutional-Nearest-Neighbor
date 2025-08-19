@@ -26,11 +26,11 @@ python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 8 16 32 --K 9
 
 python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 8 16 32 --K 9 --sampling_type spatial --num_samples 8 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_Spatial
 
-python allconvnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type all --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_All
+python allconvnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type all --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_All_Attn
 
-python allconvnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type random --num_samples 64 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_Random
+python allconvnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type random --num_samples 64 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_Random_Attn
 
-python allconvnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type spatial --num_samples 8 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_Spatial
+python allconvnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type spatial --num_samples 8 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ACM-RTX3080/ConvNN_Spatial_Attn
 
 ### VGG Experiments 
 python vgg_main.py --layer Conv2d --num_layers 3 --channels 8 16 32 --kernel_size 3 --num_epoch 5 --output_dir ./Output/TEST/VGG-RTX3080/Conv2d
@@ -45,11 +45,11 @@ python vgg_main.py --layer ConvNN --num_layers 3 --channels 8 16 32 --K 9 --samp
 
 python vgg_main.py --layer ConvNN --num_layers 3 --channels 8 16 32 --K 9 --sampling_type spatial --num_samples 8 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/VGG-RTX3080/ConvNN_Spatial
 
-python vgg_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type all --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/VGG-RTX3080/ConvNN_All
+python vgg_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type all --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/VGG-RTX3080/ConvNN_All_Attn
 
-python vgg_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type random --num_samples 64 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/VGG-RTX3080/ConvNN_Random
+python vgg_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type random --num_samples 64 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/VGG-RTX3080/ConvNN_Random_Attn
 
-python vgg_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type spatial --num_samples 8 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/VGG-RTX3080/ConvNN_Spatial
+python vgg_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type spatial --num_samples 8 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/VGG-RTX3080/ConvNN_Spatial_Attn
 
 
 ### ResNet Experiments 
@@ -65,10 +65,10 @@ python resnet_main.py --layer ConvNN --num_layers 3 --channels 8 16 32 --K 9 --s
 
 python resnet_main.py --layer ConvNN --num_layers 3 --channels 8 16 32 --K 9 --sampling_type spatial --num_samples 8 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ResNet-RTX3080/ConvNN_Spatial
 
-python resnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type all --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ResNet-RTX3080/ConvNN_All
+python resnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type all --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ResNet-RTX3080/ConvNN_All_Attn
 
-python resnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type random --num_samples 64 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ResNet-RTX3080/ConvNN_Random
+python resnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type random --num_samples 64 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ResNet-RTX3080/ConvNN_Random_Attn
 
-python resnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type spatial --num_samples 8 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ResNet-RTX3080/ConvNN_Spatial
+python resnet_main.py --layer ConvNN_Attn --num_layers 3 --channels 8 16 32 --K 9 --sampling_type spatial --num_samples 8 --shuffle_pattern BA --shuffle_scale 2 --num_epoch 5 --output_dir ./Output/TEST/ResNet-RTX3080/ConvNN_Spatial_Attn
 
 echo "All Experiments Completed"
