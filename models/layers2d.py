@@ -257,6 +257,8 @@ class Conv2d_NN(nn.Module):
         self.shuffle_scale = shuffle_scale
         self.magnitude_type = magnitude_type
         self.maximum = True if self.magnitude_type == 'similarity' else False
+        self.INF_DISTANCE = 1e10
+        self.NEG_INF_DISTANCE = -1e10
 
         # Positional Encoding (optional)
         self.coordinate_encoding = coordinate_encoding
@@ -310,7 +312,7 @@ class Conv2d_NN(nn.Module):
             # ConvNN Algorithm 
             matrix_magnitude = self._calculate_distance_matrix_N(x, x_sample, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(x, x_sample)
             range_idx = torch.arange(len(rand_idx), device=x.device)
-            matrix_magnitude[:, rand_idx, range_idx] = float('inf') if self.magnitude_type == 'distance' else float('-inf')
+            matrix_magnitude[:, rand_idx, range_idx] = self.INF_DISTANCE if self.magnitude_type == 'distance' else self.NEG_INF_DISTANCE
             prime = self._prime_N(x, matrix_magnitude, self.K, rand_idx, self.maximum)
             
         elif self.sampling_type == "spatial":
@@ -326,7 +328,7 @@ class Conv2d_NN(nn.Module):
             # ConvNN Algorithm
             matrix_magnitude = self._calculate_distance_matrix_N(x, x_sample, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(x, x_sample)
             range_idx = torch.arange(len(flat_indices), device=x.device)
-            matrix_magnitude[:, flat_indices, range_idx] = float('inf') if self.magnitude_type == 'distance' else float('-inf')
+            matrix_magnitude[:, flat_indices, range_idx] = self.INF_DISTANCE if self.magnitude_type == 'distance' else self.NEG_INF_DISTANCE
             prime = self._prime_N(x, matrix_magnitude, self.K, flat_indices, self.maximum)
         else: 
             raise ValueError("Invalid sampling_type. Must be one of ['all', 'random', 'spatial'].")
@@ -346,7 +348,7 @@ class Conv2d_NN(nn.Module):
         dot_product = torch.bmm(matrix.transpose(2, 1), matrix)
         
         dist_matrix = norm_squared + norm_squared.transpose(2, 1) - 2 * dot_product
-        dist_matrix = torch.clamp(dist_matrix, min=0) # remove negative values
+        dist_matrix = torch.clamp(dist_matrix, min=-1.0, max=1.0) # remove negative values
         dist_matrix = torch.sqrt(dist_matrix) if sqrt else dist_matrix # take square root if needed
         
         return dist_matrix
@@ -357,7 +359,7 @@ class Conv2d_NN(nn.Module):
         dot_product = torch.bmm(matrix.transpose(2, 1), matrix_sample)
         
         dist_matrix = norm_squared + norm_squared_sample - 2 * dot_product
-        dist_matrix = torch.clamp(dist_matrix, min=0) # remove negative values
+        dist_matrix = torch.clamp(dist_matrix, min=-1.0, max=1.0) 
         dist_matrix = torch.sqrt(dist_matrix) if sqrt else dist_matrix
 
         return dist_matrix
@@ -366,6 +368,7 @@ class Conv2d_NN(nn.Module):
         # p=2 (L2 Norm - Euclidean Distance), dim=1 (across the channels)
         norm_matrix = F.normalize(matrix, p=2, dim=1) 
         similarity_matrix = torch.bmm(norm_matrix.transpose(2, 1), norm_matrix)
+        similarity_matrix = torch.clamp(similarity_matrix, min=-1.0, max=1.0) 
         return similarity_matrix
     
     def _calculate_similarity_matrix_N(self, matrix, matrix_sample):
@@ -373,6 +376,7 @@ class Conv2d_NN(nn.Module):
         norm_matrix = F.normalize(matrix, p=2, dim=1) 
         norm_sample = F.normalize(matrix_sample, p=2, dim=1)
         similarity_matrix = torch.bmm(norm_matrix.transpose(2, 1), norm_sample)
+        similarity_matrix = torch.clamp(similarity_matrix, min=-1.0, max=1.0) 
         return similarity_matrix
 
     # def _prime(self, matrix, magnitude_matrix, K, maximum):
@@ -509,6 +513,8 @@ class Conv2d_NN_Attn(nn.Module):
         self.shuffle_scale = shuffle_scale
         self.magnitude_type = magnitude_type
         self.maximum = True if self.magnitude_type == 'similarity' else False
+        self.INF_DISTANCE = 1e10 
+        self.NEG_INF_DISTANCE = -1e10
 
         self.img_size = img_size  # Image size for spatial sampling
         self.num_tokens = int((img_size[0] * img_size[1]) / (shuffle_scale**2)) if self.shuffle_pattern in ["B", "BA"] else (img_size[0] * img_size[1])
@@ -588,7 +594,7 @@ class Conv2d_NN_Attn(nn.Module):
             # ConvNN Algorithm 
             matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
             range_idx = torch.arange(len(rand_idx), device=x.device)
-            matrix_magnitude[:, rand_idx, range_idx] = float('inf') if self.magnitude_type == 'distance' else float('-inf')
+            matrix_magnitude[:, rand_idx, range_idx] = self.INF_DISTANCE if self.magnitude_type == 'distance' else self.NEG_INF_DISTANCE
             prime = self._prime_N(v, matrix_magnitude, self.K, rand_idx, self.maximum)
             
         elif self.sampling_type == "spatial":
@@ -607,7 +613,7 @@ class Conv2d_NN_Attn(nn.Module):
             # ConvNN Algorithm
             matrix_magnitude = self._calculate_distance_matrix_N(k, q, sqrt=True) if self.magnitude_type == 'distance' else self._calculate_similarity_matrix_N(k, q)
             range_idx = torch.arange(len(flat_indices), device=x.device)
-            matrix_magnitude[:, flat_indices, range_idx] = float('inf') if self.magnitude_type == 'distance' else float('-inf')
+            matrix_magnitude[:, flat_indices, range_idx] = self.INF_DISTANCE if self.magnitude_type == 'distance' else self.NEG_INF_DISTANCE
             prime = self._prime_N(v, matrix_magnitude, self.K, flat_indices, self.maximum)
         else: 
             raise ValueError("Invalid sampling_type. Must be one of ['all', 'random', 'spatial'].")
@@ -628,14 +634,14 @@ class Conv2d_NN_Attn(nn.Module):
         k_norm = F.normalize(K, p=2, dim=1)
         q_norm = F.normalize(Q, p=2, dim=1)
         similarity_matrix = torch.bmm(k_norm.transpose(2, 1), q_norm) 
-        similarity_matrix = torch.clamp(similarity_matrix, min=0)  
+        similarity_matrix = torch.clamp(similarity_matrix, min=-1.0, max=1.0)  
         return similarity_matrix
     
     def _calculate_similarity_matrix_N(self, K, Q):
         k_norm = F.normalize(K, p=2, dim=1)
         q_norm = F.normalize(Q, p=2, dim=1)
         similarity_matrix = torch.bmm(k_norm.transpose(2, 1), q_norm)  
-        similarity_matrix = torch.clamp(similarity_matrix, min=0)
+        similarity_matrix = torch.clamp(similarity_matrix, min=-1.0, max=1.0)
         return similarity_matrix
         
     def _calculate_distance_matrix(self, K, Q, sqrt=False):
@@ -643,7 +649,7 @@ class Conv2d_NN_Attn(nn.Module):
         norm_squared_Q = torch.sum(Q**2, dim=1, keepdim=True) 
         dot_product = torch.bmm(K.transpose(2, 1), Q)  
         dist_matrix = norm_squared_K + norm_squared_Q.transpose(2, 1) - 2 * dot_product
-        dist_matrix = torch.clamp(dist_matrix, min=0)  # remove negative values
+        dist_matrix = torch.clamp(dist_matrix, min=-1.0, max=1.0)  # remove negative values
         dist_matrix = torch.sqrt(dist_matrix) if sqrt else dist_matrix  # take square root if needed
         return dist_matrix
 
@@ -652,7 +658,7 @@ class Conv2d_NN_Attn(nn.Module):
         norm_squared_Q = torch.sum(Q**2, dim=1, keepdim=True).transpose(2, 1).permute(0, 2, 1)
         dot_product = torch.bmm(K.transpose(2, 1), Q)  
         dist_matrix = norm_squared_K + norm_squared_Q - 2 * dot_product
-        dist_matrix = torch.clamp(dist_matrix, min=0)  # remove negative values
+        dist_matrix = torch.clamp(dist_matrix, min=-1.0, max=1.0)  # remove negative values
         dist_matrix = torch.sqrt(dist_matrix) if sqrt else dist_matrix  # take square root if needed
         return dist_matrix
 

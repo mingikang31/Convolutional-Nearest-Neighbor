@@ -1,0 +1,100 @@
+[August 18, 2025]
+
+(1) VGG's loss for ConvNN is NAN and does not train.
+Potential Problems: 
+    - Exploding Gradient 
+    - Multiplying Prime with TopK Values may make the values very large
+    - Initializing weights for the layers (nn.init.xavier_uniform_(proj.weight, gain=0.1)) 
+    - Need smaller lr for bigger models, maybe 1e-5 or 1e-6?
+    - float('inf') => 1e10 | float('-inf') => 1e-10
+    - Similarity/Distance matrix are not clamped (fixed)
+
+```python 
+prime = topk_values_exp * prime  # This can explode if topk_values are large
+
+def _prime(self, matrix, magnitude_matrix, K, maximum):
+    # ... existing code ...
+    
+    # Normalize the weights to prevent explosion
+    if maximum:  # similarity
+        topk_values = torch.softmax(topk_values, dim=-1)  # Normalizes to sum=1
+    else:  # distance
+        # For distance, use negative for softmax
+        topk_values = torch.softmax(-topk_values, dim=-1)
+    
+    # Now topk_values are normalized weights that sum to 1
+    prime = topk_values_exp * prime
+
+```
+
+(2) Overfitting Potential for CovNN_Attn 
+    - May need dropout for linear projections 
+    - May need to add residual
+
+
+```python 
+
+class Conv2d_NN_Attn_Fixed(nn.Module):
+    def __init__(self, ...):
+        super().__init__()
+        
+        # ... existing init code ...
+        
+        # FIX 1: Use Conv1d for channel projections
+        self.w_q = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, 1, bias=False)
+        self.w_k = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, 1, bias=False)
+        self.w_v = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, 1, bias=False)
+        self.w_o = nn.Conv1d(self.out_channels_1d, self.out_channels_1d, 1, bias=False)
+        
+        # FIX 2: Overlapping convolution or upsampling
+        self.stride = 1  # Or K//2
+        
+        # FIX 3: Add normalization
+        self.norm1 = nn.InstanceNorm2d(in_channels)
+        self.norm2 = nn.InstanceNorm2d(out_channels)
+        
+        # FIX 4: Temperature for soft selection
+        self.temperature = nn.Parameter(torch.ones(1))
+        
+        # FIX 5: More dropout
+        self.dropout_qkv = nn.Dropout(attention_dropout * 0.5)
+        
+    def forward(self, x):
+        # Save for residual
+        residual = x
+        
+        # Normalize input
+        x = self.norm1(x)
+        
+        # Process with your ConvNN algorithm
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
+        x_2d = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
+        x = self.flatten(x_2d)
+        
+        # Apply projections with dropout
+        k = self.dropout_qkv(self.w_k(x))
+        v = self.dropout_qkv(self.w_v(x))
+        
+        # ... rest of ConvNN algorithm ...
+        
+        # Output projection
+        x_out = self.w_o(x_drop)
+        
+        # Unflatten and reshape
+        unflatten = nn.Unflatten(dim=2, unflattened_size=x_2d.shape[2:])
+        x = unflatten(x_out)
+        x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
+        
+        # Residual connection (may need resizing if dimensions changed)
+        if x.shape == residual.shape:
+            x = x + residual
+        
+        return self.norm2(x)
+```
+
+(3) ResNet's K selection for ConvNN collides with downsampling of dimension 
+Protential Problems: 
+    - Shape of input decreases each layer (32, 32) -> (16, 16) -> (8, 8) ...
+        - if K = 9, physically do not have enough pixels to get K most similar pixels if shape is (2, 2) for example. 
+
+

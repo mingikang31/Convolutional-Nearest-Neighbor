@@ -137,21 +137,21 @@ def main(args):
     args.total_params = total_params
     args.trainable_params = trainable_params
     
-    # # Set the seed for reproducibility
-    # set_seed(args.seed)
+    # Set the seed for reproducibility
+    set_seed(args.seed)
     
     
-    # # Training Modules 
-    # train_eval_results = Train_Eval(args, 
-    #                             model, 
-    #                             dataset.train_loader, 
-    #                             dataset.test_loader
-    #                             )
+    # Training Modules 
+    train_eval_results = Train_Eval(args, 
+                                model, 
+                                dataset.train_loader, 
+                                dataset.test_loader
+                                )
     
-    # # Storing Results in output directory 
-    # write_to_file(os.path.join(args.output_dir, "args.txt"), args)
-    # write_to_file(os.path.join(args.output_dir, "model.txt"), model)
-    # write_to_file(os.path.join(args.output_dir, "train_eval_results.txt"), train_eval_results)
+    # Storing Results in output directory 
+    write_to_file(os.path.join(args.output_dir, "args.txt"), args)
+    write_to_file(os.path.join(args.output_dir, "model.txt"), model)
+    write_to_file(os.path.join(args.output_dir, "train_eval_results.txt"), train_eval_results)
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", parents=[args_parser()])
