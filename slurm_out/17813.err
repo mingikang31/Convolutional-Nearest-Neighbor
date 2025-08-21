@@ -1,0 +1,261 @@
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/instancenorm.py:115: UserWarning: input's size at dim=1 does not match num_features. You can silence this warning by not passing in num_features, which is not used because affine=False
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/instancenorm.py:115: UserWarning: input's size at dim=1 does not match num_features. You can silence this warning by not passing in num_features, which is not used because affine=False
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/instancenorm.py:115: UserWarning: input's size at dim=1 does not match num_features. You can silence this warning by not passing in num_features, which is not used because affine=False
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/instancenorm.py:115: UserWarning: input's size at dim=1 does not match num_features. You can silence this warning by not passing in num_features, which is not used because affine=False
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/instancenorm.py:115: UserWarning: input's size at dim=1 does not match num_features. You can silence this warning by not passing in num_features, which is not used because affine=False
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/instancenorm.py:115: UserWarning: input's size at dim=1 does not match num_features. You can silence this warning by not passing in num_features, which is not used because affine=False
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/instancenorm.py:115: UserWarning: input's size at dim=1 does not match num_features. You can silence this warning by not passing in num_features, which is not used because affine=False
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/instancenorm.py:115: UserWarning: input's size at dim=1 does not match num_features. You can silence this warning by not passing in num_features, which is not used because affine=False
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/instancenorm.py:115: UserWarning: input's size at dim=1 does not match num_features. You can silence this warning by not passing in num_features, which is not used because affine=False
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/utils/data/dataloader.py:617: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+usage: resnet_main.py [-h]
+                      [--layer {Conv2d,Conv2d_New,Conv2d_New_1d,ConvNN,ConvNN_Attn}]
+                      [--K K] [--kernel_size KERNEL_SIZE]
+                      [--sampling_type {all,random,spatial}]
+                      [--num_samples NUM_SAMPLES]
+                      [--sample_padding SAMPLE_PADDING]
+                      [--attention_dropout ATTENTION_DROPOUT]
+                      [--shuffle_pattern {BA,NA}]
+                      [--shuffle_scale SHUFFLE_SCALE]
+                      [--magnitude_type {similarity,distance}]
+                      [--coordinate_encoding]
+                      [--dataset {cifar10,cifar100,imagenet}]
+                      [--data_path DATA_PATH] [--batch_size BATCH_SIZE]
+                      [--num_epochs NUM_EPOCHS] [--use_amp]
+                      [--clip_grad_norm CLIP_GRAD_NORM]
+                      [--criterion {CrossEntropy,MSE}]
+                      [--optimizer {adam,sgd,adamw}] [--momentum MOMENTUM]
+                      [--weight_decay WEIGHT_DECAY] [--lr LR]
+                      [--lr_step LR_STEP] [--lr_gamma LR_GAMMA]
+                      [--scheduler {step,cosine,plateau}]
+                      [--device {cpu,cuda,mps}] [--seed SEED]
+                      [--output_dir OUTPUT_DIR]
+resnet_main.py: error: unrecognized arguments: --num_layers 3 --channels 8 16 32
+usage: resnet_main.py [-h]
+                      [--layer {Conv2d,Conv2d_New,Conv2d_New_1d,ConvNN,ConvNN_Attn}]
+                      [--K K] [--kernel_size KERNEL_SIZE]
+                      [--sampling_type {all,random,spatial}]
+                      [--num_samples NUM_SAMPLES]
+                      [--sample_padding SAMPLE_PADDING]
+                      [--attention_dropout ATTENTION_DROPOUT]
+                      [--shuffle_pattern {BA,NA}]
+                      [--shuffle_scale SHUFFLE_SCALE]
+                      [--magnitude_type {similarity,distance}]
+                      [--coordinate_encoding]
+                      [--dataset {cifar10,cifar100,imagenet}]
+                      [--data_path DATA_PATH] [--batch_size BATCH_SIZE]
+                      [--num_epochs NUM_EPOCHS] [--use_amp]
+                      [--clip_grad_norm CLIP_GRAD_NORM]
+                      [--criterion {CrossEntropy,MSE}]
+                      [--optimizer {adam,sgd,adamw}] [--momentum MOMENTUM]
+                      [--weight_decay WEIGHT_DECAY] [--lr LR]
+                      [--lr_step LR_STEP] [--lr_gamma LR_GAMMA]
+                      [--scheduler {step,cosine,plateau}]
+                      [--device {cpu,cuda,mps}] [--seed SEED]
+                      [--output_dir OUTPUT_DIR]
+resnet_main.py: error: unrecognized arguments: --num_layers 3 --channels 8 16 32
+usage: resnet_main.py [-h]
+                      [--layer {Conv2d,Conv2d_New,Conv2d_New_1d,ConvNN,ConvNN_Attn}]
+                      [--K K] [--kernel_size KERNEL_SIZE]
+                      [--sampling_type {all,random,spatial}]
+                      [--num_samples NUM_SAMPLES]
+                      [--sample_padding SAMPLE_PADDING]
+                      [--attention_dropout ATTENTION_DROPOUT]
+                      [--shuffle_pattern {BA,NA}]
+                      [--shuffle_scale SHUFFLE_SCALE]
+                      [--magnitude_type {similarity,distance}]
+                      [--coordinate_encoding]
+                      [--dataset {cifar10,cifar100,imagenet}]
+                      [--data_path DATA_PATH] [--batch_size BATCH_SIZE]
+                      [--num_epochs NUM_EPOCHS] [--use_amp]
+                      [--clip_grad_norm CLIP_GRAD_NORM]
+                      [--criterion {CrossEntropy,MSE}]
+                      [--optimizer {adam,sgd,adamw}] [--momentum MOMENTUM]
+                      [--weight_decay WEIGHT_DECAY] [--lr LR]
+                      [--lr_step LR_STEP] [--lr_gamma LR_GAMMA]
+                      [--scheduler {step,cosine,plateau}]
+                      [--device {cpu,cuda,mps}] [--seed SEED]
+                      [--output_dir OUTPUT_DIR]
+resnet_main.py: error: unrecognized arguments: --num_layers 3 --channels 8 16 32
+usage: resnet_main.py [-h]
+                      [--layer {Conv2d,Conv2d_New,Conv2d_New_1d,ConvNN,ConvNN_Attn}]
+                      [--K K] [--kernel_size KERNEL_SIZE]
+                      [--sampling_type {all,random,spatial}]
+                      [--num_samples NUM_SAMPLES]
+                      [--sample_padding SAMPLE_PADDING]
+                      [--attention_dropout ATTENTION_DROPOUT]
+                      [--shuffle_pattern {BA,NA}]
+                      [--shuffle_scale SHUFFLE_SCALE]
+                      [--magnitude_type {similarity,distance}]
+                      [--coordinate_encoding]
+                      [--dataset {cifar10,cifar100,imagenet}]
+                      [--data_path DATA_PATH] [--batch_size BATCH_SIZE]
+                      [--num_epochs NUM_EPOCHS] [--use_amp]
+                      [--clip_grad_norm CLIP_GRAD_NORM]
+                      [--criterion {CrossEntropy,MSE}]
+                      [--optimizer {adam,sgd,adamw}] [--momentum MOMENTUM]
+                      [--weight_decay WEIGHT_DECAY] [--lr LR]
+                      [--lr_step LR_STEP] [--lr_gamma LR_GAMMA]
+                      [--scheduler {step,cosine,plateau}]
+                      [--device {cpu,cuda,mps}] [--seed SEED]
+                      [--output_dir OUTPUT_DIR]
+resnet_main.py: error: unrecognized arguments: --num_layers 3 --channels 8 16 32
+usage: resnet_main.py [-h]
+                      [--layer {Conv2d,Conv2d_New,Conv2d_New_1d,ConvNN,ConvNN_Attn}]
+                      [--K K] [--kernel_size KERNEL_SIZE]
+                      [--sampling_type {all,random,spatial}]
+                      [--num_samples NUM_SAMPLES]
+                      [--sample_padding SAMPLE_PADDING]
+                      [--attention_dropout ATTENTION_DROPOUT]
+                      [--shuffle_pattern {BA,NA}]
+                      [--shuffle_scale SHUFFLE_SCALE]
+                      [--magnitude_type {similarity,distance}]
+                      [--coordinate_encoding]
+                      [--dataset {cifar10,cifar100,imagenet}]
+                      [--data_path DATA_PATH] [--batch_size BATCH_SIZE]
+                      [--num_epochs NUM_EPOCHS] [--use_amp]
+                      [--clip_grad_norm CLIP_GRAD_NORM]
+                      [--criterion {CrossEntropy,MSE}]
+                      [--optimizer {adam,sgd,adamw}] [--momentum MOMENTUM]
+                      [--weight_decay WEIGHT_DECAY] [--lr LR]
+                      [--lr_step LR_STEP] [--lr_gamma LR_GAMMA]
+                      [--scheduler {step,cosine,plateau}]
+                      [--device {cpu,cuda,mps}] [--seed SEED]
+                      [--output_dir OUTPUT_DIR]
+resnet_main.py: error: unrecognized arguments: --num_layers 3 --channels 8 16 32
+usage: resnet_main.py [-h]
+                      [--layer {Conv2d,Conv2d_New,Conv2d_New_1d,ConvNN,ConvNN_Attn}]
+                      [--K K] [--kernel_size KERNEL_SIZE]
+                      [--sampling_type {all,random,spatial}]
+                      [--num_samples NUM_SAMPLES]
+                      [--sample_padding SAMPLE_PADDING]
+                      [--attention_dropout ATTENTION_DROPOUT]
+                      [--shuffle_pattern {BA,NA}]
+                      [--shuffle_scale SHUFFLE_SCALE]
+                      [--magnitude_type {similarity,distance}]
+                      [--coordinate_encoding]
+                      [--dataset {cifar10,cifar100,imagenet}]
+                      [--data_path DATA_PATH] [--batch_size BATCH_SIZE]
+                      [--num_epochs NUM_EPOCHS] [--use_amp]
+                      [--clip_grad_norm CLIP_GRAD_NORM]
+                      [--criterion {CrossEntropy,MSE}]
+                      [--optimizer {adam,sgd,adamw}] [--momentum MOMENTUM]
+                      [--weight_decay WEIGHT_DECAY] [--lr LR]
+                      [--lr_step LR_STEP] [--lr_gamma LR_GAMMA]
+                      [--scheduler {step,cosine,plateau}]
+                      [--device {cpu,cuda,mps}] [--seed SEED]
+                      [--output_dir OUTPUT_DIR]
+resnet_main.py: error: unrecognized arguments: --num_layers 3 --channels 8 16 32
+usage: resnet_main.py [-h]
+                      [--layer {Conv2d,Conv2d_New,Conv2d_New_1d,ConvNN,ConvNN_Attn}]
+                      [--K K] [--kernel_size KERNEL_SIZE]
+                      [--sampling_type {all,random,spatial}]
+                      [--num_samples NUM_SAMPLES]
+                      [--sample_padding SAMPLE_PADDING]
+                      [--attention_dropout ATTENTION_DROPOUT]
+                      [--shuffle_pattern {BA,NA}]
+                      [--shuffle_scale SHUFFLE_SCALE]
+                      [--magnitude_type {similarity,distance}]
+                      [--coordinate_encoding]
+                      [--dataset {cifar10,cifar100,imagenet}]
+                      [--data_path DATA_PATH] [--batch_size BATCH_SIZE]
+                      [--num_epochs NUM_EPOCHS] [--use_amp]
+                      [--clip_grad_norm CLIP_GRAD_NORM]
+                      [--criterion {CrossEntropy,MSE}]
+                      [--optimizer {adam,sgd,adamw}] [--momentum MOMENTUM]
+                      [--weight_decay WEIGHT_DECAY] [--lr LR]
+                      [--lr_step LR_STEP] [--lr_gamma LR_GAMMA]
+                      [--scheduler {step,cosine,plateau}]
+                      [--device {cpu,cuda,mps}] [--seed SEED]
+                      [--output_dir OUTPUT_DIR]
+resnet_main.py: error: unrecognized arguments: --num_layers 3 --channels 8 16 32
+usage: resnet_main.py [-h]
+                      [--layer {Conv2d,Conv2d_New,Conv2d_New_1d,ConvNN,ConvNN_Attn}]
+                      [--K K] [--kernel_size KERNEL_SIZE]
+                      [--sampling_type {all,random,spatial}]
+                      [--num_samples NUM_SAMPLES]
+                      [--sample_padding SAMPLE_PADDING]
+                      [--attention_dropout ATTENTION_DROPOUT]
+                      [--shuffle_pattern {BA,NA}]
+                      [--shuffle_scale SHUFFLE_SCALE]
+                      [--magnitude_type {similarity,distance}]
+                      [--coordinate_encoding]
+                      [--dataset {cifar10,cifar100,imagenet}]
+                      [--data_path DATA_PATH] [--batch_size BATCH_SIZE]
+                      [--num_epochs NUM_EPOCHS] [--use_amp]
+                      [--clip_grad_norm CLIP_GRAD_NORM]
+                      [--criterion {CrossEntropy,MSE}]
+                      [--optimizer {adam,sgd,adamw}] [--momentum MOMENTUM]
+                      [--weight_decay WEIGHT_DECAY] [--lr LR]
+                      [--lr_step LR_STEP] [--lr_gamma LR_GAMMA]
+                      [--scheduler {step,cosine,plateau}]
+                      [--device {cpu,cuda,mps}] [--seed SEED]
+                      [--output_dir OUTPUT_DIR]
+resnet_main.py: error: unrecognized arguments: --num_layers 3 --channels 8 16 32
+usage: resnet_main.py [-h]
+                      [--layer {Conv2d,Conv2d_New,Conv2d_New_1d,ConvNN,ConvNN_Attn}]
+                      [--K K] [--kernel_size KERNEL_SIZE]
+                      [--sampling_type {all,random,spatial}]
+                      [--num_samples NUM_SAMPLES]
+                      [--sample_padding SAMPLE_PADDING]
+                      [--attention_dropout ATTENTION_DROPOUT]
+                      [--shuffle_pattern {BA,NA}]
+                      [--shuffle_scale SHUFFLE_SCALE]
+                      [--magnitude_type {similarity,distance}]
+                      [--coordinate_encoding]
+                      [--dataset {cifar10,cifar100,imagenet}]
+                      [--data_path DATA_PATH] [--batch_size BATCH_SIZE]
+                      [--num_epochs NUM_EPOCHS] [--use_amp]
+                      [--clip_grad_norm CLIP_GRAD_NORM]
+                      [--criterion {CrossEntropy,MSE}]
+                      [--optimizer {adam,sgd,adamw}] [--momentum MOMENTUM]
+                      [--weight_decay WEIGHT_DECAY] [--lr LR]
+                      [--lr_step LR_STEP] [--lr_gamma LR_GAMMA]
+                      [--scheduler {step,cosine,plateau}]
+                      [--device {cpu,cuda,mps}] [--seed SEED]
+                      [--output_dir OUTPUT_DIR]
+resnet_main.py: error: unrecognized arguments: --num_layers 3 --channels 8 16 32

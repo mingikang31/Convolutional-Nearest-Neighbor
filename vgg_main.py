@@ -9,9 +9,7 @@ from dataset import ImageNet, CIFAR10, CIFAR100
 from train_eval import Train_Eval
 
 # Models 
-from models.allconvnet import AllConvNet 
 from models.vgg import VGG 
-from models.resnet import resnet18, resnet34
 
 # Utilities 
 from utils import write_to_file, set_seed
@@ -108,6 +106,9 @@ def main(args):
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
 
+    # Make image 64x64
+    # args.resize = True
+    
     # Dataset 
     if args.dataset == "cifar10":
         dataset = CIFAR10(args)

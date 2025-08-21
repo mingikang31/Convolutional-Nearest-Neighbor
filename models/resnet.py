@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from layers2d import (
+from models.layers2d import (
     Conv2d_New,
     Conv2d_New_1d,
     Conv2d_NN, 

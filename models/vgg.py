@@ -111,7 +111,7 @@ class VGG(nn.Module):
                     layer = Conv2d_NN_Attn(**layer_params)
                     
                 layers += [layer]
-                layers += [nn.InstanceNorm2d(v)]
+                layers += [nn.BatchNorm2d(v)]
                 layers += [nn.ReLU(inplace=True)]
                 in_channels = v
 

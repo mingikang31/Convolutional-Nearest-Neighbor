@@ -1,0 +1,8 @@
+[Epoch 001] Time: 53.7423s | [Train] Loss: nan Accuracy: Top1: 9.9964%, Top5: 50.0000% | [Test] Loss: nan Accuracy: Top1: 9.9821%, Top5: 49.9701%
+[Epoch 002] Time: 53.1436s | [Train] Loss: nan Accuracy: Top1: 10.0024%, Top5: 49.9880% | [Test] Loss: nan Accuracy: Top1: 9.9821%, Top5: 49.9701%
+[Epoch 003] Time: 53.0986s | [Train] Loss: nan Accuracy: Top1: 10.0084%, Top5: 49.9940% | [Test] Loss: nan Accuracy: Top1: 9.9821%, Top5: 49.9701%
+[Epoch 004] Time: 53.0449s | [Train] Loss: nan Accuracy: Top1: 10.0024%, Top5: 49.9880% | [Test] Loss: nan Accuracy: Top1: 9.9821%, Top5: 49.9701%
+[Epoch 005] Time: 53.0724s | [Train] Loss: nan Accuracy: Top1: 9.9904%, Top5: 50.0180% | [Test] Loss: nan Accuracy: Top1: 9.9821%, Top5: 49.9701%
+
+Average Epoch Time: 53.2204s
+Max Accuracy: 9.9821% at Epoch 1
