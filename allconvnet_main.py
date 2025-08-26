@@ -36,7 +36,7 @@ def args_parser():
     parser.add_argument("--num_heads", type=int, default=4, help="Number of heads for Attention Models")    
     parser.add_argument("--attention_dropout", type=float, default=0.1, help="Dropout rate for the model")    
 
-    parser.add_argument("--shuffle_pattern", type=str, default="BA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")
+    parser.add_argument("--shuffle_pattern", type=str, default="NA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")
     parser.add_argument("--shuffle_scale", type=int, default=2, help="Shuffle scale for ConvNN Models")
     parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
     parser.add_argument("--coordinate_encoding", action="store_true", help="Use coordinate encoding in ConvNN Models")
