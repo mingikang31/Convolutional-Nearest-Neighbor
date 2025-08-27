@@ -1,0 +1,432 @@
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/mnist1d_main.py", line 8, in <module>
+    from dataset import MNIST1D
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/dataset.py", line 6, in <module>
+    from Data.mnist1d import MNIST1D_Dataset
+ModuleNotFoundError: No module named 'Data.mnist1d'
