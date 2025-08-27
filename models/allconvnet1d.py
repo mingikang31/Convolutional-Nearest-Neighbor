@@ -3,7 +3,8 @@ from torchsummary import summary
 
 from models.layers1d import (
     Conv1d_NN, 
-    Conv1d_NN_Attn
+    Conv1d_NN_Attn, 
+    Conv1d_New
 )
 
 
@@ -37,16 +38,16 @@ class AllConvNet1D(nn.Module):
                     stride=1,
                     padding='same'
                 )
-            # elif self.args.layer == "Conv1d_New":
-            #     layer = Conv1d_New(
-            #         in_channels=in_ch,
-            #         out_channels=out_ch,
-            #         kernel_size=self.args.kernel_size,
-            #         stride=1,
-            #         shuffle_pattern=self.args.shuffle_pattern,
-            #         shuffle_scale=self.args.shuffle_scale,
-            #         coordinate_encoding=self.args.coordinate_encoding
-            #     )
+            elif self.args.layer == "Conv1d_New":
+                layer = Conv1d_New(
+                    in_channels=in_ch,
+                    out_channels=out_ch,
+                    kernel_size=self.args.kernel_size,
+                    stride=1,
+                    shuffle_pattern=self.args.shuffle_pattern,
+                    shuffle_scale=self.args.shuffle_scale,
+                    coordinate_encoding=self.args.coordinate_encoding
+                )
 
             # elif self.args.layer == "Conv2d_New_1d":
             #     layer = Conv2d_New_1d(

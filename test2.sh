@@ -33,12 +33,24 @@ python mnist1d_main.py --layer Conv1d --num_layers 4 --channels 64 32 16 8 --ker
 
 python mnist1d_main.py --layer Conv1d --num_layers 4 --channels 64 32 16 8 --kernel_size 1 --num_epochs 200 --output_dir ./Output/Aug_25/1D/Conv1d_K1
 
-# # With Coord ***NOT YET IMPLEMENTED
-# python mnist1d_main.py --layer Conv2d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 3 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/1D/Conv2d_New_K3_Coord
+# # With Coord 
+python mnist1d_main.py --layer Conv1d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 9 --num_epochs 200 --output_dir ./Output/Aug_25/1D/Conv1d_K9_Coord
 
-# python mnist1d_main.py --layer Conv2d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 2 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/1D/Conv2d_New_K2_Coord
+python mnist1d_main.py --layer Conv1d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 8 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/1D/Conv1d_K8_Coord
 
-# python mnist1d_main.py --layer Conv2d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 1 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/1D/Conv2d_New_K1_Coord
+python mnist1d_main.py --layer Conv1d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 7 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/1D/Conv1d_K7_Coord
+
+python mnist1d_main.py --layer Conv1d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 6 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/1D/Conv1d_K6_Coord
+
+python mnist1d_main.py --layer Conv1d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 5 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/1D/Conv1d_K5_Coord
+
+python mnist1d_main.py --layer Conv1d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 4 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/1D/Conv1d_K4_Coord
+
+python mnist1d_main.py --layer Conv1d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 3 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/1D/Conv1d_K3_Coord
+
+python mnist1d_main.py --layer Conv1d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 2 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/1D/Conv1d_K2_Coord
+
+python mnist1d_main.py --layer Conv1d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 1 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/1D/Conv1d_K1_Coord
 
 # ConvNN 
 # K = 1

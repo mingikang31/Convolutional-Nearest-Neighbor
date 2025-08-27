@@ -13,7 +13,80 @@ Layers 1D:
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
+class Conv1d_New(nn.Module): 
+    """Convolutional Nearest Neighbor Layer 1D"""
+    def __init__(self, 
+                 in_channels, 
+                 out_channels, 
+                 kernel_size,
+                 stride, 
+                 shuffle_pattern, 
+                 shuffle_scale, 
+                 coordinate_encoding
+                 ):
+       
+        super(Conv1d_New, self).__init__()
+    
 
+        # Initialize parameters
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+
+        # Positional Encoding
+        self.coordinate_cache = {}  # Cache for coordinate encoding
+        self.coordinate_encoding = coordinate_encoding
+        self.in_channels = in_channels + 1 if self.coordinate_encoding else in_channels  # Add 1 for coordinate encoding
+        self.out_channels = out_channels + 1 if self.coordinate_encoding else out_channels  # Add 1 for coordinate encoding
+
+        # Shuffle1D/Unshuffle1D Layer
+        self.shuffle_layer = PixelShuffle1D(upscale_factor=self.shuffle_scale)
+        self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
+
+        # Adjust Channels for PixelShuffle
+        self.in_channels = self.in_channels * shuffle_scale if self.shuffle_pattern in ["BA", "B"] else self.in_channels
+        self.out_channels = self.out_channels * shuffle_scale if self.shuffle_pattern in ["BA", "A"] else self.out_channels
+
+        # Conv1d Layer
+        self.conv1d_layer = nn.Conv1d(in_channels=self.in_channels, 
+                                      out_channels=self.out_channels, 
+                                      kernel_size=self.kernel_size, 
+                                      stride=self.stride, 
+                                      padding="same")
+        self.out_channels = self.out_channels // self.shuffle_scale if self.shuffle_pattern in ["BA", "A"] else self.out_channels
+
+        self.pointwise_conv = nn.Conv1d(in_channels=self.out_channels, 
+                                        out_channels=self.out_channels - 1, 
+                                        kernel_size=1, 
+                                        stride=1, 
+                                        padding=0) 
+
+    def forward(self, x):
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
+        x = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
+
+        # Conv1d Layer
+        x = self.conv1d_layer(x)
+        x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
+        x = self.pointwise_conv(x) if self.coordinate_encoding else x  
+        return x
+    
+    def _add_coordinate_encoding(self, x):
+        b, c, t = x.shape 
+        cache_key = f"{b}_{t}_{x.device}"
+        if cache_key in self.coordinate_cache: 
+            expanded_coords = self.coordinate_cache[cache_key]
+        else: 
+            coords_vec = torch.linspace(start=-1, end=1, steps=t, device=x.device).unsqueeze(0).expand(b, -1) 
+            expanded_coords = coords_vec.unsqueeze(1).expand(b, -1, -1) 
+            self.coordinate_cache[cache_key] = expanded_coords
+
+        x_with_coords = torch.cat([x, expanded_coords], dim=1) 
+        return x_with_coords
+    
 """(1) Conv1d_NN (All, Random, Spatial Sampling)"""
 class Conv1d_NN(nn.Module): 
     """Convolutional Nearest Neighbor Layer 1D"""
