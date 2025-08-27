@@ -16,54 +16,54 @@ source activate mingi
 
 ### All Conv Net Experiments
 
-python allconvnet_main.py --layer Conv2d --num_layers 4 --channels 64 32 16 8 --kernel_size 3 --num_epochs 200 --output_dir ./Output/Aug_25/Conv2d_K3
+# python allconvnet_main.py --layer Conv2d --num_layers 4 --channels 64 32 16 8 --kernel_size 3 --num_epochs 200 --output_dir ./Output/Aug_25/Conv2d_K3
 
-python allconvnet_main.py --layer Conv2d --num_layers 4 --channels 64 32 16 8 --kernel_size 2 --num_epochs 200 --output_dir ./Output/Aug_25/Conv2d_K2
+# python allconvnet_main.py --layer Conv2d --num_layers 4 --channels 64 32 16 8 --kernel_size 2 --num_epochs 200 --output_dir ./Output/Aug_25/Conv2d_K2
 
-python allconvnet_main.py --layer Conv2d --num_layers 4 --channels 64 32 16 8 --kernel_size 1 --num_epochs 200 --output_dir ./Output/Aug_25/Conv2d_K1
+# python allconvnet_main.py --layer Conv2d --num_layers 4 --channels 64 32 16 8 --kernel_size 1 --num_epochs 200 --output_dir ./Output/Aug_25/Conv2d_K1
 
-# With Coord
-python allconvnet_main.py --layer Conv2d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 3 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/Conv2d_New_K3_Coord
+# # With Coord
+# python allconvnet_main.py --layer Conv2d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 3 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/Conv2d_New_K3_Coord
 
-python allconvnet_main.py --layer Conv2d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 2 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/Conv2d_New_K2_Coord
+# python allconvnet_main.py --layer Conv2d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 2 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/Conv2d_New_K2_Coord
 
-python allconvnet_main.py --layer Conv2d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 1 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/Conv2d_New_K1_Coord
+# python allconvnet_main.py --layer Conv2d_New --num_layers 4 --channels 64 32 16 8 --kernel_size 1 --num_epochs 200 --coordinate_encoding --output_dir ./Output/Aug_25/Conv2d_New_K1_Coord
 
-# ConvNN 
-# K = 1
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 1 --sampling_type all --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_All_K1
+# # ConvNN 
+# # K = 1
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 1 --sampling_type all --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_All_K1
 
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 1 --sampling_type random --num_samples 64 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Random_K1
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 1 --sampling_type random --num_samples 64 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Random_K1
 
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 1 --sampling_type spatial --num_samples 8 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Spatial_K1
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 1 --sampling_type spatial --num_samples 8 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Spatial_K1
 
-# K = 2
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 2 --sampling_type all --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_All_K2
+# # K = 2
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 2 --sampling_type all --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_All_K2
 
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 2 --sampling_type random --num_samples 64 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Random_K2
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 2 --sampling_type random --num_samples 64 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Random_K2
 
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 2 --sampling_type spatial --num_samples 8 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Spatial_K2
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 2 --sampling_type spatial --num_samples 8 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Spatial_K2
 
-# K = 3
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 3 --sampling_type all --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_All_K3
+# # K = 3
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 3 --sampling_type all --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_All_K3
 
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 3 --sampling_type random --num_samples 64 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Random_K3
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 3 --sampling_type random --num_samples 64 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Random_K3
 
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 3 --sampling_type spatial --num_samples 8 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Spatial_K3
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 3 --sampling_type spatial --num_samples 8 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Spatial_K3
 
-# K = 4
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 4 --sampling_type all --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_All_K4
+# # K = 4
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 4 --sampling_type all --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_All_K4
 
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 4 --sampling_type random --num_samples 64 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Random_K4
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 4 --sampling_type random --num_samples 64 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Random_K4
 
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 4 --sampling_type spatial --num_samples 8 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Spatial_K4
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 4 --sampling_type spatial --num_samples 8 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Spatial_K4
 
-# K = 5 
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 5 --sampling_type all --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_All_K5
+# # K = 5 
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 5 --sampling_type all --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_All_K5
 
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 5 --sampling_type random --num_samples 64 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Random_K5
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 5 --sampling_type random --num_samples 64 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Random_K5
 
-python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 5 --sampling_type spatial --num_samples 8 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Spatial_K5
+# python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 5 --sampling_type spatial --num_samples 8 --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_Spatial_K5
 
 # K = 6 
 python allconvnet_main.py --layer ConvNN --num_layers 4 --channels 64 32 16 8 --K 6 --sampling_type all --num_epochs 200 --output_dir ./Output/Aug_25/ConvNN_All_K6

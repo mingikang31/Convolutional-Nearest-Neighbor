@@ -10,9 +10,8 @@ __pycache__
 .DS_Store
 
 Playground/data/*
-Data/* 
-Data
-    
+
+
 .env
 
 .DS_Store
