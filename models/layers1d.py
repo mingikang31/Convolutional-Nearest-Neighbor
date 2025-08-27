@@ -53,8 +53,7 @@ class Conv1d_NN(nn.Module):
         assert (sampling_type == "all" and num_samples == -1) or (sampling_type != "all" and isinstance(num_samples, int)), "Error: num_samples must be -1 for 'all' sampling or an integer for 'random' and 'spatial' sampling"
 
         # Initialize parameters
-        self.in_channels = in_channels
-        self.out_channels = out_channels
+
         self.K = K
         self.stride = stride
         self.sampling_type = sampling_type
@@ -76,8 +75,8 @@ class Conv1d_NN(nn.Module):
         self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
 
         # Adjust Channels for PixelShuffle
-        self.in_channels = in_channels * shuffle_scale if self.shuffle_pattern in ["BA", "B"] else in_channels
-        self.out_channels = out_channels * shuffle_scale if self.shuffle_pattern in ["BA", "A"] else out_channels
+        self.in_channels = self.in_channels * shuffle_scale if self.shuffle_pattern in ["BA", "B"] else self.in_channels
+        self.out_channels = self.out_channels * shuffle_scale if self.shuffle_pattern in ["BA", "A"] else self.out_channels
 
         # Conv1d Layer
         self.conv1d_layer = nn.Conv1d(in_channels=self.in_channels, 
@@ -85,6 +84,7 @@ class Conv1d_NN(nn.Module):
                                       kernel_size=self.K, 
                                       stride=self.stride, 
                                       padding=0)
+        self.out_channels = self.out_channels // self.shuffle_scale if self.shuffle_pattern in ["BA", "A"] else self.out_channels
 
         self.pointwise_conv = nn.Conv1d(in_channels=self.out_channels, 
                                         out_channels=self.out_channels - 1, 
@@ -95,7 +95,6 @@ class Conv1d_NN(nn.Module):
     def forward(self, x):
         x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
         x = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
-
         
         if self.sampling_type == "all": 
             # ConvNN Algorithm 
@@ -223,6 +222,7 @@ class Conv1d_NN_Attn(nn.Module):
                  shuffle_scale, 
                  num_tokens, 
                  magnitude_type, 
+                 attention_dropout,
                  coordinate_encoding
                  ):
         """
@@ -250,8 +250,7 @@ class Conv1d_NN_Attn(nn.Module):
         assert (sampling_type == "all" and num_samples == -1) or (sampling_type != "all" and isinstance(num_samples, int)), "Error: num_samples must be -1 for 'all' sampling or an integer for 'random' and 'spatial' sampling"
 
         # Initialize parameters
-        self.in_channels = in_channels
-        self.out_channels = out_channels
+
         self.K = K
         self.stride = stride
         self.sampling_type = sampling_type
@@ -274,8 +273,8 @@ class Conv1d_NN_Attn(nn.Module):
         self.unshuffle_layer = PixelUnshuffle1D(downscale_factor=self.shuffle_scale)
 
         # Adjust Channels for PixelShuffle
-        self.in_channels = in_channels * shuffle_scale if self.shuffle_pattern in ["BA", "B"] else in_channels
-        self.out_channels = out_channels * shuffle_scale if self.shuffle_pattern in ["BA", "A"] else out_channels
+        self.in_channels = self.in_channels * shuffle_scale if self.shuffle_pattern in ["BA", "B"] else self.in_channels
+        self.out_channels = self.out_channels * shuffle_scale if self.shuffle_pattern in ["BA", "A"] else self.out_channels
 
         # Conv1d Layer
         self.conv1d_layer = nn.Conv1d(in_channels=self.in_channels, 
@@ -289,6 +288,11 @@ class Conv1d_NN_Attn(nn.Module):
         self.w_k = nn.Linear(self.num_tokens, self.num_tokens, bias=False) 
         self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False) 
         self.w_o = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
+        
+        self.attention_dropout = attention_dropout
+        self.dropout = nn.Dropout(p=self.attention_dropout)
+
+        self.out_channels = self.out_channels // self.shuffle_scale if self.shuffle_pattern in ["BA", "A"] else self.out_channels
 
         # Pointwise Conv1d Layer
         self.pointwise_conv = nn.Conv1d(in_channels=self.out_channels, 

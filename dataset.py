@@ -3,6 +3,7 @@ import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt 
+from Data.mnist1d import MNIST1D_Dataset
 from PIL import Image
 
 class ImageNet(datasets.ImageNet):
@@ -35,8 +36,6 @@ class ImageNet(datasets.ImageNet):
         plt.figure(figsize=(6, 3))
         plt.imshow(img)
         plt.show()
-
-
 
 class TinyImageNet(datasets.ImageNet):
     def __init__(self, args):
@@ -215,5 +214,18 @@ class MNIST(datasets.MNIST):
         plt.show()
 
 
+class MNIST1D():
+    def __init__(self, args):
 
-        
+        self.train_data = MNIST1D_Dataset(train=True)
+        self.test_data = MNIST1D_Dataset(train=False)
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
+
+        self.num_classes = 10 
+        self.img_size = (1, 40)
+
+    def shape(self):
+        return self.train_data[0][0].shape 
+
+    
