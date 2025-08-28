@@ -1,8 +1,8 @@
 #! /bin/bash 
 #SBATCH --nodes=1 
 #SBATCH --mem=32G
-#SBATCH -p gpu --gres=gpu:rtx5090:1
-#SBATCH --cpus-per-task=1
+#SBATCH -p gpu --gres=gpu:a100:1
+#SBATCH --cpus-per-task=2
 #SBATCH --job-name=mnist1d-exp
 #SBATCH --time=500:00:00
 #SBATCH --output=slurm_out/%j.out

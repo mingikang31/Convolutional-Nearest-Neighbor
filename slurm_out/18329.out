@@ -1,0 +1,24 @@
+Checking arguments based on the model...
+Model: All Convolutional Network 1D Conv1d
+Total Parameters: 24978
+Trainable Parameters: 24978
+Checking arguments based on the model...
+Model: All Convolutional Network 1D Conv1d
+Total Parameters: 22226
+Trainable Parameters: 22226
+Checking arguments based on the model...
+Model: All Convolutional Network 1D Conv1d
+Total Parameters: 19474
+Trainable Parameters: 19474
+Checking arguments based on the model...
+Model: All Convolutional Network 1D Conv1d
+Total Parameters: 16722
+Trainable Parameters: 16722
+Checking arguments based on the model...
+Model: All Convolutional Network 1D Conv1d
+Total Parameters: 13970
+Trainable Parameters: 13970
+Checking arguments based on the model...
+Model: All Convolutional Network 1D Conv1d
+Total Parameters: 11218
+Trainable Parameters: 11218

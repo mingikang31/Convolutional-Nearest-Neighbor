@@ -1,0 +1,36 @@
+training: False
+_parameters: {}
+_buffers: {}
+_non_persistent_buffers_set: set()
+_backward_pre_hooks: OrderedDict()
+_backward_hooks: OrderedDict()
+_is_full_backward_hook: None
+_forward_hooks: OrderedDict()
+_forward_hooks_with_kwargs: OrderedDict()
+_forward_hooks_always_called: OrderedDict()
+_forward_pre_hooks: OrderedDict()
+_forward_pre_hooks_with_kwargs: OrderedDict()
+_state_dict_hooks: OrderedDict()
+_state_dict_pre_hooks: OrderedDict()
+_load_state_dict_pre_hooks: OrderedDict()
+_load_state_dict_post_hooks: OrderedDict()
+_modules: {'features': Sequential(
+  (0): InstanceNorm1d(64, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False)
+  (1): Conv1d(1, 64, kernel_size=(3,), stride=(1,), padding=same)
+  (2): ReLU(inplace=True)
+  (3): InstanceNorm1d(32, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False)
+  (4): Conv1d(64, 32, kernel_size=(3,), stride=(1,), padding=same)
+  (5): ReLU(inplace=True)
+  (6): InstanceNorm1d(16, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False)
+  (7): Conv1d(32, 16, kernel_size=(3,), stride=(1,), padding=same)
+  (8): ReLU(inplace=True)
+  (9): InstanceNorm1d(8, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False)
+  (10): Conv1d(16, 8, kernel_size=(3,), stride=(1,), padding=same)
+  (11): ReLU(inplace=True)
+), 'pool': AdaptiveAvgPool1d(output_size=1), 'classifier': Sequential(
+  (0): Dropout(p=0.1, inplace=False)
+  (1): Linear(in_features=8, out_features=10, bias=True)
+)}
+args: Namespace(layer='Conv1d', num_layers=4, channels=[64, 32, 16, 8], K=3, kernel_size=3, sampling_type='all', num_samples=-1, sample_padding=0, num_heads=4, attention_dropout=0.1, shuffle_pattern='NA', shuffle_scale=2, magnitude_type='similarity', coordinate_encoding=False, batch_size=64, num_epochs=200, use_amp=False, clip_grad_norm=None, criterion='CrossEntropy', optimizer='adamw', momentum=0.9, weight_decay=1e-06, lr=0.001, lr_step=20, lr_gamma=0.1, scheduler='step', device='cuda', seed=0, output_dir='./Output/Aug_25/1D/Conv1d_K3', resize=False, num_classes=10, img_size=(1, 40), total_params=8466, trainable_params=8466)
+model: All Convolutional Network 1D
+name: All Convolutional Network 1D Conv1d

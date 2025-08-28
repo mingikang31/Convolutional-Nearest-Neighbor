@@ -1,0 +1,34 @@
+layer: Conv1d
+num_layers: 4
+channels: [64, 32, 16, 8]
+K: 3
+kernel_size: 9
+sampling_type: all
+num_samples: -1
+sample_padding: 0
+num_heads: 4
+attention_dropout: 0.1
+shuffle_pattern: NA
+shuffle_scale: 2
+magnitude_type: similarity
+coordinate_encoding: False
+batch_size: 64
+num_epochs: 200
+use_amp: False
+clip_grad_norm: None
+criterion: CrossEntropy
+optimizer: adamw
+momentum: 0.9
+weight_decay: 1e-06
+lr: 0.001
+lr_step: 20
+lr_gamma: 0.1
+scheduler: step
+device: cuda
+seed: 0
+output_dir: ./Output/Aug_25/1D/Conv1d_K9
+resize: False
+num_classes: 10
+img_size: (1, 40)
+total_params: 24978
+trainable_params: 24978
