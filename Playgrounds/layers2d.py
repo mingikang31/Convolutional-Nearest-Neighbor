@@ -1,0 +1,196 @@
+import torch 
+import torch.nn as nn 
+import torch.nn.functional as F
+
+class Conv2d_NN(nn.Module):
+    def __init__(self, 
+            in_channels, 
+            out_channels, 
+            K,
+            stride, 
+            padding, 
+            sampling_type, 
+            num_samples, 
+            sample_padding, # NOT IN USE AS OF NOW
+            shuffle_pattern, 
+            shuffle_scale, 
+            magnitude_type,
+            coordinate_encoding
+                ):
+        super(Conv2d_NN, self).__init__()
+
+        assert K == stride, "K must be equal to stride for ConvNN."
+
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.K = K
+        self.stride = stride
+        self.padding = padding
+        self.sampling_type = sampling_type
+        self.num_samples = num_samples
+        self.sample_padding = sample_padding
+        self.shuffle_pattern = shuffle_pattern
+        self.shuffle_scale = shuffle_scale
+        self.magnitude_type = magnitude_type
+        self.coordinate_encoding = coordinate_encoding
+
+        # Shuffle2D/Unshuffle2D Layers 
+        self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
+        self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
+        
+        # Positional Encoding (optional)
+        self.coordinate_encoding = coordinate_encoding
+        self.coordinate_cache = {} 
+        
+        # Conv1d Layer 
+        self.conv1d_layer = nn.Conv1d(
+            in_channels=self.in_channels, # + 2, ## CHANGE IF NEEDED
+            out_channels=self.out_channels,
+            kernel_size=self.K,
+            stride=self.stride,
+        )
+
+        self.flatten = nn.Flatten(start_dim=2) 
+        self.unflatten = None
+
+    def forward(self, x):
+        og_shape = x.shape
+        x = F.pad(x, (self.padding, self.padding, self.padding, self.padding), mode='constant', value=0) if self.padding > 0 else x
+
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x 
+
+        x = self.flatten(x)
+        
+        x_dist = x[:, -2:, :]
+        x = x[:, :-2, :] 
+
+        if self.sampling_type == "all":
+            similarity_matrix = self._calculate_similarity_matrix(x_dist)
+            prime = self._prime(x, similarity_matrix, self.K, maximum=True)
+        x = self.conv1d_layer(prime)
+        
+        unflatten = nn.Unflatten(dim=2, unflattened_size=og_shape[2:])
+
+        x = unflatten(x)
+        return x
+
+
+    def _calculate_similarity_matrix(self, matrix, sigma=0.1):
+        """Calculate similarity matrix based on coordinate distance"""
+        b, c, t = matrix.shape  # c should be 2 for (x, y) coordinates
+
+        ### TODO CHANGE IF NOT USING DISTANCE ANYMORE
+        coord_matrix = matrix[:, -2:, :]
+
+        # Calculate pairwise Euclidean distances between coordinates
+        coord_expanded_1 = coord_matrix.unsqueeze(3)  # [B, 2, T, 1]
+        coord_expanded_2 = coord_matrix.unsqueeze(2)  # [B, 2, 1, T]
+
+        # Euclidean distance between coordinates
+        coord_diff = coord_expanded_1 - coord_expanded_2  # [B, 2, T, T]
+        coord_dist = torch.sqrt(torch.sum(coord_diff ** 2, dim=1) + 1e-8)  # [B, T, T]
+        
+        # Convert distance to similarity using Gaussian kernel
+        similarity_matrix = torch.exp(-coord_dist ** 2 / (2 * sigma ** 2))
+    
+        return similarity_matrix
+
+    def _prime(self, matrix, magnitude_matrix, K, maximum):
+        b, c, t = matrix.shape
+        _, topk_indices = torch.topk(magnitude_matrix.detach(), k=K, dim=2, largest=maximum)
+            
+        topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
+        matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
+        prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
+        prime, _ = self.filter_non_zero_starting_rows_multichannel(prime)
+        print(prime)
+        b, c, num_filtered_rows, k = prime.shape
+        prime = prime.view(b, c, num_filtered_rows * k) 
+        
+        return prime
+
+    def filter_non_zero_starting_rows_multichannel(self, tensor):
+        """
+        Filter rows based on the first element of the first channel being non-zero
+        
+        Args:
+            tensor: Input tensor of shape [B, C, num_rows, row_length]
+        
+        Returns:
+            Filtered tensor with only rows where first channel's first element != 0
+        """
+        # Get the shape
+        b, c, num_rows, row_length = tensor.shape
+        
+        # Create mask based on first channel only
+        # tensor[:, 0, :, 0] gets first element of each row in first channel
+            
+        mask = tensor[:, 0, :, 0].detach() != 0  # Shape: [b, num_rows]
+        
+        # Get indices of non-zero starting rows
+        non_zero_indices = torch.where(mask[0])[0]  # [0] because batch dimension
+    
+        # Select rows from ALL channels
+        filtered_tensor = tensor[:, :, non_zero_indices, :]
+        
+        return filtered_tensor, non_zero_indices
+
+    def _add_coordinate_encoding(self, x):
+        b, _, h, w = x.shape
+        cache_key = f"{b}_{h}_{w}_{x.device}"
+
+        if cache_key in self.coordinate_cache:
+            expanded_grid = self.coordinate_cache[cache_key]
+        else:
+            with torch.no_grad():
+                y_coords_vec = torch.linspace(start=-1, end=1, steps=h, device=x.device)
+                x_coords_vec = torch.linspace(start=-1, end=1, steps=w, device=x.device)
+
+                y_grid, x_grid = torch.meshgrid(y_coords_vec, x_coords_vec, indexing='ij')
+                grid = torch.stack((x_grid, y_grid), dim=0).unsqueeze(0)
+                expanded_grid = grid.expand(b, -1, -1, -1)
+                self.coordinate_cache[cache_key] = expanded_grid
+
+        x_with_coords = torch.cat((x, expanded_grid), dim=1)
+        return x_with_coords 
+
+if __name__ == "__main__":
+    ex = torch.Tensor(
+        [
+            [
+                [
+                    [1, 2, 3],
+                    [4, 5, 6],
+                    [7, 8, 9]
+                ], 
+                [
+                    [1, 2, 3],
+                    [4, 5, 6],
+                    [7, 8, 9]
+                ], 
+                [
+                    [1, 2, 3],
+                    [4, 5, 6],
+                    [7, 8, 9]
+                ]
+            ]
+        ]
+    )
+    conv = Conv2d_NN(
+        in_channels=3,
+        out_channels=5,
+        K=9,
+        stride=9,
+        padding=1,
+        sampling_type="all",
+        num_samples=1,
+        sample_padding=0,
+        shuffle_pattern="none",
+        shuffle_scale=1.0,
+        magnitude_type="none",
+        coordinate_encoding=True
+    )
+
+    out = conv(ex)
+    print(out.shape)

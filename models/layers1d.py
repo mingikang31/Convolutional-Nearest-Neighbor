@@ -210,7 +210,7 @@ class Conv1d_NN(nn.Module):
         dot_product = torch.bmm(matrix.transpose(2, 1), matrix)
         
         dist_matrix = norm_squared + norm_squared.transpose(2, 1) - 2 * dot_product
-        dist_matrix = torch.clamp(dist_matrix, min=0) # remove negative values
+        dist_matrix = torch.clamp(dist_matrix, min=-1.0, max=1.0)
         dist_matrix = torch.sqrt(dist_matrix) if sqrt else dist_matrix # take square root if needed
         
         return dist_matrix
@@ -221,7 +221,7 @@ class Conv1d_NN(nn.Module):
         dot_product = torch.bmm(matrix.transpose(2, 1), matrix_sample)
         
         dist_matrix = norm_squared + norm_squared_sample - 2 * dot_product
-        dist_matrix = torch.clamp(dist_matrix, min=0) # remove negative values
+        dist_matrix = torch.clamp(dist_matrix, min=-1.0, max=1.0)
         dist_matrix = torch.sqrt(dist_matrix) if sqrt else dist_matrix
 
         return dist_matrix
@@ -230,6 +230,7 @@ class Conv1d_NN(nn.Module):
         # p=2 (L2 Norm - Euclidean Distance), dim=1 (across the channels)
         norm_matrix = F.normalize(matrix, p=2, dim=1) 
         similarity_matrix = torch.bmm(norm_matrix.transpose(2, 1), norm_matrix)
+        similarity_matrix = torch.clamp(similarity_matrix, min=-1.0, max=1.0)
         return similarity_matrix
     
     def _calculate_similarity_matrix_N(self, matrix, matrix_sample):
@@ -237,21 +238,24 @@ class Conv1d_NN(nn.Module):
         norm_matrix = F.normalize(matrix, p=2, dim=1) 
         norm_sample = F.normalize(matrix_sample, p=2, dim=1)
         similarity_matrix = torch.bmm(norm_matrix.transpose(2, 1), norm_sample)
+        similarity_matrix = torch.clamp(similarity_matrix, min=-1.0, max=1.0)
         return similarity_matrix
 
     def _prime(self, matrix, magnitude_matrix, K, maximum):
         b, c, t = matrix.shape
-        _, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
+        topk_values, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
-      
+        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K)
+        
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
+        prime = topk_values_exp * prime
         prime = prime.view(b, c, -1)
         return prime
     
     def _prime_N(self, matrix, magnitude_matrix, K, rand_idx, maximum):
         b, c, t = matrix.shape
-        _, topk_indices = torch.topk(magnitude_matrix, k=K - 1, dim=2, largest=maximum)
+        topk_values, topk_indices = torch.topk(magnitude_matrix, k=K - 1, dim=2, largest=maximum)
         tk = topk_indices.shape[-1]
         assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
 
@@ -260,8 +264,13 @@ class Conv1d_NN(nn.Module):
         final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
         indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
 
+        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K-1)
+        ones = torch.ones((b, c, t, 1), device=matrix.device)
+        topk_values_exp = torch.cat((ones, topk_values_exp), dim=-1)
+
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(matrix_expanded, dim=2, index=indices_expanded)  
+        prime = topk_values_exp * prime
         prime = prime.view(b, c, -1)
         return prime
 
@@ -356,7 +365,7 @@ class Conv1d_NN_Attn(nn.Module):
                                       stride=self.stride, 
                                       padding=0)
 
-        # Linear Projections for Q, K, V, O
+        # Linear Projections for Q, K, V, O TODO: Do linear projection on channels and not tokens
         self.w_q = nn.Linear(self.num_tokens, self.num_tokens, bias=False) if self.sampling_type == "all" else nn.Linear(self.num_samples, self.num_samples, bias=False)
         self.w_k = nn.Linear(self.num_tokens, self.num_tokens, bias=False) 
         self.w_v = nn.Linear(self.num_tokens, self.num_tokens, bias=False) 
@@ -461,28 +470,35 @@ class Conv1d_NN_Attn(nn.Module):
         return dist_matrix
 
     def _prime(self, v, qk, K, maximum):
-        b, c, t = v.shape 
-        _, topk_indices = torch.topk(qk, k=K, dim=-1, largest = maximum)
+        b, c, t = v.shape
+        topk_values, topk_indices = torch.topk(qk, k=K, dim=2, largest=maximum)
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)
+        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K)
         
-        v_expanded = v.unsqueeze(-1).expand(b, c, t, K)
+        v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(v_expanded, dim=2, index=topk_indices_exp)
+        prime = topk_values_exp * prime
         prime = prime.reshape(b, c, -1)
         return prime
             
     def _prime_N(self, v, qk, K, rand_idx, maximum):
         b, c, t = v.shape
-        _, topk_indices = torch.topk(qk, k=K - 1, dim=2, largest=maximum)
+        topk_values, topk_indices = torch.topk(qk, k=K-1, dim=2, largest=maximum)
         tk = topk_indices.shape[-1]
         assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
+        
         mapped_tensor = rand_idx[topk_indices]
-
         token_indices = torch.arange(t, device=v.device).view(1, t, 1).expand(b, t, 1)
         final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
         indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
 
+        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K-1)
+        ones = torch.ones((b, c, t, 1), device=v.device)
+        topk_values_exp = torch.cat((ones, topk_values_exp), dim=-1)
+
         v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(v_expanded, dim=2, index=indices_expanded) 
+        prime = topk_values_exp * prime
         prime = prime.reshape(b, c, -1)
         return prime
     

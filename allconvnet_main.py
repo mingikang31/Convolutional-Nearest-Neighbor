@@ -29,6 +29,7 @@ def args_parser():
     # Additional Layer Arguments
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN")
     parser.add_argument("--kernel_size", type=int, default=3, help="Kernel Size for Conv2d")        
+    parser.add_argument("--padding", type=int, default=0, help="Padding for ConvNN")
     parser.add_argument("--sampling_type", type=str, default='all', choices=["all", "random", "spatial"], help="Sampling method for ConvNN Models")
     parser.add_argument("--num_samples", type=int, default=-1, help="Number of samples for ConvNN Models")
     parser.add_argument("--sample_padding", type=int, default=0, help="Padding for spatial sampling in ConvNN Models")

@@ -78,3 +78,4 @@ Trainable Parameters: 332510058
 [Epoch 004] Time: 53.0449s | [Train] Loss: nan Accuracy: Top1: 10.0024%, Top5: 49.9880% | [Test] Loss: nan Accuracy: Top1: 9.9821%, Top5: 49.9701%
 [Epoch 005] Time: 53.0724s | [Train] Loss: nan Accuracy: Top1: 9.9904%, Top5: 50.0180% | [Test] Loss: nan Accuracy: Top1: 9.9821%, Top5: 49.9701%
 All Experiments Completed
+
