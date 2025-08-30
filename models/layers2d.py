@@ -261,24 +261,29 @@ class Conv2d_NN_sanity(nn.Module):
         self.unflatten = None
 
     def forward(self, x):
+        print("x shape: ", x.shape)
         x = F.pad(x, (self.padding, self.padding, self.padding, self.padding), mode='constant', value=0) if self.padding > 0 else x
         og_shape = x.shape
+        print("Original x shape: ", og_shape)
 
-        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x 
-
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
+        print("coor shape: ", x.shape)
         x = self.flatten(x)
-        
+        print("flattened shape: ", x.shape)
+
         x_dist = x[:, -2:, :]
         x = x[:, :-2, :] 
 
         if self.sampling_type == "all":
             similarity_matrix = self._calculate_similarity_matrix(x_dist)
             prime = self._prime(x, similarity_matrix, self.K, maximum=True)
+        print("prime shape: ", prime.shape)
         x = self.conv1d_layer(prime)
+        print("conv1d shape: ", x.shape)
         # print(x.shape)
         unflatten = nn.Unflatten(dim=2, unflattened_size=og_shape[2:])
         x = unflatten(x)
-
+        print("unflattened shape: ", x.shape)
         # print(x.shape)
 
         # Remove padding before final output
@@ -286,6 +291,7 @@ class Conv2d_NN_sanity(nn.Module):
             # Crop back to original size
             x = x[:, :, self.padding:-self.padding, self.padding:-self.padding]
         # print(x.shape)
+        print("final shape: ", x.shape)
 
 
         return x
@@ -322,7 +328,8 @@ class Conv2d_NN_sanity(nn.Module):
         # prime, _ = self.filter_non_zero_starting_rows_multichannel(prime)
         # b, c, num_filtered_rows, k = prime.shape
         # print(prime.shape)
-        prime = prime.view(b, c, -1) 
+        prime = prime.view(b, c, k * t) 
+        
         # print(prime.shape)
         
         return prime
