@@ -287,7 +287,8 @@ class Conv2d_NN_sanity(nn.Module):
         b, c, t = matrix.shape  # c should be 2 for (x, y) coordinates
 
         ### TODO CHANGE IF NOT USING DISTANCE ANYMORE
-        coord_matrix = matrix[:, -2:, :]
+        # coord_matrix = matrix[:, -2:, :]
+        coord_matrix = matrix
 
         # Calculate pairwise Euclidean distances between coordinates
         coord_expanded_1 = coord_matrix.unsqueeze(3)  # [B, 2, T, 1]
