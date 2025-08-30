@@ -14,11 +14,11 @@ cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 
 source activate mingi
 
-python allconvnet_main.py --layer Conv2d --num_layers 3 --channels 32 16 8 --kernel_size 3 --num_epochs 75 --output_dir ./Output/Aug_30_Sanity/Conv2d_K3
+# python allconvnet_main.py --layer Conv2d --num_layers 3 --channels 32 16 8 --kernel_size 3 --num_epochs 75 --output_dir ./Output/Aug_30_Sanity/Conv2d_K3
 
-python allconvnet_main.py --layer Conv2d --num_layers 3 --channels 32 16 8 --kernel_size 1 --num_epochs 75 --output_dir ./Output/Aug_30_Sanity/Conv2d_K1
+# python allconvnet_main.py --layer Conv2d --num_layers 3 --channels 32 16 8 --kernel_size 1 --num_epochs 75 --output_dir ./Output/Aug_30_Sanity/Conv2d_K1
 
-python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 16 8 --K 9 --sampling_type all --num_epochs 75 --coordinate_encoding --output_dir ./Output/Aug_30_Sanity/ConvNN_All_K9
+python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 16 8 --K 9 --sampling_type all --num_epochs 75 --coordinate_encoding --output_dir ./Output/Aug_30_Sanity/ConvNN_All_K9 --padding 1
 
-python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 16 8 --K 1 --sampling_type all --num_epochs 75 --coordinate_encoding --output_dir ./Output/Aug_30_Sanity/ConvNN_All_K1
-
+python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 16 8 --K 1 --sampling_type all --num_epochs 75 --coordinate_encoding --output_dir ./Output/Aug_30_Sanity/ConvNN_All_K1 --padding 0
+ 

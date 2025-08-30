@@ -275,6 +275,7 @@ class Conv2d_NN_sanity(nn.Module):
             similarity_matrix = self._calculate_similarity_matrix(x_dist)
             prime = self._prime(x, similarity_matrix, self.K, maximum=True)
         x = self.conv1d_layer(prime)
+        # print(x.shape)
         unflatten = nn.Unflatten(dim=2, unflattened_size=og_shape[2:])
 
         x = unflatten(x)
