@@ -261,8 +261,8 @@ class Conv2d_NN_sanity(nn.Module):
         self.unflatten = None
 
     def forward(self, x):
-        og_shape = x.shape
         x = F.pad(x, (self.padding, self.padding, self.padding, self.padding), mode='constant', value=0) if self.padding > 0 else x
+        og_shape = x.shape
 
         x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x 
 
@@ -277,8 +277,17 @@ class Conv2d_NN_sanity(nn.Module):
         x = self.conv1d_layer(prime)
         # print(x.shape)
         unflatten = nn.Unflatten(dim=2, unflattened_size=og_shape[2:])
-
         x = unflatten(x)
+
+        # print(x.shape)
+
+        # Remove padding before final output
+        if self.padding > 0:
+            # Crop back to original size
+            x = x[:, :, self.padding:-self.padding, self.padding:-self.padding]
+        # print(x.shape)
+
+
         return x
 
 
@@ -310,9 +319,11 @@ class Conv2d_NN_sanity(nn.Module):
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
-        prime, _ = self.filter_non_zero_starting_rows_multichannel(prime)
-        b, c, num_filtered_rows, k = prime.shape
-        prime = prime.view(b, c, num_filtered_rows * k) 
+        # prime, _ = self.filter_non_zero_starting_rows_multichannel(prime)
+        # b, c, num_filtered_rows, k = prime.shape
+        # print(prime.shape)
+        prime = prime.view(b, c, -1) 
+        # print(prime.shape)
         
         return prime
 
