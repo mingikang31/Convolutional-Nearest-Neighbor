@@ -3,7 +3,7 @@
 #SBATCH --mem=32G
 #SBATCH -p gpu --gres=gpu:a100:1
 #SBATCH --cpus-per-task=4
-#SBATCH --job-name=mnist1d-exp
+#SBATCH --job-name=Sanity_Test
 #SBATCH --time=500:00:00
 #SBATCH --output=slurm_out/%j.out
 #SBATCH --error=slurm_out/%j.err
