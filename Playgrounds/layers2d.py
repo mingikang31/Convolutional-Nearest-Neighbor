@@ -1,8 +1,10 @@
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F
+import time 
+import math
 
-class Conv2d_NN(nn.Module):
+class Conv2d_NN_sanity(nn.Module):
     def __init__(self, 
             in_channels, 
             out_channels, 
@@ -17,7 +19,7 @@ class Conv2d_NN(nn.Module):
             magnitude_type,
             coordinate_encoding
                 ):
-        super(Conv2d_NN, self).__init__()
+        super(Conv2d_NN_sanity, self).__init__()
 
         assert K == stride, "K must be equal to stride for ConvNN."
 
@@ -54,25 +56,50 @@ class Conv2d_NN(nn.Module):
         self.flatten = nn.Flatten(start_dim=2) 
         self.unflatten = None
 
+
+        # Shapes of tensors
+        self.og_shape = None 
+        self.pad_shape = None
+
+        init_h, init_w = None, None 
+        padded_h, padded_w = None, None
+
     def forward(self, x):
-        og_shape = x.shape
+        if not self.og_shape:
+            self.og_shape = x.shape
+        print("Original x shape: ", self.og_shape)
         x = F.pad(x, (self.padding, self.padding, self.padding, self.padding), mode='constant', value=0) if self.padding > 0 else x
-
-        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x 
-
-        x = self.flatten(x)
         
+        if not self.pad_shape:
+            self.pad_shape = x.shape
+        print("Padded x shape: ", self.pad_shape)
+
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
+        print("coor shape: ", x.shape)
+        x = self.flatten(x)
+        print("flattened shape: ", x.shape)
+
         x_dist = x[:, -2:, :]
         x = x[:, :-2, :] 
 
         if self.sampling_type == "all":
             similarity_matrix = self._calculate_similarity_matrix(x_dist)
             prime = self._prime(x, similarity_matrix, self.K, maximum=True)
+        print("prime shape: ", prime.shape)
         x = self.conv1d_layer(prime)
-        
-        unflatten = nn.Unflatten(dim=2, unflattened_size=og_shape[2:])
+        print("conv1d shape: ", x.shape)
+        # print(x.shape)
+        if not self.unflatten:
+            self.unflatten = nn.Unflatten(dim=2, unflattened_size=self.og_shape[2:])
 
-        x = unflatten(x)
+        x = self.unflatten(x)
+        print("unflattened shape: ", x.shape)
+        # print(x.shape)
+
+        print("final shape: ", x.shape)
+
+        print("sleeping for 2 seconds")
+        time.sleep(2)
         return x
 
 
@@ -81,7 +108,8 @@ class Conv2d_NN(nn.Module):
         b, c, t = matrix.shape  # c should be 2 for (x, y) coordinates
 
         ### TODO CHANGE IF NOT USING DISTANCE ANYMORE
-        coord_matrix = matrix[:, -2:, :]
+        # coord_matrix = matrix[:, -2:, :]
+        coord_matrix = matrix
 
         # Calculate pairwise Euclidean distances between coordinates
         coord_expanded_1 = coord_matrix.unsqueeze(3)  # [B, 2, T, 1]
@@ -103,10 +131,27 @@ class Conv2d_NN(nn.Module):
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
-        prime, _ = self.filter_non_zero_starting_rows_multichannel(prime)
+        # prime, _ = self.filter_non_zero_starting_rows_multichannel(prime)
+        # b, c, num_filtered_rows, k = prime.shape
+        print()
+        print("With Padding Ks")
+        print(prime.shape)
         print(prime)
-        b, c, num_filtered_rows, k = prime.shape
-        prime = prime.view(b, c, num_filtered_rows * k) 
+        print()
+        if self.padding > 0:
+            prime = prime.view(b, c, self.pad_shape[-2], self.pad_shape[-1], K)
+            print("Prime with Padded shape:")
+            print(prime.shape)
+            print(prime)
+            print()
+            prime = prime[:, :, self.padding:-self.padding, self.padding:-self.padding, :]
+            print("Without Padding Ks")
+            print(prime.shape)
+            print(prime)
+
+            prime = prime.reshape(b, c, K * self.og_shape[-2] * self.og_shape[-1])
+        else: 
+            prime = prime.view(b, c, -1)
         
         return prime
 
@@ -177,7 +222,7 @@ if __name__ == "__main__":
             ]
         ]
     )
-    conv = Conv2d_NN(
+    conv = Conv2d_NN_sanity(
         in_channels=3,
         out_channels=5,
         K=9,

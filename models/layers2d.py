@@ -273,17 +273,17 @@ class Conv2d_NN_sanity(nn.Module):
     def forward(self, x):
         if not self.og_shape:
             self.og_shape = x.shape
-        print("Original x shape: ", self.og_shape)
+        # print("Original x shape: ", self.og_shape)
         x = F.pad(x, (self.padding, self.padding, self.padding, self.padding), mode='constant', value=0) if self.padding > 0 else x
         
         if not self.pad_shape:
             self.pad_shape = x.shape
-        print("Padded x shape: ", self.pad_shape)
+        # print("Padded x shape: ", self.pad_shape)
 
         x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
-        print("coor shape: ", x.shape)
+        # print("coor shape: ", x.shape)
         x = self.flatten(x)
-        print("flattened shape: ", x.shape)
+        # print("flattened shape: ", x.shape)
 
         x_dist = x[:, -2:, :]
         x = x[:, :-2, :] 
@@ -291,21 +291,21 @@ class Conv2d_NN_sanity(nn.Module):
         if self.sampling_type == "all":
             similarity_matrix = self._calculate_similarity_matrix(x_dist)
             prime = self._prime(x, similarity_matrix, self.K, maximum=True)
-        print("prime shape: ", prime.shape)
+        # print("prime shape: ", prime.shape)
         x = self.conv1d_layer(prime)
-        print("conv1d shape: ", x.shape)
+        # print("conv1d shape: ", x.shape)
         # print(x.shape)
         if not self.unflatten:
             self.unflatten = nn.Unflatten(dim=2, unflattened_size=self.og_shape[2:])
 
         x = self.unflatten(x)
-        print("unflattened shape: ", x.shape)
+        # print("unflattened shape: ", x.shape)
         # print(x.shape)
 
-        print("final shape: ", x.shape)
+        # print("final shape: ", x.shape)
 
-        print("sleeping for 2 seconds")
-        time.sleep(2)
+        # print("sleeping for 2 seconds")
+        # time.sleep(2)
         return x
 
 
@@ -339,44 +339,47 @@ class Conv2d_NN_sanity(nn.Module):
         prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
         # prime, _ = self.filter_non_zero_starting_rows_multichannel(prime)
         # b, c, num_filtered_rows, k = prime.shape
-        print(prime.shape)
+        # print(prime.shape)
 
-        prime = prime.view(b, c, self.pad_shape[-2], self.pad_shape[-1], K)
-        print(prime.shape)
-        prime = prime[:, :, self.padding:-self.padding, self.padding:-self.padding, :]
-        print(prime.shape)
+        if self.sample_padding > 0:
+            prime = prime.view(b, c, self.pad_shape[-2], self.pad_shape[-1], K)
+            # print(prime.shape)
+            prime = prime[:, :, self.padding:-self.padding, self.padding:-self.padding, :]
+            # print(prime.shape)
 
-        prime = prime.reshape(b, c, K * self.og_shape[-2] * self.og_shape[-1])
+            prime = prime.reshape(b, c, K * self.og_shape[-2] * self.og_shape[-1])
+        else: 
+            prime = prime.view(b, c, -1)
 
-        print(prime.shape)
+        # print(prime.shape)
         
         return prime
 
-    def filter_non_zero_starting_rows_multichannel(self, tensor):
-        """
-        Filter rows based on the first element of the first channel being non-zero
+    # def filter_non_zero_starting_rows_multichannel(self, tensor):
+    #     """
+    #     Filter rows based on the first element of the first channel being non-zero
         
-        Args:
-            tensor: Input tensor of shape [B, C, num_rows, row_length]
+    #     Args:
+    #         tensor: Input tensor of shape [B, C, num_rows, row_length]
         
-        Returns:
-            Filtered tensor with only rows where first channel's first element != 0
-        """
-        # Get the shape
-        b, c, num_rows, row_length = tensor.shape
+    #     Returns:
+    #         Filtered tensor with only rows where first channel's first element != 0
+    #     """
+    #     # Get the shape
+    #     b, c, num_rows, row_length = tensor.shape
         
-        # Create mask based on first channel only
-        # tensor[:, 0, :, 0] gets first element of each row in first channel
+    #     # Create mask based on first channel only
+    #     # tensor[:, 0, :, 0] gets first element of each row in first channel
             
-        mask = tensor[:, 0, :, 0].detach() != 0  # Shape: [b, num_rows]
+    #     mask = tensor[:, 0, :, 0].detach() != 0  # Shape: [b, num_rows]
         
-        # Get indices of non-zero starting rows
-        non_zero_indices = torch.where(mask[0])[0]  # [0] because batch dimension
+    #     # Get indices of non-zero starting rows
+    #     non_zero_indices = torch.where(mask[0])[0]  # [0] because batch dimension
     
-        # Select rows from ALL channels
-        filtered_tensor = tensor[:, :, non_zero_indices, :]
+    #     # Select rows from ALL channels
+    #     filtered_tensor = tensor[:, :, non_zero_indices, :]
         
-        return filtered_tensor, non_zero_indices
+    #     return filtered_tensor, non_zero_indices
 
     def _add_coordinate_encoding(self, x):
         b, _, h, w = x.shape
