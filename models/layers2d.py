@@ -17,6 +17,8 @@ Branching Layers 2D:
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
+import time 
+import math
 # from models.layers1d import Attention1d
 
 class Conv2d_New(nn.Module): 
@@ -260,11 +262,23 @@ class Conv2d_NN_sanity(nn.Module):
         self.flatten = nn.Flatten(start_dim=2) 
         self.unflatten = None
 
+
+        # Shapes of tensors
+        self.og_shape = None 
+        self.pad_shape = None
+
+        init_h, init_w = None, None 
+        padded_h, padded_w = None, None
+
     def forward(self, x):
-        print("x shape: ", x.shape)
+        if not self.og_shape:
+            self.og_shape = x.shape
+        print("Original x shape: ", self.og_shape)
         x = F.pad(x, (self.padding, self.padding, self.padding, self.padding), mode='constant', value=0) if self.padding > 0 else x
-        og_shape = x.shape
-        print("Original x shape: ", og_shape)
+        
+        if not self.pad_shape:
+            self.pad_shape = x.shape
+        print("Padded x shape: ", self.pad_shape)
 
         x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
         print("coor shape: ", x.shape)
@@ -281,19 +295,17 @@ class Conv2d_NN_sanity(nn.Module):
         x = self.conv1d_layer(prime)
         print("conv1d shape: ", x.shape)
         # print(x.shape)
-        unflatten = nn.Unflatten(dim=2, unflattened_size=og_shape[2:])
-        x = unflatten(x)
+        if not self.unflatten:
+            self.unflatten = nn.Unflatten(dim=2, unflattened_size=self.og_shape[2:])
+
+        x = self.unflatten(x)
         print("unflattened shape: ", x.shape)
         # print(x.shape)
 
-        # Remove padding before final output
-        if self.padding > 0:
-            # Crop back to original size
-            x = x[:, :, self.padding:-self.padding, self.padding:-self.padding]
-        # print(x.shape)
         print("final shape: ", x.shape)
 
-
+        print("sleeping for 2 seconds")
+        time.sleep(2)
         return x
 
 
@@ -327,10 +339,16 @@ class Conv2d_NN_sanity(nn.Module):
         prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
         # prime, _ = self.filter_non_zero_starting_rows_multichannel(prime)
         # b, c, num_filtered_rows, k = prime.shape
-        # print(prime.shape)
-        prime = prime.view(b, c, k * t) 
-        
-        # print(prime.shape)
+        print(prime.shape)
+
+        prime = prime.view(b, c, self.pad_shape[-2], self.pad_shape[-1], K)
+        print(prime.shape)
+        prime = prime[:, :, self.padding:-self.padding, self.padding:-self.padding, :]
+        print(prime.shape)
+
+        prime = prime.reshape(b, c, K * self.og_shape[-2] * self.og_shape[-1])
+
+        print(prime.shape)
         
         return prime
 
