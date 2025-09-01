@@ -1,6 +1,6 @@
 #! /bin/bash 
 #SBATCH --nodes=1 
-#SBATCH --mem=32G
+#SBATCH --mem=64G
 #SBATCH -p gpu --gres=gpu:a100:1
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=Sanity_Test

@@ -296,7 +296,7 @@ class Conv2d_NN_sanity(nn.Module):
         # print("conv1d shape: ", x.shape)
         # print(x.shape)
         if not self.unflatten:
-            self.unflatten = nn.Unflatten(dim=2, unflattened_size=self.padded_shape[2:])
+            self.unflatten = nn.Unflatten(dim=2, unflattened_size=self.pad_shape[2:])
 
         x = self.unflatten(x)
         # print("unflattened shape: ", x.shape)
