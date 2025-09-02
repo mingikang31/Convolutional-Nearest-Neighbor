@@ -61,3 +61,6 @@ python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 16 8 --K 4
 
 python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 16 8 --K 1 --sampling_type all --num_epochs 75 --output_dir ./Output/Sep_1_Sanity/ConvNN_All_K1_102 --padding 0 --seed 102
 
+
+
+# python allconvnet_main.py --layer ConvNN --num_layers 2 --channels 4 4 --K 9 --sampling_type all --num_epochs 75 --coordinate_encoding --output_dir ./Output/TEST --padding 1 --seed 42 --device mps

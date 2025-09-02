@@ -121,14 +121,23 @@ class Conv2d_NN_sanity(nn.Module):
         
         # Convert distance to similarity using Gaussian kernel
         similarity_matrix = torch.exp(-coord_dist ** 2 / (2 * sigma ** 2))
-    
+
         return similarity_matrix
 
     def _prime(self, matrix, magnitude_matrix, K, maximum):
         b, c, t = matrix.shape
+        """ ORIGINAL
         _, topk_indices = torch.topk(magnitude_matrix.detach(), k=K, dim=2, largest=maximum)
-            
-        topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
+        print("Top-k Indices")
+        print(topk_indices.shape)
+        """
+        # New My TopK
+        _, sorted_indices = torch.sort(magnitude_matrix.detach(), dim=2, descending=True, stable=True)
+        topk_indices = sorted_indices[:, :, :K]
+        
+        # End of My TopK
+        
+        topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
         # prime, _ = self.filter_non_zero_starting_rows_multichannel(prime)

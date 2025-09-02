@@ -253,7 +253,7 @@ class Conv2d_NN_sanity(nn.Module):
         
         # Conv1d Layer 
         self.conv1d_layer = nn.Conv1d(
-            in_channels=self.in_channels + 2 if self.coordinate_encoding else self.in_channels, 
+            in_channels=self.in_channels, # + 2 if self.coordinate_encoding else self.in_channels, 
             out_channels=self.out_channels,
             kernel_size=self.K,
             stride=self.stride,
@@ -285,11 +285,11 @@ class Conv2d_NN_sanity(nn.Module):
         x = self.flatten(x)
         # print("flattened shape: ", x.shape)
 
-        # x_dist = x[:, -2:, :]
-        # x = x[:, :-2, :] 
+        x_dist = x[:, -2:, :]
+        x = x[:, :-2, :] 
 
         if self.sampling_type == "all":
-            similarity_matrix = self._calculate_similarity_matrix(x)
+            similarity_matrix = self._calculate_similarity_matrix(x_dist)
             prime = self._prime(x, similarity_matrix, self.K, maximum=True)
         # print("prime shape: ", prime.shape)
         x = self.conv1d_layer(prime)
@@ -332,9 +332,13 @@ class Conv2d_NN_sanity(nn.Module):
 
     def _prime(self, matrix, magnitude_matrix, K, maximum):
         b, c, t = matrix.shape
-        _, topk_indices = torch.topk(magnitude_matrix.detach(), k=K, dim=2, largest=maximum)
-            
+        # _, topk_indices = torch.topk(magnitude_matrix.detach(), k=K, dim=2, largest=maximum)
+
+        _, sorted_indices = torch.sort(magnitude_matrix.detach(), dim=2, descending=True, stable=True)
+        topk_indices = sorted_indices[:, :, :K]
+
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
+
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
         # prime, _ = self.filter_non_zero_starting_rows_multichannel(prime)
