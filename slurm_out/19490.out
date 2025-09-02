@@ -1,0 +1,7 @@
+Checking arguments based on the model...
+Files already downloaded and verified
+Upscale transform not defined. Skipping dataset upscale.
+Model: All Convolutional Network ConvNN
+Total Parameters: 6770
+Trainable Parameters: 6770
+[Epoch 001] Time: 73.6927s | [Train] Loss: 2.22193046 Accuracy: Top1: 17.6111%, Top5: 65.2813% | [Test] Loss: 2.09917891 Accuracy: Top1: 26.4630%, Top5: 77.6672%
