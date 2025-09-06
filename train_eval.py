@@ -65,7 +65,6 @@ def Train_Eval(args,
     
     for epoch in range(args.num_epochs):
         # Model Training
-        model.train() 
         train_running_loss = 0.0
         test_running_loss = 0.0
         epoch_result = ""
@@ -108,23 +107,21 @@ def Train_Eval(args,
         epoch_times.append(end_time - start_time)
         
         # Model Evaluation 
-        model.eval()
         test_top1_5 = [0, 0]
-        with torch.no_grad():
-            for images, labels in test_loader: 
-                images, labels = images.to(device), labels.to(device)
-                if args.use_amp:
-                    with torch.cuda.amp.autocast():
-                        outputs = model(images)
-                else: 
+        for images, labels in test_loader: 
+            images, labels = images.to(device), labels.to(device)
+            if args.use_amp:
+                with torch.cuda.amp.autocast():
                     outputs = model(images)
-                loss = criterion(outputs, labels)
-                test_running_loss += loss.item()
+            else: 
+                outputs = model(images)
+            loss = criterion(outputs, labels)
 
-                    
-                top1, top5 = accuracy(outputs, labels, topk=(1, 5))
-                test_top1_5[0] += top1.item()
-                test_top1_5[1] += top5.item()
+            top1, top5 = accuracy(outputs, labels, topk=(1, 5))
+            test_top1_5[0] += top1.item()
+            test_top1_5[1] += top5.item()
+            test_running_loss += loss.item()
+
         
         test_top1_5[0] /= len(test_loader)
         test_top1_5[1] /= len(test_loader)

@@ -64,7 +64,7 @@ def args_parser():
     parser.add_argument('--weight_decay', type=float, default=1e-6, help='Weight decay for optimizer')
     
     # Learning Rate Arguments
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate for the optimizer")
     parser.add_argument('--lr_step', type=int, default=20, help='Step size for learning rate scheduler')
     parser.add_argument('--lr_gamma', type=float, default=0.1, help='Gamma for learning rate scheduler')
     parser.add_argument('--scheduler', type=str, default='step', choices=['step', 'cosine', 'plateau'], help='Learning rate scheduler')

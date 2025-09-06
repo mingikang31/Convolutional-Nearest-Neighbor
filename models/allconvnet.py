@@ -45,7 +45,8 @@ class AllConvNet(nn.Module):
                     out_channels=out_ch, 
                     kernel_size=self.args.kernel_size, 
                     stride=1, 
-                    padding='same'
+                    padding='same', 
+                    bias=False
                 )
             elif self.args.layer == "Conv2d_New":
                 layer = Conv2d_New(

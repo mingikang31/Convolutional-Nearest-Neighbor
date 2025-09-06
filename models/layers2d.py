@@ -257,6 +257,7 @@ class Conv2d_NN_sanity(nn.Module):
             out_channels=self.out_channels,
             kernel_size=self.K,
             stride=self.stride,
+            bias=False
         )
 
         self.flatten = nn.Flatten(start_dim=2) 
