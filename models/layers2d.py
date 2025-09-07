@@ -105,110 +105,6 @@ class Conv2d_New(nn.Module):
 
         x_with_coords = torch.cat((x, expanded_grid), dim=1)
         return x_with_coords
-    
-class Conv2d_New_1d(nn.Module): 
-    """Convolution 2D Nearest Neighbor Layer"""
-    def __init__(self, 
-                in_channels, 
-                out_channels, 
-                K,
-                stride, 
-                shuffle_pattern, 
-                shuffle_scale, 
-                coordinate_encoding
-                ): 
-        """
-        Parameters: 
-            in_channels (int): Number of input channels.
-            out_channels (int): Number of output channels.
-            K (int): Number of Nearest Neighbors for consideration.
-            stride (int): Stride size.
-            sampling_type (str): Sampling type: "all", "random", "spatial".
-            num_samples (int): Number of samples to consider. -1 for all samples.
-            shuffle_pattern (str): Shuffle pattern: "B", "A", "BA".
-            shuffle_scale (int): Shuffle scale factor.
-            magnitude_type (str): Distance or Similarity.
-        """
-        super(Conv2d_New_1d, self).__init__()
-        
-        # Assertions 
-        assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
-        
-        # Initialize parameters
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.K = K
-        self.stride = stride
-        self.shuffle_pattern = shuffle_pattern
-        self.shuffle_scale = shuffle_scale
-
-        # Positional Encoding (optional)
-        self.coordinate_encoding = coordinate_encoding
-        self.coordinate_cache = {} 
-        self.in_channels = in_channels + 2 if self.coordinate_encoding else in_channels
-        self.out_channels = out_channels + 2 if self.coordinate_encoding else out_channels
-
-        # Shuffle2D/Unshuffle2D Layers
-        self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
-        self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
-        
-        # Adjust Channels for PixelShuffle
-        self.in_channels_1d = self.in_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["B", "BA"] else self.in_channels
-        self.out_channels_1d = self.out_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["A", "BA"] else self.out_channels
-
-        # Conv1d Layer
-        self.conv1d_layer = nn.Conv1d(in_channels=self.in_channels_1d, 
-                                      out_channels=self.out_channels_1d, 
-                                      kernel_size=self.K, 
-                                      stride=self.stride, 
-                                      padding='same')
-
-        # Flatten Layer
-        self.flatten = nn.Flatten(start_dim=2)
-
-        # Pointwise Convolution Layer
-        self.pointwise_conv = nn.Conv2d(in_channels=self.out_channels,
-                                         out_channels=self.out_channels - 2,
-                                         kernel_size=1,
-                                         stride=1,
-                                         padding=0)
-        
-        
-
-    def forward(self, x): 
-        # Coordinate Channels (optional) + Unshuffle + Flatten 
-        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
-        x_2d = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
-        x = self.flatten(x_2d)
-
-        # Post-Processing 
-        x_conv = self.conv1d_layer(x) 
-
-        # Unflatten + Shuffle
-        unflatten = nn.Unflatten(dim=2, unflattened_size=x_2d.shape[2:])
-        x = unflatten(x_conv)  # [batch_size, out_channels
-        x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
-        x = self.pointwise_conv(x) if self.coordinate_encoding else x
-        return x
-
-    def _add_coordinate_encoding(self, x):
-        b, _, h, w = x.shape
-        cache_key = f"{b}_{h}_{w}_{x.device}"
-
-        if cache_key in self.coordinate_cache:
-            expanded_grid = self.coordinate_cache[cache_key]
-        else:
-            y_coords_vec = torch.linspace(start=-1, end=1, steps=h, device=x.device)
-            x_coords_vec = torch.linspace(start=-1, end=1, steps=w, device=x.device)
-
-            y_grid, x_grid = torch.meshgrid(y_coords_vec, x_coords_vec, indexing='ij')
-            grid = torch.stack((x_grid, y_grid), dim=0).unsqueeze(0)
-            expanded_grid = grid.expand(b, -1, -1, -1)
-            self.coordinate_cache[cache_key] = expanded_grid
-
-        x_with_coords = torch.cat((x, expanded_grid), dim=1)
-        return x_with_coords
-
 
 class Conv2d_NN_sanity(nn.Module):
     def __init__(self, 
@@ -290,7 +186,7 @@ class Conv2d_NN_sanity(nn.Module):
         x = x[:, :-2, :] 
 
         if self.sampling_type == "all":
-            similarity_matrix = self._calculate_similarity_matrix(x_dist)
+            similarity_matrix = self._calculate_similarity_matrix(x)
             prime = self._prime(x, similarity_matrix, self.K, maximum=True)
         # print("prime shape: ", prime.shape)
         x = self.conv1d_layer(prime)
