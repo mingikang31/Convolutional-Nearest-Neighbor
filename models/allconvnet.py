@@ -5,7 +5,6 @@ from torchsummary import summary
 
 from models.layers2d import (
     Conv2d_New,
-    Conv2d_New_1d,
     Conv2d_NN, 
     Conv2d_NN_sanity,
     Conv2d_NN_Attn, 
@@ -54,17 +53,6 @@ class AllConvNet(nn.Module):
                     out_channels=out_ch,
                     kernel_size=self.args.kernel_size,
                     stride=1,
-                    shuffle_pattern=self.args.shuffle_pattern,
-                    shuffle_scale=self.args.shuffle_scale,
-                    coordinate_encoding=self.args.coordinate_encoding
-                )
-
-            elif self.args.layer == "Conv2d_New_1d":
-                layer = Conv2d_New_1d(
-                    in_channels=in_ch, 
-                    out_channels=out_ch, 
-                    K=self.args.K, 
-                    stride=1, 
                     shuffle_pattern=self.args.shuffle_pattern,
                     shuffle_scale=self.args.shuffle_scale,
                     coordinate_encoding=self.args.coordinate_encoding
