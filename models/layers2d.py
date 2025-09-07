@@ -146,7 +146,7 @@ class Conv2d_NN_sanity(nn.Module):
         # Positional Encoding (optional)
         self.coordinate_encoding = coordinate_encoding
         self.coordinate_cache = {} 
-        
+        # print(self.in_channels, self.out_channels)
         # Conv1d Layer 
         self.conv1d_layer = nn.Conv1d(
             in_channels=self.in_channels, # + 2 if self.coordinate_encoding else self.in_channels, 
@@ -187,8 +187,11 @@ class Conv2d_NN_sanity(nn.Module):
 
         if self.sampling_type == "all":
             similarity_matrix = self._calculate_similarity_matrix(x)
+            # print("similarity matrix shape: ", similarity_matrix.shape)
+            # print("x shape: ", x.shape)
             prime = self._prime(x, similarity_matrix, self.K, maximum=True)
         # print("prime shape: ", prime.shape)
+    
         x = self.conv1d_layer(prime)
         # print("conv1d shape: ", x.shape)
         # print(x.shape)

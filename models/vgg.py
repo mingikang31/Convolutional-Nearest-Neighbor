@@ -14,7 +14,6 @@ import torch.nn as nn
 
 from models.layers2d import (
     Conv2d_New, 
-    Conv2d_New_1d,
     Conv2d_NN, 
     Conv2d_NN_Attn
 )
@@ -76,14 +75,6 @@ class VGG(nn.Module):
                         "coordinate_encoding": args.coordinate_encoding
                     })
                     layer = Conv2d_New(**layer_params)
-
-                elif args.layer == "Conv2d_New_1d":
-                    layer_params.update({
-                        "K": args.K, 
-                        "stride": 1, 
-                        "coordinate_encoding": args.coordinate_encoding
-                    })
-                    layer = Conv2d_New_1d(**layer_params)
 
                 elif self.args.layer == "ConvNN":
                     layer_params.update({

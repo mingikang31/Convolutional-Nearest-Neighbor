@@ -11,7 +11,6 @@ from torch import Tensor
 
 from models.layers2d import (
     Conv2d_New,
-    Conv2d_New_1d,
     Conv2d_NN, 
     Conv2d_NN_Attn
 )
@@ -54,27 +53,6 @@ class BasicBlock(nn.Module):
 
             self.conv1 = Conv2d_New(in_channels, out_channels, **layer_params_1)
             self.conv2 = Conv2d_New(out_channels, out_channels, **layer_params_2)
-            self.downsample_conv1 = nn.Identity()
-            self.downsample_conv2 = nn.Identity()
-            
-        elif args.layer == "Conv2d_New_1d":
-            layer_params_1 = {
-                "K": args.K, 
-                "stride": stride,  # Use actual stride for conv1
-                "shuffle_pattern": args.shuffle_pattern, 
-                "shuffle_scale": args.shuffle_scale,
-                "coordinate_encoding": args.coordinate_encoding
-            }
-            layer_params_2 = {
-                "K": args.K, 
-                "stride": 1,  # Always 1 for conv2
-                "shuffle_pattern": args.shuffle_pattern, 
-                "shuffle_scale": args.shuffle_scale,
-                "coordinate_encoding": args.coordinate_encoding
-            }
-
-            self.conv1 = Conv2d_New_1d(in_channels, out_channels, **layer_params_1)
-            self.conv2 = Conv2d_New_1d(out_channels, out_channels, **layer_params_2)
             self.downsample_conv1 = nn.Identity()
             self.downsample_conv2 = nn.Identity()
 
