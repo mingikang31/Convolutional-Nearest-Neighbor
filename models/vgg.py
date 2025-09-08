@@ -14,6 +14,7 @@ import torch.nn as nn
 
 from models.layers2d import (
     Conv2d_New, 
+    Conv2d_NN_sanity, 
     Conv2d_NN, 
     Conv2d_NN_Attn
 )
@@ -80,13 +81,15 @@ class VGG(nn.Module):
                     layer_params.update({
                         "K": self.args.K,
                         "stride": self.args.K, # Stride is always K
+                        "padding": self.args.padding,
                         "sampling_type": self.args.sampling_type,
                         "num_samples": self.args.num_samples,
                         "sample_padding": self.args.sample_padding,
                         "magnitude_type": self.args.magnitude_type,
                         "coordinate_encoding": self.args.coordinate_encoding
                     })
-                    layer = Conv2d_NN(**layer_params)
+                    # layer = Conv2d_NN(**layer_params)
+                    layer = Conv2d_NN_sanity(**layer_params)
                 elif self.args.layer == "ConvNN_Attn":
                     layer_params.update({
                         "K": self.args.K,

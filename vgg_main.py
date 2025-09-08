@@ -23,12 +23,11 @@ def args_parser():
     
     # Model Arguments
     parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "Conv2d_New", "Conv2d_New_1d", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], help="Type of Convolution or Attention layer to use")
-    parser.add_argument("--num_layers", type=int, default=5, help="Number of layers.")   
-    parser.add_argument("--channels", nargs='+', type=int, default=[8, 16, 32, 64, 128], help="Channel sizes for each layer.")
     
     # Additional Layer Arguments
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN")
     parser.add_argument("--kernel_size", type=int, default=3, help="Kernel Size for Conv2d")        
+    parser.add_argument("--padding", type=int, default=1, help="Padding for ConvNN")
     parser.add_argument("--sampling_type", type=str, default='all', choices=["all", "random", "spatial"], help="Sampling method for ConvNN Models")
     parser.add_argument("--num_samples", type=int, default=-1, help="Number of samples for ConvNN Models")
     parser.add_argument("--sample_padding", type=int, default=0, help="Padding for spatial sampling in ConvNN Models")
@@ -86,7 +85,6 @@ def check_args(args):
     assert args.optimizer in ['adam', 'sgd', 'adamw'], f"Optimizer {args.optimizer} not supported"
     assert args.scheduler in ['step', 'cosine', 'plateau'], f"Scheduler {args.scheduler} not supported"
     
-    assert args.num_layers == len(args.channels), f"Number of layers {args.num_layers} does not match the number of channels {len(args.channels)}"
         
     if args.sampling_type == "all": # only for Conv2d_NN, Conv2d_NN_Attn
         args.num_samples = -1
@@ -159,6 +157,5 @@ if __name__ == '__main__':
 
     main(args)
 
-# python allconvnet_main.py --layer Conv2d --num_layers 3 --channels 8 16 32 --dataset cifar10 --num_epochs 10 --device cuda --output_dir ./Output/Simple/Conv2d 
 
-# python allconvnet_main.py --layer Conv2d/ConvNN --num_layers 3 --channels 8 16 32 --sampling Spatial --num_samples 8 --dataset cifar10 --num_epochs 10 --device cuda --output_dir ./Output/Simple/Conv2d_ConvNN_Spatial
+# python vgg_main.py --layer ConvNN --K 9 --coordinate_encoding --sampling_type all --num_epochs 50 --output_dir ./Output/Sep_8/vgg/Distance/1e_3/ConvNN_All_K9_0_p1 --padding 1 --seed 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-3 --device mps

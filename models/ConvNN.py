@@ -52,4 +52,59 @@ class Conv2d_NN(nn.Module):
         # Positional Encoding (optional)
         self.coordinate_encoding = coordinate_encoding 
         self.coordinate_cache = {}
+
+        # Pixel Shuffle Adjustments
+        self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale) 
+        self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
+
+        self.in_channels_1d = self.in_channels * (self.shuffle_scale ** 2) if self.shuffle_pattern in ["B", "BA"] else self.in_channels
+        self.out_channels_1d = self.out_channels * (self.shuffle_scale ** 2) if self.shuffle_pattern in ["A", "BA"] else self.out_channels
+
+        self.in_channels_1d = self.in_channels_1d + 2 if self.coordinate_encoding else self.in_channels_1d
+
+        self.conv1d_layer = nn.Conv1d(
+            in_channels = self.in_channels_1d,
+            out_channels = self.out_channels_1d,
+            kernel_size = self.K, 
+            stride = self.stride, 
+            padding = 0, 
+            bias = False
+        )
+
+        self.og_shape = None 
+        self.padded_shape = None
+
+
+    def forward(self, x):  
+        # 1. Pixel Shuffle 
+        x = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
+        self.og_shape = x.shape
+
+        # 2. Add Padding 
+        if self.padding > 0:
+            x = F.pad(x, (self.padding, self.padding, self.padding, self.padding), mode='replicate')
+            self.padded_shape = x.shape
+
+        # 3. Add Coordinate Encoding
+        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
+
+        # 4. Sampling 
+
+        # 5. Similarity Calculation 
+
+        # 6. Aggregation 
+
+
+        # 7. Pixel Unshuffle
+
+        
+        
+        
+
+        return 
+    
+
+        
+
+        
         
