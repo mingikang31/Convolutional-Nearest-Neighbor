@@ -149,7 +149,7 @@ class Conv2d_NN_sanity(nn.Module):
         # print(self.in_channels, self.out_channels)
         # Conv1d Layer 
         self.conv1d_layer = nn.Conv1d(
-            in_channels=self.in_channels, # + 2 if self.coordinate_encoding else self.in_channels, 
+            in_channels=self.in_channels + 2 if self.coordinate_encoding else self.in_channels, 
             out_channels=self.out_channels,
             kernel_size=self.K,
             stride=self.stride,
@@ -182,8 +182,8 @@ class Conv2d_NN_sanity(nn.Module):
         x = self.flatten(x)
         # print("flattened shape: ", x.shape)
 
-        x_dist = x[:, -2:, :]
-        x = x[:, :-2, :] 
+        # x_dist = x[:, -2:, :]
+        # x = x[:, :-2, :] 
 
         if self.sampling_type == "all":
             similarity_matrix = self._calculate_similarity_matrix(x)

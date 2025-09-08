@@ -15,11 +15,11 @@ cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 source activate mingi
 
 # ConvNN
-python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 16 8 --K 9 --coordinate_encoding --sampling_type all --num_epochs 150 --output_dir ./Output/Sep_6_no_bias/1e_3/Color/ConvNN_All_K9_0_p1 --padding 1 --seed 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-3
+python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 16 8 --K 9 --coordinate_encoding --sampling_type all --num_epochs 150 --output_dir ./Output/Sep_6_no_bias/Distance_Color/1e_3/ConvNN_All_K9_0_p1 --padding 1 --seed 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-3
 
-python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 16 8 --K 4 --coordinate_encoding --sampling_type all --num_epochs 150 --output_dir ./Output/Sep_6_no_bias/1e_3/Color/ConvNN_All_K4_0_p1 --padding 1 --seed 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-3
+python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 16 8 --K 4 --coordinate_encoding --sampling_type all --num_epochs 150 --output_dir ./Output/Sep_6_no_bias/Distance_Color/1e_3/ConvNN_All_K4_0_p1 --padding 1 --seed 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-3
 
-python allconvnet_main.py --layer ConvNN --num_layers 3 --channels 32 16 8 --K 1 --coordinate_encoding --sampling_type all --num_epochs 150 --output_dir ./Output/Sep_6_no_bias/1e_3/Color/ConvNN_All_K1_0_p0 --padding 0 --seed 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-3
+
 
 # Conv2d
 # python allconvnet_main.py --layer Conv2d --num_layers 3 --channels 32 16 8 --kernel_size 3 --num_epochs 150 --output_dir ./Output/Sep_6_no_bias/Color/1e_3/Conv2d_K3 --lr_step 2 --lr_gamma 0.95 --lr 1e-3
