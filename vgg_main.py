@@ -158,4 +158,4 @@ if __name__ == '__main__':
     main(args)
 
 
-# python vgg_main.py --layer ConvNN --K 9 --coordinate_encoding --sampling_type all --num_epochs 50 --output_dir ./Output/Sep_8/vgg/Distance/1e_3/ConvNN_All_K9_0_p1 --padding 1 --seed 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-3 --device mps
+# python vgg_main.py --layer ConvNN --K 9 --coordinate_encoding --sampling_type all --num_epochs 50 --output_dir ./Output/Sep_8/vgg/Distance_Color/1e_3/ConvNN_All_K9_0_p1 --padding 1 --seed 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-3 --device mps
