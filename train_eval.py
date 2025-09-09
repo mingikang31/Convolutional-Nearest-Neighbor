@@ -56,43 +56,44 @@ def Train_Eval(args,
     if args.use_amp:
         scaler = torch.amp.GradScaler("cuda")
 
-
+    # ==================== GFLOPs Calculation with PyTorch Profiler ====================
     try:
+        import torch.profiler
+
         # Get a single batch from the train_loader to determine input size
         input_tensor, _ = next(iter(train_loader))
         input_tensor = input_tensor.to(device)
 
-        # 1. Define a handler for the nn.Unflatten layer
-        def unflatten_handler(m, x, y):
-            # Unflatten is a reshaping op with zero FLOPs
-            pass
+        # Profile a single forward pass
+        with torch.profiler.profile(
+            activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+            profile_memory=True,
+            with_flops=True
+        ) as prof:
+            with torch.no_grad():
+                model(input_tensor[0:1])
 
-        # 2. Create the custom_ops dictionary
-        custom_ops = {
-            nn.Unflatten: unflatten_handler
-        }
+        # Find the total FLOPs from the profiler results
+        total_flops = 0
+        for event in prof.key_averages():
+            if event.key == "Total": # Event for the total of all ops
+                total_flops = event.flops
 
-        # 3. Pass the custom_ops to the profile function
-        # This is the ONLY profile call you need.
-        macs, params = profile(
-            model, 
-            inputs=(input_tensor[0:1], ), 
-            custom_ops=custom_ops,
-            verbose=False
-        )
-        
-        # Convert MACs to GFLOPs
-        gflops = (macs * 2) / 1e9
-        params_m = params / 1e6
-        
-        print(f"✨ Model Complexity:")
-        print(f"   - GFLOPs: {gflops:.2f}")
-        print(f"   - Parameters: {params_m:.2f} M")
-        
+        if total_flops > 0:
+            gflops = total_flops / 1e9
+            params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+            params_m = params / 1e6
+            
+            print(f"✨ Model Complexity (Profiler):")
+            print(f"   - GFLOPs: {gflops:.8f}")
+            print(f"   - Trainable Parameters: {params_m:.8f} M")
+        else:
+            print("Could not calculate GFLOPs with PyTorch Profiler. Ensure you're on PyTorch 1.10+.")
+
     except Exception as e:
-        print(f"Could not calculate GFLOPs: {e}")
+        print(f"Could not calculate GFLOPs with PyTorch Profiler: {e}")
     # =====================================================================
-
+    
     # Training Loop
     epoch_times = [] # Average Epoch Time 
     epoch_results = [] 
