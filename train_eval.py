@@ -57,13 +57,11 @@ def Train_Eval(args,
         scaler = torch.amp.GradScaler("cuda")
 
 
-    # ==================== ADD GFLOPs CALCULATION HERE ====================
     try:
         # Get a single batch from the train_loader to determine input size
         input_tensor, _ = next(iter(train_loader))
         input_tensor = input_tensor.to(device)
-              # --- FIX STARTS HERE ---
-        
+
         # 1. Define a handler for the nn.Unflatten layer
         def unflatten_handler(m, x, y):
             # Unflatten is a reshaping op with zero FLOPs
@@ -75,25 +73,21 @@ def Train_Eval(args,
         }
 
         # 3. Pass the custom_ops to the profile function
+        # This is the ONLY profile call you need.
         macs, params = profile(
             model, 
             inputs=(input_tensor[0:1], ), 
-            custom_ops=custom_ops, # Add this argument
+            custom_ops=custom_ops,
             verbose=False
         )
         
-        # Profile the model with a single image from the batch
-        # verbose=False prevents the library from printing its own summary
-        macs, params = profile(model, inputs=(input_tensor[0:1], ), verbose=False)
-        
-        # Convert MACs (Multiply-Accumulate operations) to GFLOPs
-        # Note: 1 MAC is typically counted as 2 FLOPs (1 multiplication, 1 addition)
+        # Convert MACs to GFLOPs
         gflops = (macs * 2) / 1e9
         params_m = params / 1e6
         
-        print(f"Model Complexity:")
-        print(f"   - GFLOPs: {gflops:.10f}")
-        print(f"   - Parameters: {params_m:.10f} M")
+        print(f"✨ Model Complexity:")
+        print(f"   - GFLOPs: {gflops:.2f}")
+        print(f"   - Parameters: {params_m:.2f} M")
         
     except Exception as e:
         print(f"Could not calculate GFLOPs: {e}")
@@ -118,7 +112,7 @@ def Train_Eval(args,
         train_top1_5 = [0, 0]
         for images, labels in train_loader: 
             images, labels = images.to(device), labels.to(device)
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)
             
             # use mixed precision training
             if args.use_amp:
