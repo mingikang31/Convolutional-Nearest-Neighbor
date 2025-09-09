@@ -56,7 +56,7 @@ def Train_Eval(args,
     if args.use_amp:
         scaler = torch.amp.GradScaler("cuda")
 
-    # ==================== GFLOPs Calculation with PyTorch Profiler ====================
+    # ==================== ROBUST GFLOPs Calculation with PyTorch Profiler ====================
     try:
         import torch.profiler
 
@@ -67,17 +67,13 @@ def Train_Eval(args,
         # Profile a single forward pass
         with torch.profiler.profile(
             activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-            profile_memory=True,
             with_flops=True
         ) as prof:
             with torch.no_grad():
                 model(input_tensor[0:1])
 
-        # Find the total FLOPs from the profiler results
-        total_flops = 0
-        for event in prof.key_averages():
-            if event.key == "Total": # Event for the total of all ops
-                total_flops = event.flops
+        # A more robust way to get total FLOPs: sum them up from all events
+        total_flops = sum(event.flops for event in prof.key_averages())
 
         if total_flops > 0:
             gflops = total_flops / 1e9
@@ -85,10 +81,11 @@ def Train_Eval(args,
             params_m = params / 1e6
             
             print(f"✨ Model Complexity (Profiler):")
-            print(f"   - GFLOPs: {gflops:.8f}")
-            print(f"   - Trainable Parameters: {params_m:.8f} M")
+            print(f"   - GFLOPs: {gflops:.2f}")
+            print(f"   - Trainable Parameters: {params_m:.2f} M")
         else:
-            print("Could not calculate GFLOPs with PyTorch Profiler. Ensure you're on PyTorch 1.10+.")
+            # If this still fails, fvcore is the best alternative
+            print("Profiler returned 0 FLOPs. Consider using the 'fvcore' method instead for a theoretical count.")
 
     except Exception as e:
         print(f"Could not calculate GFLOPs with PyTorch Profiler: {e}")
