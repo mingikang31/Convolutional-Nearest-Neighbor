@@ -80,9 +80,9 @@ def Train_Eval(args,
             params = sum(p.numel() for p in model.parameters() if p.requires_grad)
             params_m = params / 1e6
             
-            print(f"✨ Model Complexity (Profiler):")
-            print(f"   - GFLOPs: {gflops:.2f}")
-            print(f"   - Trainable Parameters: {params_m:.2f} M")
+            print(f"Model Complexity (Profiler):")
+            print(f"   - GFLOPs: {gflops:.8f}")
+            print(f"   - Trainable Parameters: {params_m:.8f} M")
         else:
             # If this still fails, fvcore is the best alternative
             print("Profiler returned 0 FLOPs. Consider using the 'fvcore' method instead for a theoretical count.")
