@@ -14,7 +14,6 @@ import torch.nn as nn
 
 from models.layers2d import (
     Conv2d_New, 
-    Conv2d_NN_sanity, 
     Conv2d_NN, 
     Conv2d_NN_Attn
 )
@@ -53,56 +52,70 @@ class VGG(nn.Module):
 
         layers = [] 
 
+        conv2d_new_params = {
+            "kernel_size": self.args.kernel_size,
+            "stride": 1, # Stride is always 1 
+            "shuffle_pattern": self.args.shuffle_pattern,
+            "shuffle_scale": self.args.shuffle_scale,
+            "aggregation_type": self.args.aggregation_type
+        }
+
+        convnn_params = {
+            "K": self.args.K, 
+            "stride": self.args.K, # Stride is always K
+            "padding": self.args.padding,
+            "sampling_type": self.args.sampling_type,
+            "num_samples": self.args.num_samples,
+            "sample_padding": self.args.sample_padding,
+            "shuffle_pattern": self.args.shuffle_pattern,
+            "shuffle_scale": self.args.shuffle_scale,
+            "magnitude_type": self.args.magnitude_type,
+            "similarity_type": self.args.similarity_type,
+            "aggregation_type": self.args.aggregation_type
+        }
+        
+        convnn_attn_params = {
+            "K": self.args.K, 
+            "stride": self.args.K, # Stride is always K
+            "padding": self.args.padding,
+            "sampling_type": self.args.sampling_type,
+            "num_samples": self.args.num_samples,
+            "sample_padding": self.args.sample_padding,
+            "shuffle_pattern": self.args.shuffle_pattern,
+            "shuffle_scale": self.args.shuffle_scale,
+            "magnitude_type": self.args.magnitude_type,
+            "similarity_type": self.args.similarity_type,
+            "aggregation_type": self.args.aggregation_type, 
+            
+            "attention_dropout": self.args.attention_dropout
+        }
+
         for v in cfg[features_config]:
             if v == "M":
                 layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             else:
-                layer_params = {
-                    "in_channels": in_channels,
-                    "out_channels": v,
-                    "shuffle_pattern": self.args.shuffle_pattern,
-                    "shuffle_scale": self.args.shuffle_scale,
-                }
-                
                 if self.args.layer == "Conv2d":
-                    layer = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
-                    
+                    layer = nn.Conv2d(in_channels, v, kernel_size=self.args.kernel_size, padding="same", bias=False)
                 elif args.layer == "Conv2d_New": 
-                    layer_params.update({
-                        "kernel_size": args.kernel_size,
-                        "stride": 1, 
-                        "shuffle_pattern": args.shuffle_pattern, 
-                        "shuffle_scale": args.shuffle_scale,
-                        "coordinate_encoding": args.coordinate_encoding
+                    conv2d_new_params.update({
+                        "in_channels": in_channels,
+                        "out_channels": v
                     })
-                    layer = Conv2d_New(**layer_params)
+                    layer = Conv2d_New(**conv2d_new_params)
 
                 elif self.args.layer == "ConvNN":
-                    layer_params.update({
-                        "K": self.args.K,
-                        "stride": self.args.K, # Stride is always K
-                        "padding": self.args.padding,
-                        "sampling_type": self.args.sampling_type,
-                        "num_samples": self.args.num_samples,
-                        "sample_padding": self.args.sample_padding,
-                        "magnitude_type": self.args.magnitude_type,
-                        "coordinate_encoding": self.args.coordinate_encoding
+                    convnn_params.update({
+                        "in_channels": in_channels,
+                        "out_channels": v,
                     })
-                    # layer = Conv2d_NN(**layer_params)
-                    layer = Conv2d_NN_sanity(**layer_params)
+                    layer = Conv2d_NN(**convnn_params)
                 elif self.args.layer == "ConvNN_Attn":
-                    layer_params.update({
-                        "K": self.args.K,
-                        "stride": self.args.K,
-                        "sampling_type": self.args.sampling_type,
-                        "num_samples": self.args.num_samples,
-                        "sample_padding": self.args.sample_padding,
-                        "magnitude_type": self.args.magnitude_type,
-                        "img_size": self.args.img_size[1:], # Pass H, W
-                        "attention_dropout": self.args.attention_dropout,
-                        "coordinate_encoding": self.args.coordinate_encoding
+                    convnn_attn_params.update({
+                        "in_channels": in_channels,
+                        "out_channels": v,
+
                     })
-                    layer = Conv2d_NN_Attn(**layer_params)
+                    layer = Conv2d_NN_Attn(**convnn_attn_params)
                     
                 layers += [layer]
                 layers += [nn.BatchNorm2d(v)]
@@ -134,51 +147,3 @@ class VGG(nn.Module):
         total_params = sum(p.numel() for p in self.parameters())
         trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
         return total_params, trainable_params
-        
-if __name__ == "__main__":
-    from types import SimpleNamespace
-
-    # Create default args
-    args = SimpleNamespace(
-        layer="ConvNN",
-        num_layers=3,
-        channels=[8, 16, 32],
-        K=3,
-        sampling_type="all",
-        num_samples=-1,
-        sample_padding=0,
-        num_heads=4,
-        attention_dropout=0.1,
-        shuffle_pattern="NA",
-        shuffle_scale=2,
-        magnitude_type="similarity",
-        coordinate_encoding=True, 
-        img_size=(3, 32, 32), 
-        num_classes=10,
-    )
-    model = VGG(
-        args=args,
-        features_config="A",
-    )
-    print("Parameter count ConvNN: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
-
-    args.layer = "Conv2d"
-    model = VGG(
-        args=args,
-        features_config="A",
-    )
-    print("Parameter count Conv2d: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
-    
-    args.layer = "ConvNN_Attn"
-    model = VGG(
-        args=args,
-        features_config="A",
-    )
-    print("Parameter count ConvNN_Attn: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
-
-
-"""
-Parameter count Conv2d:  128,807,306
-Parameter count ConvNN:  170,448,554
-Parameter count ConvNN_Attn:  172,545,706
-"""

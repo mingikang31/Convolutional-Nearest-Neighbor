@@ -22,28 +22,30 @@ def args_parser():
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", add_help=False) 
     
     # Model Arguments
-    parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "Conv2d_New", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], help="Type of Convolution or Attention layer to use")
+    parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "Conv2d_New", "ConvNN", "ConvNN_Attn"], help="Type of Convolution layer to use")
     parser.add_argument("--num_layers", type=int, default=3, help="Number of layers.")   
-    parser.add_argument("--channels", nargs='+', type=int, default=[8, 16, 32], help="Channel sizes for each layer.")
+    parser.add_argument("--channels", nargs='+', type=int, default=[32, 16, 8], help="Channel sizes for each layer.")
     
     # Additional Layer Arguments
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN")
     parser.add_argument("--kernel_size", type=int, default=3, help="Kernel Size for Conv2d")        
-    parser.add_argument("--padding", type=int, default=0, help="Padding for ConvNN")
+    parser.add_argument("--padding", type=int, default=1, help="Padding for ConvNN")
     parser.add_argument("--sampling_type", type=str, default='all', choices=["all", "random", "spatial"], help="Sampling method for ConvNN Models")
     parser.add_argument("--num_samples", type=int, default=-1, help="Number of samples for ConvNN Models")
     parser.add_argument("--sample_padding", type=int, default=0, help="Padding for spatial sampling in ConvNN Models")
     
-    parser.add_argument("--num_heads", type=int, default=4, help="Number of heads for Attention Models")    
+    # ConvNN Attention specific arguments
     parser.add_argument("--attention_dropout", type=float, default=0.1, help="Dropout rate for the model")    
 
+    # ConvNN specific arguments
     parser.add_argument("--shuffle_pattern", type=str, default="NA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")
-    parser.add_argument("--shuffle_scale", type=int, default=2, help="Shuffle scale for ConvNN Models")
-    parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
-    parser.add_argument("--coordinate_encoding", action="store_true", help="Use coordinate encoding in ConvNN Models")
-    parser.set_defaults(coordinate_encoding=False)    
+    parser.add_argument("--shuffle_scale", type=int, default=0, help="Shuffle scale for ConvNN Models")
+    parser.add_argument("--magnitude_type", type=str, default="cosine", choices=["cosine", "euclidean"], help="Magnitude type for ConvNN Models")
+    parser.add_argument("--similarity_type", type=str, default="Loc", choices=["Loc", "Col", "Loc_Col"], help="Similarity type for ConvNN Models")
+    parser.add_argument("--aggregation_type", type=str, default="Col", choices=["Col", "Loc_Col"], help="Aggregation type for ConvNN Models")
 
-    # Arguments for Data 
+
+    # Data Arguments
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", 'imagenet'], help="Dataset to use for training and evaluation")
     parser.add_argument("--data_path", type=str, default="./Data", help="Path to the dataset")
         
@@ -53,7 +55,6 @@ def args_parser():
     parser.add_argument("--use_amp", action="store_true", help="Use mixed precision training")
     parser.set_defaults(use_amp=False)
     parser.add_argument("--clip_grad_norm", type=float, default=None, help="Gradient clipping value")
-    
     
     # Loss Function Arguments
     parser.add_argument("--criterion", type=str, default="CrossEntropy", choices=["CrossEntropy", "MSE"], help="Loss function to use for training")
@@ -75,6 +76,10 @@ def args_parser():
     
     # Output Arguments 
     parser.add_argument("--output_dir", type=str, default="./Output/AllConvNet/ConvNN", help="Directory to save the output files")
+
+    # Test Arguments
+    parser.add_argument("--test_only", action="store_true", help="Only perform testing")
+    parser.set_defaults(test_only=False)
     
     return parser
 
@@ -82,19 +87,9 @@ def check_args(args):
     # Check the arguments based on the model 
     print("Checking arguments based on the model...")    
     
-    assert args.layer in ["Conv2d","Conv2d_New", "ConvNN", "ConvNN_Attn", "Attention", "Conv2d/ConvNN", "Conv2d/ConvNN_Attn", "Attention/ConvNN", "Attention/ConvNN_Attn", "Conv2d/Attention"], f"Model {args.layer} not supported"
-    assert args.dataset in ["cifar10", "cifar100", 'imagenet'], f"Dataset {args.dataset} not supported"
-    assert args.criterion in ["CrossEntropy", "MSE"], f"Criterion {args.criterion} not supported"
-    assert args.optimizer in ['adam', 'sgd', 'adamw'], f"Optimizer {args.optimizer} not supported"
-    assert args.scheduler in ['step', 'cosine', 'plateau'], f"Scheduler {args.scheduler} not supported"
-    
     assert args.num_layers == len(args.channels), f"Number of layers {args.num_layers} does not match the number of channels {len(args.channels)}"
-        
-    if args.sampling_type == "all": # only for Conv2d_NN, Conv2d_NN_Attn
-        args.num_samples = -1
-    if args.num_samples == -1:
-        args.sampling_type = "all"
-
+    
+    # # Make image 64x64
     args.resize = False
     return args
     
@@ -134,29 +129,30 @@ def main(args):
     print(f"Trainable Parameters: {trainable_params}")
     args.total_params = total_params
     args.trainable_params = trainable_params
-    
-    # Set the seed for reproducibility
-    set_seed(args.seed)
-    
-    
-    # Training Modules 
-    train_eval_results = Train_Eval(args, 
-                                model, 
-                                dataset.train_loader, 
-                                dataset.test_loader
-                                )
-    
-    # Storing Results in output directory 
-    write_to_file(os.path.join(args.output_dir, "args.txt"), args)
-    write_to_file(os.path.join(args.output_dir, "model.txt"), model)
-    write_to_file(os.path.join(args.output_dir, "train_eval_results.txt"), train_eval_results)
+
+    if args.test_only:       
+        ex = torch.Tensor(3, 3, 32, 32) 
+        out = model(ex)
+        print(f"Output shape: {out.shape}")
+        print("Testing Complete")
+    else:
+        # Set the seed for reproducibility
+        set_seed(args.seed)
+        
+        # Training Modules 
+        train_eval_results = Train_Eval(args, 
+                                    model, 
+                                    dataset.train_loader, 
+                                    dataset.test_loader
+                                    )
+        
+        # Storing Results in output directory 
+        write_to_file(os.path.join(args.output_dir, "args.txt"), args)
+        write_to_file(os.path.join(args.output_dir, "model.txt"), model)
+        write_to_file(os.path.join(args.output_dir, "train_eval_results.txt"), train_eval_results)
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", parents=[args_parser()])
     args = parser.parse_args()
 
     main(args)
-
-# python allconvnet_main.py --layer Conv2d --num_layers 3 --channels 8 16 32 --dataset cifar10 --num_epochs 10 --device mps --output_dir ./Output/Simple/Conv2d 
-
-# python allconvnet_main.py --layer Conv2d/ConvNN --num_layers 3 --channels 8 16 32 --sampling Spatial --num_samples 8 --dataset cifar10 --num_epochs 10 --device cuda --output_dir ./Output/Simple/Conv2d_ConvNN_Spatial
