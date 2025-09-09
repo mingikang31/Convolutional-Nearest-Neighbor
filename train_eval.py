@@ -8,68 +8,6 @@ from tqdm import tqdm
 import time 
 
 from utils import set_seed
-
-from thop import profile 
-
-def Train_Eval(args, 
-               model: nn.Module, 
-               train_loader, 
-               test_loader
-               ):
-    
-    if args.seed != 0:
-        set_seed(args.seed)
-    
-    if args.criterion == 'CrossEntropy':
-        if args.layer == "ConvNNAttention" or args.layer == "ConvNN":
-            # criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
-            criterion = nn.CrossEntropyLoss()
-        else: 
-            criterion = nn.CrossEntropyLoss()
-    elif args.criterion == 'MSE':
-        criterion = nn.MSELoss()
-
-    
-    # Optimizer 
-    if args.optimizer == 'adam':
-        optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    elif args.optimizer == 'sgd':
-        optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
-    elif args.optimizer == 'adamw':
-        optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-        
-
-    # Learning Rate Scheduler
-    scheduler = None
-    if args.scheduler == 'step':
-        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step, gamma=args.lr_gamma)
-    elif args.scheduler == 'cosine':
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.num_epochs)
-    elif args.scheduler == 'plateau':
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=5)
-
-        
-    # Device
-    device = args.device
-    model.to(device)
-    criterion.to(device)
-    
-    if args.use_amp:
-        scaler = torch.amp.GradScaler("cuda")
-
-
-
-'''Training & Evaluation Module for Convolutional Neural Networks'''
-
-import torch
-import torch.nn as nn
-import torch.optim as optim
-
-from tqdm import tqdm
-import time 
-
-from utils import set_seed
-# ADD THIS IMPORT
 from thop import profile
 
 
@@ -124,6 +62,25 @@ def Train_Eval(args,
         # Get a single batch from the train_loader to determine input size
         input_tensor, _ = next(iter(train_loader))
         input_tensor = input_tensor.to(device)
+              # --- FIX STARTS HERE ---
+        
+        # 1. Define a handler for the nn.Unflatten layer
+        def unflatten_handler(m, x, y):
+            # Unflatten is a reshaping op with zero FLOPs
+            pass
+
+        # 2. Create the custom_ops dictionary
+        custom_ops = {
+            nn.Unflatten: unflatten_handler
+        }
+
+        # 3. Pass the custom_ops to the profile function
+        macs, params = profile(
+            model, 
+            inputs=(input_tensor[0:1], ), 
+            custom_ops=custom_ops, # Add this argument
+            verbose=False
+        )
         
         # Profile the model with a single image from the batch
         # verbose=False prevents the library from printing its own summary
