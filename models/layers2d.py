@@ -2,24 +2,15 @@
 
 """
 Layers 2D: 
-(1) Conv2d_NN (All, Random, Spatial Sampling) 
-(2) Conv2d_NN_Attn (All, Random, Spatial Sampling) 
-(3) Attention2d 
+(1) Conv2d_New (Baseline Nearest Neighbor Layer w/ Pixel Shuffle and Coordinate Encoding)
+(2) Conv2d_NN (Convolutional Nearest Neighbor Layer w/ Pixel Shuffle, Coordinate Encoding, Similarity and Aggregation Types, and 3 Sampling Types) 
+(3) Conv2d_NN_Attn (Convolutional Nearest Neighbor Attention Layer w/ Pixel Shuffle, Coordinate Encoding, Similarity and Aggregation Types, and 3 Sampling Types) 
 
-Branching Layers 2D: 
-(4) Conv2d_ConvNN_Branching (All, Random, Spatial Sampling)
-(5) Conv2d_ConvNN_Attn_Branching (All, Random, Spatial Sampling)
-(6) Attention_ConvNN_Branching (All, Random, Spatial Sampling)
-(7) Attention_ConvNN_Attn_Branching (All, Random, Spatial Sampling)
-(8) Attention_Conv2d_Branching 
 """
 
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
-import time 
-import math
-
 
 class Conv2d_New(nn.Module): 
     """Convolution 2D Nearest Neighbor Layer"""
@@ -37,6 +28,7 @@ class Conv2d_New(nn.Module):
         
         # Assertions 
         assert shuffle_pattern in ["B", "A", "BA", "NA"], "Error: shuffle_pattern must be one of ['B', 'A', 'BA', 'NA']"
+        assert aggregation_type in ["Col", "Loc_Col"], "Error: aggregation_type must be one of ['Col', 'Loc_Col']"
         
         # Initialize parameters
         self.in_channels = in_channels
@@ -46,46 +38,40 @@ class Conv2d_New(nn.Module):
         self.shuffle_pattern = shuffle_pattern
         self.shuffle_scale = shuffle_scale
 
+        self.aggregation_type = aggregation_type 
+
         # Positional Encoding (optional)
-        self.coordinate_encoding = coordinate_encoding
         self.coordinate_cache = {} 
-        self.in_channels = in_channels + 2 if self.coordinate_encoding else in_channels
-        self.out_channels = out_channels + 2 if self.coordinate_encoding else out_channels
 
         # Shuffle2D/Unshuffle2D Layers
         self.shuffle_layer = nn.PixelShuffle(upscale_factor=self.shuffle_scale)
         self.unshuffle_layer = nn.PixelUnshuffle(downscale_factor=self.shuffle_scale)
         
         # Adjust Channels for PixelShuffle
-        self.in_channels_shuff = self.in_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["B", "BA"] else self.in_channels
-        self.out_channels_shuff = self.out_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["A", "BA"] else self.out_channels
+        self.in_channels = self.in_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["B", "BA"] else self.in_channels
+        self.out_channels = self.out_channels * (self.shuffle_scale**2) if self.shuffle_pattern in ["A", "BA"] else self.out_channels
 
+        self.in_channels = self.in_channels + 2 if self.aggregation_type == "Loc_Col" else self.in_channels
+
+    
         # Conv2d Layer
-        self.conv2d_layer = nn.Conv2d(in_channels=self.in_channels_shuff, 
-                                      out_channels=self.out_channels_shuff, 
+        self.conv2d_layer = nn.Conv2d(in_channels=self.in_channels, 
+                                      out_channels=self.out_channels, 
                                       kernel_size=self.kernel_size, 
                                       stride=self.stride, 
                                       padding="same")
-
-
-        # Pointwise Convolution Layer
-        self.pointwise_conv = nn.Conv2d(in_channels=self.out_channels,
-                                         out_channels=self.out_channels - 2,
-                                         kernel_size=1,
-                                         stride=1,
-                                         padding=0)
-        
         
     def forward(self, x): 
-        # Coordinate Channels (optional) + Unshuffle + Flatten 
-        x = self._add_coordinate_encoding(x) if self.coordinate_encoding else x
-        x_2d = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
+        x = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
+        print("x shape after unshuffle:", x.shape)
+        x = self._add_coordinate_encoding(x) if self.aggregation_type == "Loc_Col" else x
+        print("x shape after adding coordinates:", x.shape)
 
         # Conv2d Layer
-        x = self.conv2d_layer(x_2d)
-
+        x = self.conv2d_layer(x)
+        print("x shape after conv2d:", x.shape)
         x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
-        x = self.pointwise_conv(x) if self.coordinate_encoding else x
+        print("x shape after shuffle:", x.shape)
         return x
 
     def _add_coordinate_encoding(self, x):
@@ -829,4 +815,3 @@ class Conv2d_NN_old(nn.Module):
 
         x_with_coords = torch.cat((x, expanded_grid), dim=1)
         return x_with_coords ### Last two channels are coordinate channels 
- 

@@ -55,6 +55,8 @@ def Train_Eval(args,
     
     if args.use_amp:
         scaler = torch.amp.GradScaler("cuda")
+        
+    epoch_results = [] 
 
     # ==================== ROBUST GFLOPs Calculation with PyTorch Profiler ====================
     try:
@@ -79,10 +81,13 @@ def Train_Eval(args,
             gflops = total_flops / 1e9
             params = sum(p.numel() for p in model.parameters() if p.requires_grad)
             params_m = params / 1e6
-            
+            print(f"   - Trainable Parameters: {params_m:.8f} M")
+
             print(f"Model Complexity (Profiler):")
             print(f"   - GFLOPs: {gflops:.8f}")
             print(f"   - Trainable Parameters: {params_m:.8f} M")
+            epoch_results.append(f"Model Complexity (Profiler): GFLOPs: {gflops:.8f}, Trainable Parameters: {params_m:.8f} M")
+            
         else:
             # If this still fails, fvcore is the best alternative
             print("Profiler returned 0 FLOPs. Consider using the 'fvcore' method instead for a theoretical count.")
@@ -93,7 +98,6 @@ def Train_Eval(args,
     
     # Training Loop
     epoch_times = [] # Average Epoch Time 
-    epoch_results = [] 
     
     max_accuracy = 0.0 
     max_epoch = 0
