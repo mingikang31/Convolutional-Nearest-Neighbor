@@ -38,7 +38,7 @@ def args_parser():
     # ConvNN specific arguments
     parser.add_argument("--shuffle_pattern", type=str, default="NA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")
     parser.add_argument("--shuffle_scale", type=int, default=0, help="Shuffle scale for ConvNN Models")
-    parser.add_argument("--magnitude_type", type=str, default="cosine", choices=["cosine", "euclidean"], help="Magnitude type for ConvNN Models")
+    parser.add_argument("--magnitude_type", type=str, default="euclidean", choices=["cosine", "euclidean"], help="Magnitude type for ConvNN Models")
     parser.add_argument("--similarity_type", type=str, default="Loc", choices=["Loc", "Col", "Loc_Col"], help="Similarity type for ConvNN Models")
     parser.add_argument("--aggregation_type", type=str, default="Col", choices=["Col", "Loc_Col"], help="Aggregation type for ConvNN Models")
 
@@ -69,7 +69,7 @@ def args_parser():
     parser.add_argument('--scheduler', type=str, default='step', choices=['step', 'cosine', 'plateau'], help='Learning rate scheduler')
     
     # Device Arguments
-    parser.add_argument("--device", type=str, default="cuda", choices=["cpu", "cuda", "mps"], help="Device to use for training and evaluation")
+    parser.add_argument("--device", type=str, default="cpu", choices=["cpu", "cuda", "mps"], help="Device to use for training and evaluation")
     parser.add_argument('--seed', default=0, type=int)
     
     # Output Arguments 

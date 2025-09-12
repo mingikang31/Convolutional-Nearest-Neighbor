@@ -176,6 +176,11 @@ class Conv2d_NN(nn.Module):
         self.padded_shape = None
 
 
+        # Utility Variables
+        self.INF = 1e5
+        self.NEG_INF = -1e5
+
+
     def forward(self, x):  
         # 1. Pixel Shuffle 
         x = self.unshuffle_layer(x) if self.shuffle_pattern in ["B", "BA"] else x
@@ -217,7 +222,11 @@ class Conv2d_NN(nn.Module):
             x_sample = x_sim[:, :, rand_idx]
 
             similarity_matrix = self._calculate_euclidean_matrix_N(x_sim, x_sample, sqrt=True) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(x_sim, x_sample)
-            prime = self._prime_N(x, similarity_matrix, self.K, rand_idx, self.maximum)            
+
+            range_idx = torch.arange(len(rand_idx), device=x.device)
+            similarity_matrix[:, rand_idx, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
+
+            prime = self._prime_N(x, similarity_matrix, self.K, rand_idx, self.maximum)
 
         elif self.sampling_type == "spatial":
             x_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-2] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
@@ -229,10 +238,13 @@ class Conv2d_NN(nn.Module):
             x_sample = x_sim[:, :, flat_indices]
 
             similarity_matrix = self._calculate_euclidean_matrix_N(x_sim, x_sample, sqrt=True) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(x_sim, x_sample)
+
+            range_idx = torch.arange(len(flat_indices), device=x.device)    
+            similarity_matrix[:, flat_indices, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
             prime = self._prime_N(x, similarity_matrix, self.K, flat_indices, self.maximum)
         else:
             raise NotImplementedError("Sampling Type not Implemented")
-
+        
         # 5. Conv1d Layer
         x = self.conv1d_layer(prime)
 
@@ -244,11 +256,12 @@ class Conv2d_NN(nn.Module):
 
     def _calculate_euclidean_matrix(self, matrix, sqrt=False):
         norm_squared = torch.sum(matrix ** 2, dim=1, keepdim=True)
-        dot_product = torch.bmm(matrix.transpose(2, 1), matrix)
+        dot_product = torch.matmul(matrix.transpose(2, 1), matrix)
         dist_matrix = norm_squared + norm_squared.transpose(2, 1) - 2 * dot_product
-        dist_matrix = torch.clamp(dist_matrix, min=0.0) 
         dist_matrix = torch.sqrt(dist_matrix) if sqrt else dist_matrix 
-        
+        dist_matrix = torch.clamp(dist_matrix, min=0.0) 
+
+        torch.diagonal(dist_matrix, dim1=1, dim2=2).fill_(self.NEG_INF)
         return dist_matrix
     
     def _calculate_euclidean_matrix_N(self, matrix, matrix_sample, sqrt=False):
@@ -264,9 +277,10 @@ class Conv2d_NN(nn.Module):
     
     def _calculate_cosine_matrix(self, matrix):
         # p=2 (L2 Norm - Euclidean Distance), dim=1 (across the channels)
-        norm_matrix = F.normalize(matrix, p=2, dim=1) 
-        similarity_matrix = torch.bmm(norm_matrix.transpose(2, 1), norm_matrix)
+        norm_matrix = F.normalize(matrix, p=2, dim=1)
+        similarity_matrix = torch.matmul(norm_matrix.transpose(2, 1), norm_matrix)
         similarity_matrix = torch.clamp(similarity_matrix, min=-1.0, max=1.0) 
+        torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(self.INF)
         return similarity_matrix
     
     def _calculate_cosine_matrix_N(self, matrix, matrix_sample):
@@ -286,7 +300,9 @@ class Conv2d_NN(nn.Module):
         else:
             _, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
-        
+
+        print("topk_indices shape:", topk_indices.shape)
+        print("topk_indices: ", topk_indices)
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
 
@@ -306,6 +322,10 @@ class Conv2d_NN(nn.Module):
         tk = topk_indices.shape[-1]
         assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
 
+        print("topk_indices shape:", topk_indices.shape)
+        print("topk_indices: ", topk_indices)
+
+        
         # Map sample indices back to original matrix positions
         mapped_tensor = rand_idx[topk_indices]
         token_indices = torch.arange(t, device=matrix.device).view(1, t, 1).expand(b, t, 1)

@@ -116,9 +116,17 @@ class VGG(nn.Module):
 
                     })
                     layer = Conv2d_NN_Attn(**convnn_attn_params)
-                    
+
+                ## Changed to Instance Norm to go first then conv (different from VGG paper) 
+                """
+                original:
                 layers += [layer]
                 layers += [nn.BatchNorm2d(v)]
+                layers += [nn.ReLU(inplace=True)]
+                """
+                
+                layers += [nn.InstanceNorm2d(v)]
+                layers += [layer]
                 layers += [nn.ReLU(inplace=True)]
                 in_channels = v
 
@@ -147,3 +155,8 @@ class VGG(nn.Module):
         total_params = sum(p.numel() for p in self.parameters())
         trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
         return total_params, trainable_params
+
+
+
+if __name__ == "__main__":
+    pass

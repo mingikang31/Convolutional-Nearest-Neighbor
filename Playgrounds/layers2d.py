@@ -83,7 +83,7 @@ class Conv2d_NN_sanity(nn.Module):
         x = x[:, :-2, :] 
 
         if self.sampling_type == "all":
-            similarity_matrix = self._calculate_similarity_matrix(x_dist)
+            similarity_matrix = self._calculate_euclidean_matrix(x_dist)
             prime = self._prime(x, similarity_matrix, self.K, maximum=True)
         print("prime shape: ", prime.shape)
         x = self.conv1d_layer(prime)
@@ -123,7 +123,16 @@ class Conv2d_NN_sanity(nn.Module):
         similarity_matrix = torch.exp(-coord_dist ** 2 / (2 * sigma ** 2))
 
         return similarity_matrix
-
+    
+    def _calculate_euclidean_matrix(self, matrix, sqrt=False):
+        norm_squared = torch.sum(matrix ** 2, dim=1, keepdim=True)
+        dot_product = torch.bmm(matrix.transpose(2, 1), matrix)
+        dist_matrix = norm_squared + norm_squared.transpose(2, 1) - 2 * dot_product
+        dist_matrix = torch.clamp(dist_matrix, min=0.0) 
+        dist_matrix = torch.sqrt(dist_matrix) if sqrt else dist_matrix 
+        
+        return dist_matrix
+    
     def _prime(self, matrix, magnitude_matrix, K, maximum):
         b, c, t = matrix.shape
         """ ORIGINAL
@@ -132,9 +141,11 @@ class Conv2d_NN_sanity(nn.Module):
         print(topk_indices.shape)
         """
         # New My TopK
-        _, sorted_indices = torch.sort(magnitude_matrix.detach(), dim=2, descending=True, stable=True)
+        _, sorted_indices = torch.sort(magnitude_matrix.detach(), dim=2, descending=False, stable=True)
         topk_indices = sorted_indices[:, :, :K]
-        
+
+        _, topk_indices = torch.topk(magnitude_matrix.detach(), k=K, dim=2, largest=False)
+    
         # End of My TopK
         
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)
