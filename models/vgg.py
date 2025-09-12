@@ -125,8 +125,8 @@ class VGG(nn.Module):
                 layers += [nn.ReLU(inplace=True)]
                 """
                 
-                layers += [nn.InstanceNorm2d(v)]
                 layers += [layer]
+                layers += [nn.BatchNorm2d(v)]
                 layers += [nn.ReLU(inplace=True)]
                 in_channels = v
 

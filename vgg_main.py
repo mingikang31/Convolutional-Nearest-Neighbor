@@ -69,7 +69,7 @@ def args_parser():
     parser.add_argument('--scheduler', type=str, default='step', choices=['step', 'cosine', 'plateau'], help='Learning rate scheduler')
     
     # Device Arguments
-    parser.add_argument("--device", type=str, default="cpu", choices=["cpu", "cuda", "mps"], help="Device to use for training and evaluation")
+    parser.add_argument("--device", type=str, default="cuda", choices=["cpu", "cuda", "mps"], help="Device to use for training and evaluation")
     parser.add_argument('--seed', default=0, type=int)
     
     # Output Arguments 

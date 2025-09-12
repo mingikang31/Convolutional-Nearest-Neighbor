@@ -261,7 +261,7 @@ class Conv2d_NN(nn.Module):
         dist_matrix = torch.sqrt(dist_matrix) if sqrt else dist_matrix 
         dist_matrix = torch.clamp(dist_matrix, min=0.0) 
 
-        torch.diagonal(dist_matrix, dim1=1, dim2=2).fill_(self.NEG_INF)
+        torch.diagonal(dist_matrix, dim1=1, dim2=2).fill_(-0.1)
         return dist_matrix
     
     def _calculate_euclidean_matrix_N(self, matrix, matrix_sample, sqrt=False):
@@ -280,7 +280,7 @@ class Conv2d_NN(nn.Module):
         norm_matrix = F.normalize(matrix, p=2, dim=1)
         similarity_matrix = torch.matmul(norm_matrix.transpose(2, 1), norm_matrix)
         similarity_matrix = torch.clamp(similarity_matrix, min=-1.0, max=1.0) 
-        torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(self.INF)
+        torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(1.1)
         return similarity_matrix
     
     def _calculate_cosine_matrix_N(self, matrix, matrix_sample):
@@ -301,8 +301,8 @@ class Conv2d_NN(nn.Module):
             _, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
 
-        print("topk_indices shape:", topk_indices.shape)
-        print("topk_indices: ", topk_indices)
+        # print("topk_indices shape:", topk_indices.shape)
+        # print("topk_indices: ", topk_indices)
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
 
@@ -322,8 +322,8 @@ class Conv2d_NN(nn.Module):
         tk = topk_indices.shape[-1]
         assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
 
-        print("topk_indices shape:", topk_indices.shape)
-        print("topk_indices: ", topk_indices)
+        # print("topk_indices shape:", topk_indices.shape)
+        # print("topk_indices: ", topk_indices)
 
         
         # Map sample indices back to original matrix positions
