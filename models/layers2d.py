@@ -299,6 +299,8 @@ class Conv2d_NN(nn.Module):
             topk_indices = topk_indices[:, :, :K]
         else:
             _, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
+
+        topk_indices, _ = torch.sort(topk_indices, dim=-1)
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
 
         # print("topk_indices shape:", topk_indices.shape)
