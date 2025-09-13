@@ -11,7 +11,7 @@ from train_eval import Train_Eval
 # Models 
 from models.allconvnet import AllConvNet 
 from models.vgg import VGG 
-from models.resnet import resnet18, resnet34
+from models.resnet_NIU import resnet18, resnet34
 
 # Utilities 
 from utils import write_to_file, set_seed

@@ -188,7 +188,7 @@ class Conv2d_NN(nn.Module):
 
         # 2. Add Padding 
         if self.padding > 0:
-            x = F.pad(x, (self.padding, self.padding, self.padding, self.padding), mode='replicate')
+            x = F.pad(x, (self.padding, self.padding, self.padding, self.padding), mode='constant', value=0)
             self.padded_shape = x.shape
 
         # 3. Add Coordinate Encoding
