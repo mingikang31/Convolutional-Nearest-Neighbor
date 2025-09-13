@@ -367,9 +367,9 @@ class Conv2d_NN_sanity(nn.Module):
         else: 
             x = x
             
-        if self.similarity_type == "Loc_Col":
-            x_sim = x_sim/math.sqrt(2)
-            x = x/math.sqrt(self.og_shape[1])
+        # if self.similarity_type == "Loc_Col":
+        #     x_sim = x_sim/math.sqrt(2)
+        #     x = x/math.sqrt(self.og_shape[1])
             
         # 4. Sampling + Similarity Calculation + Aggregation
         if self.sampling_type == "all":
