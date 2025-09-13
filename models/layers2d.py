@@ -11,6 +11,7 @@ Layers 2D:
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
+import math
 
 class Conv2d_New(nn.Module): 
     """Convolution 2D Nearest Neighbor Layer"""
@@ -211,6 +212,11 @@ class Conv2d_NN(nn.Module):
             x = x[:, :-2, :]
         else: 
             x = x
+
+        if self.similarity_type == "Loc_Col":
+            x_sim = x_sim/math.sqrt(2)
+            x = x/math.sqrt(self.og_shape[1])
+            
         
         # 4. Sampling + Similarity Calculation + Aggregation
         if self.sampling_type == "all":
@@ -332,6 +338,7 @@ class Conv2d_NN(nn.Module):
         mapped_tensor = rand_idx[topk_indices]
         token_indices = torch.arange(t, device=matrix.device).view(1, t, 1).expand(b, t, 1)
         final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
+        final_indices, _ = torch.sort(final_indices, dim=-1)
         indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
 
         # Gather matrix values and apply similarity weighting
