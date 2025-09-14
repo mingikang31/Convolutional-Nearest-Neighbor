@@ -107,7 +107,8 @@ class Conv2d_NN(nn.Module):
                  shuffle_scale, 
                  magnitude_type, 
                  similarity_type, 
-                 aggregation_type
+                 aggregation_type, 
+                 lambda_param
                 ):
 
         super(Conv2d_NN, self).__init__()
@@ -181,6 +182,9 @@ class Conv2d_NN(nn.Module):
         self.INF = 1e5
         self.NEG_INF = -1e5
 
+        # self.lambda_param = nn.Parameter(torch.tensor(0.5), requires_grad=True)
+        self.lambda_param = lambda_param
+
 
     def forward(self, x):  
         # 1. Pixel Shuffle 
@@ -213,9 +217,16 @@ class Conv2d_NN(nn.Module):
         else: 
             x = x
 
-        # if self.similarity_type == "Loc_Col":
-        #     x_sim = x_sim/math.sqrt(2)
-        #     x = x/math.sqrt(self.og_shape[1])
+        if self.similarity_type == "Loc_Col":
+            # x1 = x_sim[:, :-2, :]/math.sqrt(self.og_shape[1] - 2)
+            # x2 = x_sim[:, -2:, :]/math.sqrt(2)
+            # x_sim = torch.cat((x1, x2), dim=1)
+
+            # With Lambda 
+            x1 = self.lambda_param * x_sim[:, :-2, :]/math.sqrt(self.og_shape[1] - 2)
+            x2 = (1 - self.lambda_param) * x_sim[:, -2:, :]/math.sqrt(2)
+            x_sim = torch.cat((x1, x2), dim=1)            
+
             
         
         # 4. Sampling + Similarity Calculation + Aggregation

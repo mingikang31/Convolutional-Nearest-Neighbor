@@ -71,7 +71,8 @@ class VGG(nn.Module):
             "shuffle_scale": self.args.shuffle_scale,
             "magnitude_type": self.args.magnitude_type,
             "similarity_type": self.args.similarity_type,
-            "aggregation_type": self.args.aggregation_type
+            "aggregation_type": self.args.aggregation_type, 
+            "lambda_param": self.args.lambda_param
         }
         
         convnn_attn_params = {
@@ -86,6 +87,7 @@ class VGG(nn.Module):
             "magnitude_type": self.args.magnitude_type,
             "similarity_type": self.args.similarity_type,
             "aggregation_type": self.args.aggregation_type, 
+            "lambda_param": self.args.lambda_param,
             
             "attention_dropout": self.args.attention_dropout
         }

@@ -41,7 +41,7 @@ def args_parser():
     parser.add_argument("--magnitude_type", type=str, default="euclidean", choices=["cosine", "euclidean"], help="Magnitude type for ConvNN Models")
     parser.add_argument("--similarity_type", type=str, default="Loc", choices=["Loc", "Col", "Loc_Col"], help="Similarity type for ConvNN Models")
     parser.add_argument("--aggregation_type", type=str, default="Col", choices=["Col", "Loc_Col"], help="Aggregation type for ConvNN Models")
-
+    parser.add_argument("--lambda_param", type=float, default=0.5, help="Lambda parameter for Loc_Col aggregation in ConvNN Models")
 
     # Data Arguments
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", 'imagenet'], help="Dataset to use for training and evaluation")
