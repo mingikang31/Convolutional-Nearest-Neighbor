@@ -71,3 +71,14 @@ python vgg_main.py --layer ConvNN --K 3 --sampling_type all --num_epochs 30 --ou
 
 python vgg_main.py --layer ConvNN --K 3 --sampling_type all --num_epochs 30 --output_dir ./Output/Sep_13_lambda/vgg_1e-5_cos/CIFAR10/LocCol_LocCol/ConvNN_All_K3_L_09_s42 --seed 42 --padding 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --lambda_param 0.9
 
+
+# ## Learned Parameter Lambda
+
+# python vgg_main.py --layer ConvNN --K 3 --sampling_type all --num_epochs 30 --output_dir ./Output/Sep_13_lambda/vgg_1e-5_eucl/CIFAR10/LocCol_Col/ConvNN_All_K3_L_param_s42 --seed 42 --padding 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Col --magnitude_type euclidean --lambda_param 0.5
+
+# python vgg_main.py --layer ConvNN --K 3 --sampling_type all --num_epochs 30 --output_dir ./Output/Sep_13_lambda/vgg_1e-5_eucl/CIFAR10/LocCol_LocCol/ConvNN_All_K3_L_param_s42 --seed 42 --padding 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type euclidean --lambda_param 0.5
+
+# python vgg_main.py --layer ConvNN --K 3 --sampling_type all --num_epochs 30 --output_dir ./Output/Sep_13_lambda/vgg_1e-5_cos/CIFAR10/LocCol_Col/ConvNN_All_K3_L_param_s42 --seed 42 --padding 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Col --magnitude_type cosine --lambda_param 0.9
+
+# python vgg_main.py --layer ConvNN --K 3 --sampling_type all --num_epochs 30 --output_dir ./Output/Sep_13_lambda/vgg_1e-5_cos/CIFAR10/LocCol_LocCol/ConvNN_All_K3_L_param_s42 --seed 42 --padding 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --lambda_param 0.9
+

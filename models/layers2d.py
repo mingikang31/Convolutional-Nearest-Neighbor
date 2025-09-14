@@ -182,8 +182,8 @@ class Conv2d_NN(nn.Module):
         self.INF = 1e5
         self.NEG_INF = -1e5
 
-        # self.lambda_param = nn.Parameter(torch.tensor(0.5), requires_grad=True)
-        self.lambda_param = lambda_param
+        # self.lambda_param = lambda_param
+        self.lambda_param = nn.Parameter(torch.tensor(0.5), requires_grad=True)
 
 
     def forward(self, x):  
