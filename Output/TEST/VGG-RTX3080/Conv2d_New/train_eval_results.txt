@@ -1,8 +1,0 @@
-[Epoch 001] Time: 23.6478s | [Train] Loss: 2.69743086 Accuracy: Top1: 12.3941%, Top5: 54.3898% | [Test] Loss: 2.21379011 Accuracy: Top1: 15.5056%, Top5: 61.6839%
-[Epoch 002] Time: 23.4916s | [Train] Loss: 2.19401940 Accuracy: Top1: 15.4831%, Top5: 67.5412% | [Test] Loss: 2.12798422 Accuracy: Top1: 17.4562%, Top5: 73.2783%
-[Epoch 003] Time: 23.5350s | [Train] Loss: 2.08162358 Accuracy: Top1: 17.4153%, Top5: 76.3927% | [Test] Loss: 1.99354725 Accuracy: Top1: 17.8543%, Top5: 79.0008%
-[Epoch 004] Time: 23.6430s | [Train] Loss: 2.04934249 Accuracy: Top1: 17.8329%, Top5: 77.2918% | [Test] Loss: 1.99129556 Accuracy: Top1: 18.4017%, Top5: 79.9662%
-[Epoch 005] Time: 23.6048s | [Train] Loss: 2.01646940 Accuracy: Top1: 18.4723%, Top5: 79.1041% | [Test] Loss: 1.96644527 Accuracy: Top1: 18.8197%, Top5: 80.2448%
-
-Average Epoch Time: 23.5844s
-Max Accuracy: 18.8197% at Epoch 5

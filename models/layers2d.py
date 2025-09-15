@@ -182,8 +182,8 @@ class Conv2d_NN(nn.Module):
         self.INF = 1e5
         self.NEG_INF = -1e5
 
-        # self.lambda_param = lambda_param
-        self.lambda_param = nn.Parameter(torch.tensor(0.5), requires_grad=True)
+        self.lambda_param = lambda_param
+        # self.lambda_param = nn.Parameter(torch.tensor(0.5), requires_grad=True)
 
 
     def forward(self, x):  
@@ -222,10 +222,19 @@ class Conv2d_NN(nn.Module):
             # x2 = x_sim[:, -2:, :]/math.sqrt(2)
             # x_sim = torch.cat((x1, x2), dim=1)
 
-            # With Lambda 
-            x1 = self.lambda_param * x_sim[:, :-2, :]/math.sqrt(self.og_shape[1] - 2)
-            x2 = (1 - self.lambda_param) * x_sim[:, -2:, :]/math.sqrt(2)
-            x_sim = torch.cat((x1, x2), dim=1)            
+            # # With Lambda 
+            # x1 = self.lambda_param * x_sim[:, :-2, :]/math.sqrt(self.og_shape[1] - 2)
+            # x2 = (1 - self.lambda_param) * x_sim[:, -2:, :]/math.sqrt(2)
+            # x_sim = torch.cat((x1, x2), dim=1)            
+            # Normalize each modality to unit variance before combining
+            
+            color_feats = x_sim[:, :-2, :]
+            color_std = torch.std(color_feats, dim=[1,2], keepdim=True) + 1e-6
+            color_norm = color_feats / color_std
+
+            coord_feats = x_sim[:, -2:, :]  # Already in [-1,1]
+            x_sim = torch.cat([self.lambda_param * color_norm, 
+                            (1-self.lambda_param) * coord_feats], dim=1)
 
             
         

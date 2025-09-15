@@ -70,10 +70,20 @@ class TinyImageNet(datasets.ImageNet):
         
 class CIFAR100(datasets.CIFAR100): 
     def __init__(self, args): 
+        class AddGaussianNoise(object):
+            def __init__(self, mean=0., std=0.1):
+                self.mean = mean
+                self.std = std
+                
+            def __call__(self, tensor):
+                return tensor + torch.randn(tensor.size()) * self.std + self.mean
+
+
         # Define transforms
         transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5071, 0.4867, 0.4408], std=[0.2675, 0.2565, 0.2761])
+            transforms.Normalize(mean=[0.5071, 0.4867, 0.4408], std=[0.2675, 0.2565, 0.2761]),
+            AddGaussianNoise(mean=0., std=args.noise)
         ])
         
         if args.resize: 
@@ -128,10 +138,19 @@ class CIFAR100(datasets.CIFAR100):
         
 class CIFAR10(datasets.CIFAR10): 
     def __init__(self, args):
+        class AddGaussianNoise(object):
+            def __init__(self, mean=0., std=0.1):
+                self.mean = mean
+                self.std = std
+                
+            def __call__(self, tensor):
+                return tensor + torch.randn(tensor.size()) * self.std + self.mean
+
         # Define transforms
         transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
+            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616]),
+            AddGaussianNoise(mean=0., std=args.noise)
         ])
         
         if args.resize:
