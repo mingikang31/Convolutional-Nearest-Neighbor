@@ -6,6 +6,15 @@ import matplotlib.pyplot as plt
 from Data.mnist1d import MNIST1D_Dataset
 from PIL import Image
 
+class AddGaussianNoise(object):
+            def __init__(self, mean=0., std=0.1):
+                self.mean = mean
+                self.std = std
+                
+            def __call__(self, tensor):
+                return tensor + torch.randn(tensor.size()) * self.std + self.mean
+
+
 class ImageNet(datasets.ImageNet):
     def __init__(self, args):
         # Define transforms
@@ -70,14 +79,6 @@ class TinyImageNet(datasets.ImageNet):
         
 class CIFAR100(datasets.CIFAR100): 
     def __init__(self, args): 
-        class AddGaussianNoise(object):
-            def __init__(self, mean=0., std=0.1):
-                self.mean = mean
-                self.std = std
-                
-            def __call__(self, tensor):
-                return tensor + torch.randn(tensor.size()) * self.std + self.mean
-
 
         # Define transforms
         transform = transforms.Compose([
@@ -138,14 +139,7 @@ class CIFAR100(datasets.CIFAR100):
         
 class CIFAR10(datasets.CIFAR10): 
     def __init__(self, args):
-        class AddGaussianNoise(object):
-            def __init__(self, mean=0., std=0.1):
-                self.mean = mean
-                self.std = std
-                
-            def __call__(self, tensor):
-                return tensor + torch.randn(tensor.size()) * self.std + self.mean
-
+        
         # Define transforms
         transform = transforms.Compose([
             transforms.ToTensor(),
