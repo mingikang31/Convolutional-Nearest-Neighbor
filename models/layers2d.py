@@ -647,6 +647,66 @@ class Conv2d_NN_Attn(nn.Module):
         return x_with_coords
 
 
+class Conv2d_Branching(nn.Module):
+    def __init__(self, 
+                 in_channels, 
+                 out_channels, 
+                 kernel_size, 
+                 K, 
+                 stride, 
+                 padding, 
+                 sampling_type, 
+                 num_samples, 
+                 sample_padding, 
+                 shuffle_pattern, 
+                 shuffle_scale, 
+                 magnitude_type, 
+                 similarity_type, 
+                 aggregation_type, 
+                 lambda_param
+                 ):
+        super(Conv2d_Branching, self).__init__()
+
+        self.in_channels_1 = in_channels // 2
+        self.in_channels_2 = in_channels - self.in_channels_1
+        self.out_channels_1 = out_channels // 2
+        self.out_channels_2 = out_channels - self.out_channels_1
+
+        
+
+        self.branch1 = Conv2d_NN(
+            in_channels=self.in_channels_1,
+            out_channels=self.out_channels_1,
+            K=K,
+            stride=stride,
+            padding=padding,
+            sampling_type=sampling_type,
+            num_samples=num_samples,
+            sample_padding=sample_padding,
+            shuffle_pattern=shuffle_pattern,
+            shuffle_scale=shuffle_scale,
+            magnitude_type=magnitude_type,
+            similarity_type=similarity_type,
+            aggregation_type=aggregation_type,
+            lambda_param=lambda_param
+        )
+
+        self.branch2 = nn.Conv2d(
+            in_channels=self.in_channels_2,
+            out_channels=self.out_channels_2,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+        )
+
+    def forward(self, x):
+        x1 = self.branch1(x[:, :self.in_channels_1, :, :])
+        x2 = self.branch2(x[:, self.in_channels_1:, :, :])
+        # nn.ChannelShuffle() # Maybe use later?
+        return torch.cat((x1, x2), dim=1)        
+
+
+
 """NOT USING"""
 class Conv2d_NN_old(nn.Module): 
     """Convolution 2D Nearest Neighbor Layer"""
