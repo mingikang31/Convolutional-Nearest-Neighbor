@@ -695,15 +695,19 @@ class Conv2d_Branching(nn.Module):
             in_channels=self.in_channels_2,
             out_channels=self.out_channels_2,
             kernel_size=kernel_size,
-            stride=stride,
-            padding=padding,
+            stride=1,
+            padding="same",
         )
+
+        self.channel_shuffle = nn.ChannelShuffle(groups=2)
 
     def forward(self, x):
         x1 = self.branch1(x[:, :self.in_channels_1, :, :])
         x2 = self.branch2(x[:, self.in_channels_1:, :, :])
-        # nn.ChannelShuffle() # Maybe use later?
-        return torch.cat((x1, x2), dim=1)        
+        out = torch.cat((x1, x2), dim=1)
+        out = self.channel_shuffle(out) 
+        
+        return out
 
 
 
