@@ -133,8 +133,8 @@ class Conv2d_NN(nn.Module):
 
         # 3 Sampling Types: all, random, spatial
         self.sampling_type = sampling_type
-        self.num_samples = num_samples
-        self.sample_padding = sample_padding if sampling_type == "spatial" else 0
+        self.num_samples = int(num_samples)
+        self.sample_padding = int(sample_padding) if sampling_type == "spatial" else 0
 
         # Pixel Shuffling (optional) 
         self.shuffle_pattern = shuffle_pattern
@@ -203,6 +203,7 @@ class Conv2d_NN(nn.Module):
         x = self.flatten(x) 
 
         # 5. Similarity and Aggregation Type 
+        
         if self.similarity_type == "Loc":
             x_sim = x[:, -2:, :]
         elif self.similarity_type == "Loc_Col":
@@ -218,24 +219,20 @@ class Conv2d_NN(nn.Module):
             x = x
 
         if self.similarity_type == "Loc_Col":
-            # x1 = x_sim[:, :-2, :]/math.sqrt(self.og_shape[1] - 2)
-            # x2 = x_sim[:, -2:, :]/math.sqrt(2)
-            # x_sim = torch.cat((x1, x2), dim=1)
 
-            # With Lambda 
-            x1 = self.lambda_param * x_sim[:, :-2, :]/math.sqrt(self.og_shape[1] - 2)
-            x2 = (1 - self.lambda_param) * x_sim[:, -2:, :]/math.sqrt(2)
-            x_sim = torch.cat((x1, x2), dim=1)            
+            # # 1. With Lambda 
+            # x1 = self.lambda_param * x_sim[:, :-2, :]/math.sqrt(self.og_shape[1] - 2)
+            # x2 = (1 - self.lambda_param) * x_sim[:, -2:, :]/math.sqrt(2)
+            # x_sim = torch.cat((x1, x2), dim=1)            
             
-            # Normalize each modality to unit variance before combining
-            
-            # color_feats = x_sim[:, :-2, :]
-            # color_std = torch.std(color_feats, dim=[1,2], keepdim=True) + 1e-6
-            # color_norm = color_feats / color_std
+            # 2. Normalize each modality to unit variance before combining
+            color_feats = x_sim[:, :-2, :]
+            color_std = torch.std(color_feats, dim=[1,2], keepdim=True) + 1e-6
+            color_norm = color_feats / color_std
 
-            # coord_feats = x_sim[:, -2:, :]  # Already in [-1,1]
-            # x_sim = torch.cat([self.lambda_param * color_norm, 
-            #                 (1-self.lambda_param) * coord_feats], dim=1)
+            coord_feats = x_sim[:, -2:, :]  # Already in [-1,1]
+            x_sim = torch.cat([self.lambda_param * color_norm, 
+                            (1-self.lambda_param) * coord_feats], dim=1)
 
             
         
@@ -322,12 +319,13 @@ class Conv2d_NN(nn.Module):
         b, c, t = matrix.shape
 
         if self.similarity_type == "Loc":
-            _, topk_indices = torch.sort(magnitude_matrix, dim=2, descending=maximum, stable=True)
+            topk_values, topk_indices = torch.sort(magnitude_matrix, dim=2, descending=maximum, stable=True)
             topk_indices = topk_indices[:, :, :K]
-        else:
-            _, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
+            topk_indices, _ = torch.sort(topk_indices, dim=-1)
 
-        topk_indices, _ = torch.sort(topk_indices, dim=-1)
+        else:
+            topk_values, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
+
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
 
         # print("topk_indices shape:", topk_indices.shape)
@@ -347,7 +345,7 @@ class Conv2d_NN(nn.Module):
     def _prime_N(self, matrix, magnitude_matrix, K, rand_idx, maximum):
         b, c, t = matrix.shape
         
-        _, topk_indices = torch.topk(magnitude_matrix, k=K - 1, dim=2, largest=maximum)
+        topk_values, topk_indices = torch.topk(magnitude_matrix, k=K - 1, dim=2, largest=maximum)
         tk = topk_indices.shape[-1]
         assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
 
@@ -359,7 +357,8 @@ class Conv2d_NN(nn.Module):
         mapped_tensor = rand_idx[topk_indices]
         token_indices = torch.arange(t, device=matrix.device).view(1, t, 1).expand(b, t, 1)
         final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
-        final_indices, _ = torch.sort(final_indices, dim=-1)
+        if self.similarity_type == "Loc":
+            final_indices, _ = torch.sort(final_indices, dim=-1)
         indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
 
         # Gather matrix values and apply similarity weighting
@@ -439,7 +438,7 @@ class Conv2d_NN_Attn(nn.Module):
         self.K = K
         self.stride = stride
         self.sampling_type = sampling_type
-        self.num_samples = num_samples if num_samples != -1 else 'all'  # -1 for all samples
+        self.num_samples = int(num_samples)
         self.sample_padding = sample_padding if sampling_type == "spatial" else 0
         self.shuffle_pattern = shuffle_pattern
         self.shuffle_scale = shuffle_scale
@@ -538,7 +537,6 @@ class Conv2d_NN_Attn(nn.Module):
             width = x_2d.shape[2] 
             flat_indices = y_idx_flat * width + x_idx_flat  
             x_sample = x[:, :, flat_indices]
-
             # Q Projection
             q = self.dropout(self.w_q(x_sample))
 
@@ -672,6 +670,12 @@ class Conv2d_Branching(nn.Module):
         self.out_channels_1 = out_channels // 2
         self.out_channels_2 = out_channels - self.out_channels_1
 
+        self.pointwise_conv = nn.Conv2d(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0)
         
 
         self.branch1 = Conv2d_NN(
@@ -699,14 +703,14 @@ class Conv2d_Branching(nn.Module):
             padding="same",
         )
 
-        self.channel_shuffle = nn.ChannelShuffle(groups=2)
+        self.channel_shuffle = nn.ChannelShuffle(groups=2) # Optional Channel Shuffle - not in use
 
     def forward(self, x):
         x1 = self.branch1(x[:, :self.in_channels_1, :, :])
         x2 = self.branch2(x[:, self.in_channels_1:, :, :])
         out = torch.cat((x1, x2), dim=1)
-        out = self.channel_shuffle(out) 
-        
+        # out = self.channel_shuffle(out) # Optional Channel Shuffle - not in use
+        out = self.pointwise_conv(out)
         return out
 
 
