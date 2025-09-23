@@ -3,7 +3,7 @@
 import argparse 
 from pathlib import Path
 import os 
-
+import torch 
 # Datasets 
 from dataset import ImageNet, CIFAR10, CIFAR100
 from train_eval import Train_Eval
@@ -15,7 +15,7 @@ from models.vgg import VGG
 from utils import write_to_file, set_seed
 
 """
-Only doing Conv2d, Conv2d_New, Conv2d_New_1d, ConvNN, and ConvNN_Attn
+Only doing Conv2d, Conv2d_New, ConvNN, ConvNN_Attn, Branching for now
 """
 
 def args_parser():
@@ -42,6 +42,7 @@ def args_parser():
     parser.add_argument("--similarity_type", type=str, default="Loc", choices=["Loc", "Col", "Loc_Col"], help="Similarity type for ConvNN Models")
     parser.add_argument("--aggregation_type", type=str, default="Col", choices=["Col", "Loc_Col"], help="Aggregation type for ConvNN Models")
     parser.add_argument("--lambda_param", type=float, default=0.5, help="Lambda parameter for Loc_Col aggregation in ConvNN Models")
+    parser.add_argument("--branch_ratio", type=float, default=0.5, help="Branch ratio for Branching layer (between 0 and 1), ex. 0.25 means 25% of in_channels and out_channels go to ConvNN branch, rest to Conv2d branch")
 
     # Data Arguments
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", 'imagenet'], help="Dataset to use for training and evaluation")

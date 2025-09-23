@@ -86,10 +86,7 @@ class VGG(nn.Module):
             "shuffle_pattern": self.args.shuffle_pattern,
             "shuffle_scale": self.args.shuffle_scale,
             "magnitude_type": self.args.magnitude_type,
-            "similarity_type": self.args.similarity_type,
-            "aggregation_type": self.args.aggregation_type, 
-            "lambda_param": self.args.lambda_param,
-            
+            "aggregation_type": self.args.aggregation_type,
             "attention_dropout": self.args.attention_dropout
         }
 
@@ -107,6 +104,7 @@ class VGG(nn.Module):
             "similarity_type": self.args.similarity_type,
             "aggregation_type": self.args.aggregation_type, 
             "lambda_param": self.args.lambda_param,
+            "branch_ratio": self.args.branch_ratio
         }
 
             
@@ -115,7 +113,11 @@ class VGG(nn.Module):
                 layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             else:
                 if self.args.layer == "Conv2d":
-                    layer = nn.Conv2d(in_channels, v, kernel_size=self.args.kernel_size, padding="same", bias=False)
+                    layer = nn.Conv2d(in_channels, 
+                                      v, 
+                                      kernel_size=self.args.kernel_size, 
+                                      padding="same", 
+                                      bias=False if args.similarity_type == "Loc" else True)
                 elif args.layer == "Conv2d_New": 
                     conv2d_new_params.update({
                         "in_channels": in_channels,

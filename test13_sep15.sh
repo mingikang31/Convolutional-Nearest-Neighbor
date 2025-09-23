@@ -17,15 +17,15 @@ source activate mingi
 ### VGG Experiments
 # CIFAR10 
 ## I. Conv2d K3, K2 
-python vgg_main.py --layer Conv2d --kernel_size 3 --num_epochs 50 --output_dir ./Output/Sep_15/vgg_1e-5/CIFAR10-noise/Conv2d_K3_s42 --seed 42 --lr_step 5 --lr_gamma 0.9 --lr 1e-4 --noise 0.1
+python vgg_main.py --layer Conv2d --kernel_size 3 --num_epochs 50 --output_dir ./Output/Sep_21/vgg_1e-5/CIFAR10-noise/Conv2d_K3_s42 --seed 42 --lr_step 5 --lr_gamma 0.9 --lr 1e-4 --noise 0.3
 
 
-python vgg_main.py --layer Conv2d --kernel_size 3 --num_epochs 50 --output_dir ./Output/Sep_15/vgg_1e-5/CIFAR100-noise/Conv2d_K3_s42 --seed 42 --lr_step 5 --lr_gamma 0.9 --lr 1e-4 --dataset cifar100 --noise 0.1
+python vgg_main.py --layer Conv2d --kernel_size 3 --num_epochs 50 --output_dir ./Output/Sep_21/vgg_1e-5/CIFAR100-noise/Conv2d_K3_s42 --seed 42 --lr_step 5 --lr_gamma 0.9 --lr 1e-4 --dataset cifar100 --noise 0.5
 
 
 ## II. ConvNN K1-10 All Sampling - Loc, Col euclidean similarity
 
-python vgg_main.py --layer ConvNN --K 9 --sampling_type all --num_epochs 50 --output_dir ./Output/Sep_15/vgg_1e-5_eucl/CIFAR10-noise/Loc_Col/ConvNN_All_K9_s42 --seed 42 --padding 1 --lr_step 5 --lr_gamma 0.9 --lr 1e-4 --similarity_type Loc --aggregation_type Col --magnitude_type euclidean --noise 0.1
+python vgg_main.py --layer ConvNN --K 9 --sampling_type all --num_epochs 50 --output_dir ./Output/Sep_21/vgg_1e-5_eucl/CIFAR10-noise/Loc_Col/ConvNN_All_K9_s42 --seed 42 --padding 1 --lr_step 5 --lr_gamma 0.9 --lr 1e-4 --similarity_type Loc --aggregation_type Col --magnitude_type euclidean --noise 0.3
 
 ## III. ConvNN K1-10 All Sampling - Loc_Col, Col euclidean similarity
 
@@ -111,6 +111,6 @@ python vgg_main.py --layer ConvNN --K 9 --sampling_type all --num_epochs 50 --ou
 # V. ConvNN K1-10 All Sampling - Col, Col cosine similarity
 
 
-python vgg_main.py --layer ConvNN --K 9 --sampling_type all --num_epochs 50 --output_dir ./Output/Sep_15/vgg_1e-5_cos/CIFAR100-noise/Col_Col/ConvNN_All_K9_s42 --seed 42 --padding 1 --lr_step 5 --lr_gamma 0.9 --lr 1e-4 --similarity_type Col --aggregation_type Col --dataset cifar100 --magnitude_type cosine --noise 0.1
+python vgg_main.py --layer ConvNN --K 9 --sampling_type all --num_epochs 50 --output_dir ./Output/Sep_21/vgg_1e-5_cos/CIFAR100-noise/Col_Col/ConvNN_All_K9_s42 --seed 42 --padding 1 --lr_step 5 --lr_gamma 0.9 --lr 1e-4 --similarity_type Col --aggregation_type Col --dataset cifar100 --magnitude_type cosine --noise 0.5
 
 

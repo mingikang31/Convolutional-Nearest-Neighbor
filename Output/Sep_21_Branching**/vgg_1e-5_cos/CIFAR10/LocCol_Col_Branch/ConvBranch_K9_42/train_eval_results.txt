@@ -30,5 +30,8 @@ Model Complexity (Profiler): GFLOPs: 0.31408579, Trainable Parameters: 125.40545
 [Epoch 029] Time: 22.5246s | [Train] Loss: 0.61975599 Accuracy: Top1: 77.8233%, Top5: 98.9270% | [Test] Loss: 0.85868412 Accuracy: Top1: 70.1234%, Top5: 97.8304%
 [Epoch 030] Time: 22.4993s | [Train] Loss: 0.61224760 Accuracy: Top1: 78.2769%, Top5: 98.8931% | [Test] Loss: 0.85974311 Accuracy: Top1: 70.8400%, Top5: 97.8006%
 
+
+
+
 Average Epoch Time: 22.5234s
 Max Accuracy: 70.8400% at Epoch 30
