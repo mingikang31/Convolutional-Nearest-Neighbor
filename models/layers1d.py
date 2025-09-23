@@ -474,7 +474,7 @@ class Conv1d_NN_Attn(nn.Module):
         # 3 Sampling Types: all, random, spatial 
         self.sampling_type = sampling_type
         self.num_samples = int(num_samples) 
-        self.sample_padding = sample_padding if sampling_type == "spatial" else 0
+        self.sample_padding = int(sample_padding) if sampling_type == "spatial" else 0
 
         # Pixel Shuffling (optional)
         self.shuffle_pattern = shuffle_pattern
@@ -617,7 +617,6 @@ class Conv1d_NN_Attn(nn.Module):
         k_norm = F.normalize(K, p=2, dim=1)
         q_norm = F.normalize(Q, p=2, dim=1)
         similarity_matrix = torch.matmul(k_norm.transpose(1, 2), q_norm)
-        similarity_matrix = torch.clamp(similarity_matrix, min=-1.0, max=1.0)
         torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(1.1)
         return similarity_matrix 
     
@@ -625,7 +624,6 @@ class Conv1d_NN_Attn(nn.Module):
         norm_k = F.normalize(K, p=2, dim=1)
         norm_q = F.normalize(Q, p=2, dim=1)
         similarity_matrix = torch.bmm(norm_k.transpose(1, 2), norm_q)
-        similarity_matrix = torch.clamp(similarity_matrix, min=-1.0, max=1.0)
         return similarity_matrix
     
     def _prime(self, v, qk, K, maximum):
@@ -657,7 +655,7 @@ class Conv1d_NN_Attn(nn.Module):
         # Map sample indices back to original matrix positions
         mapped_tensor = rand_idx[topk_indices]
         token_indices = torch.arange(t, device=v.device).view(1, t, 1).expand(b, t, 1)
-        final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
+        final_indices = torch.cat([token_indices, mapped_tensor], dim=-1)
         indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
 
         topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K - 1)
@@ -713,35 +711,39 @@ class Conv1d_Branching(nn.Module):
         super(Conv1d_Branching, self).__init__()
 
         self.branch_ratio = branch_ratio
-        self.in_channels_1 = int(in_channels * branch_ratio)
-        self.in_channels_2 = in_channels - self.in_channels_1
+        self.in_channels = in_channels
+        # self.in_channels_1 = int(in_channels * branch_ratio)
+        # self.in_channels_2 = in_channels - self.in_channels_1
         self.out_channels_1 = int(out_channels * branch_ratio)
         self.out_channels_2 = out_channels - self.out_channels_1
 
-        self.branch1 = Conv1d_NN(
-            in_channels=self.in_channels_1,
-            out_channels=self.out_channels_1,
-            K=K,
-            stride=K,
-            padding=padding,
-            sampling_type=sampling_type,
-            num_samples=num_samples,
-            sample_padding=sample_padding,
-            shuffle_pattern=shuffle_pattern,
-            shuffle_scale=shuffle_scale, 
-            magnitude_type=magnitude_type,
-            similarity_type=similarity_type,
-            aggregation_type=aggregation_type,
-            lambda_param=lambda_param
-        )
+        if self.branch_ratio != 0:
+            self.branch1 = Conv1d_NN(
+                in_channels=self.in_channels,
+                out_channels=self.out_channels_1,
+                K=K,
+                stride=K,
+                padding=padding,
+                sampling_type=sampling_type,
+                num_samples=num_samples,
+                sample_padding=sample_padding,
+                shuffle_pattern=shuffle_pattern,
+                shuffle_scale=shuffle_scale, 
+                magnitude_type=magnitude_type,
+                similarity_type=similarity_type,
+                aggregation_type=aggregation_type,
+                lambda_param=lambda_param
+            )
 
-        self.branch2 = nn.Conv1d(
-            in_channels=self.in_channels_2,
-            out_channels=self.out_channels_2,
-            kernel_size=kernel_size,
-            stride=1,
-            padding="same"
-        )
+        if self.branch_ratio != 1:
+            self.branch2 = nn.Conv1d(
+                in_channels=self.in_channels,
+                out_channels=self.out_channels_2,
+                kernel_size=kernel_size,
+                stride=1,
+                padding="same"
+            )
+            
         self.pointwise_conv = nn.Conv1d(
             in_channels=in_channels, 
             out_channels=in_channels, 
@@ -752,8 +754,22 @@ class Conv1d_Branching(nn.Module):
         # self.channel_shuffle = ChannelShuffle1D(groups=2) # Optional Channel Shuffle - not in use 
 
     def forward(self, x):
-        x1 = self.branch1(x[:, :self.in_channels_1, :])
-        x2 = self.branch2(x[:, self.in_channels_1:, :])
+        if self.branch_ratio == 0:
+            x = self.branch2(x)
+            x = self.pointwise_conv(x)
+            return x
+
+        if self.branch_ratio == 1:
+            x = self.branch1(x)
+            x = self.pointwise_conv(x)
+            return x
+
+    
+        x1 = self.branch1(x)
+        x2 = self.branch2(x)
+
+        # x1 = self.branch1(x[:, :self.in_channels_1, :])
+        # x2 = self.branch2(x[:, self.in_channels_2:, :])
         out = torch.cat([x1, x2], dim=1)
         out = self.pointwise_conv(out)
         return out

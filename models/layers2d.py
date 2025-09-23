@@ -741,9 +741,12 @@ class Conv2d_Branching(nn.Module):
         
         x1 = self.branch1(x)
         x2 = self.branch2(x)
+
+        # x1 = self.branch(x[:, :self.in_channels_1, :, :]
+        # x2 = self.conv2d(x[:, self.in_channels_2:, :, :])
         out = torch.cat((x1, x2), dim=1)
         out = self.pointwise_conv(out)
-        print("Out Shape:", out.shape)
+        # print("Out Shape:", out.shape)
         return out
 
 
