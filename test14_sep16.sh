@@ -30,3 +30,12 @@ python vgg_main.py --layer Branching --kernel_size 3 --K 9 --sampling_type all -
 python vgg_main.py --layer ConvNN --K 9 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_22_Branching/vgg_1e-5_cos/CIFAR10/LocCol_Col/ConvNN_K9_42 --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Col --magnitude_type cosine --lambda_param 0.5 # Done
 
 python vgg_main.py --layer ConvNN --K 9 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_22_Branching/vgg_1e-5_cos/CIFAR10/LocCol_LocCol/ConvNN_K9_42 --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --lambda_param 0.5 # Done
+
+
+### TEST 
+
+python vgg_main.py --layer Conv2d --kernel_size 3 --num_epochs 60 --output_dir ./Output/TEST --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5
+
+python vgg_main.py --layer Branching --kernel_size 3 --K 9 --sampling_type all --num_epochs 60 --output_dir ./Output/TEST --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --lambda_param 0.5 --branch_ratio 0.0
+
+python vgg_main.py --layer ConvNN --K 9 --sampling_type all --num_epochs 60 --output_dir ./Output/TEST --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --lambda_param 0.5 # Done

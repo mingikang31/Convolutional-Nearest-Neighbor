@@ -683,7 +683,7 @@ class Conv2d_Branching(nn.Module):
                  ):
         super(Conv2d_Branching, self).__init__()
 
-        assert 0 < branch_ratio < 1, "Branch ratio must be between 0 and 1"
+        assert 0 <= branch_ratio <= 1, "Branch ratio must be between 0 and 1"
 
         self.branch_ratio = branch_ratio
         self.in_channels_1 = int(in_channels * branch_ratio)
@@ -691,31 +691,33 @@ class Conv2d_Branching(nn.Module):
         self.out_channels_1 = int(out_channels * branch_ratio)
         self.out_channels_2 = out_channels - self.out_channels_1
 
-        self.branch1 = Conv2d_NN(
-            in_channels=self.in_channels_1,
-            out_channels=self.out_channels_1,
-            K=K,
-            stride=K,
-            padding=padding,
-            sampling_type=sampling_type,
-            num_samples=num_samples,
-            sample_padding=sample_padding,
-            shuffle_pattern=shuffle_pattern,
-            shuffle_scale=shuffle_scale,
-            magnitude_type=magnitude_type,
-            similarity_type=similarity_type,
-            aggregation_type=aggregation_type,
-            lambda_param=lambda_param
-        )
+        if self.in_channels_1 != 0 or self.out_channels_1 != 0:
+            self.branch1 = Conv2d_NN(
+                in_channels=self.in_channels_1,
+                out_channels=self.out_channels_1,
+                K=K,
+                stride=K,
+                padding=padding,
+                sampling_type=sampling_type,
+                num_samples=num_samples,
+                sample_padding=sample_padding,
+                shuffle_pattern=shuffle_pattern,
+                shuffle_scale=shuffle_scale,
+                magnitude_type=magnitude_type,
+                similarity_type=similarity_type,
+                aggregation_type=aggregation_type,
+                lambda_param=lambda_param
+            )
+        if self.in_channels_2 != 0 or self.out_channels_2 != 0:
+            self.branch2 = nn.Conv2d(
+                in_channels=self.in_channels_2,
+                out_channels=self.out_channels_2,
+                kernel_size=kernel_size,
+                stride=1,
+                padding="same"
+            )
 
-        self.branch2 = nn.Conv2d(
-            in_channels=self.in_channels_2,
-            out_channels=self.out_channels_2,
-            kernel_size=kernel_size,
-            stride=1,
-            padding="same"
-        )
-        
+            
         self.pointwise_conv = nn.Conv2d(
             in_channels=out_channels,
             out_channels=out_channels,
@@ -727,6 +729,15 @@ class Conv2d_Branching(nn.Module):
         # self.channel_shuffle = nn.ChannelShuffle(groups=2) # Optional Channel Shuffle - not in use
 
     def forward(self, x):
+        if self.in_channels_1 == 0:
+            x = self.branch2(x)
+            out = self.pointwise_conv(x)
+            return out
+        if self.in_channels_2 == 0:
+            x = self.branch1(x)
+            out = self.pointwise_conv(x)
+            return out
+        
         x1 = self.branch1(x[:, :self.in_channels_1, :, :])
         x2 = self.branch2(x[:, self.in_channels_1:, :, :])
         out = torch.cat((x1, x2), dim=1)
