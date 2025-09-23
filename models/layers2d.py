@@ -686,14 +686,15 @@ class Conv2d_Branching(nn.Module):
         assert 0 <= branch_ratio <= 1, "Branch ratio must be between 0 and 1"
 
         self.branch_ratio = branch_ratio
-        self.in_channels_1 = int(in_channels * branch_ratio)
-        self.in_channels_2 = in_channels - self.in_channels_1
+        self.in_channels = in_channels
+        # self.in_channels_1 = int(in_channels * branch_ratio)
+        # self.in_channels_2 = in_channels - self.in_channels_1
         self.out_channels_1 = int(out_channels * branch_ratio)
         self.out_channels_2 = out_channels - self.out_channels_1
 
-        if self.in_channels_1 != 0 or self.out_channels_1 != 0:
+        if self.branch_ratio != 0:
             self.branch1 = Conv2d_NN(
-                in_channels=self.in_channels_1,
+                in_channels=self.in_channels,
                 out_channels=self.out_channels_1,
                 K=K,
                 stride=K,
@@ -708,9 +709,9 @@ class Conv2d_Branching(nn.Module):
                 aggregation_type=aggregation_type,
                 lambda_param=lambda_param
             )
-        if self.in_channels_2 != 0 or self.out_channels_2 != 0:
+        if self.branch_ratio != 1:
             self.branch2 = nn.Conv2d(
-                in_channels=self.in_channels_2,
+                in_channels=self.in_channels,
                 out_channels=self.out_channels_2,
                 kernel_size=kernel_size,
                 stride=1,
@@ -729,17 +730,20 @@ class Conv2d_Branching(nn.Module):
         # self.channel_shuffle = nn.ChannelShuffle(groups=2) # Optional Channel Shuffle - not in use
 
     def forward(self, x):
-        if self.in_channels_1 == 0:
+        if self.branch_ratio == 0:
             x = self.branch2(x)
             out = self.pointwise_conv(x)
             return out
-        if self.in_channels_2 == 0:
+        if self.branch_ratio == 1:
             x = self.branch1(x)
             out = self.pointwise_conv(x)
             return out
         
-        x1 = self.branch1(x[:, :self.in_channels_1, :, :])
-        x2 = self.branch2(x[:, self.in_channels_1:, :, :])
+        x1 = self.branch1(x)
+        x2 = self.branch2(x)
         out = torch.cat((x1, x2), dim=1)
         out = self.pointwise_conv(out)
+        print("Out Shape:", out.shape)
         return out
+
+
