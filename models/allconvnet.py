@@ -6,7 +6,8 @@ from torchsummary import summary
 from models.layers2d import (
     Conv2d_New,
     Conv2d_NN, 
-    Conv2d_NN_Attn
+    Conv2d_NN_Attn, 
+    Conv2d_Branching
 )
 
 
@@ -39,7 +40,8 @@ class AllConvNet(nn.Module):
             "shuffle_scale": self.args.shuffle_scale,
             "magnitude_type": self.args.magnitude_type,
             "similarity_type": self.args.similarity_type,
-            "aggregation_type": self.args.aggregation_type
+            "aggregation_type": self.args.aggregation_type, 
+            "lambda_param": self.args.lambda_param
         }
         
         convnn_attn_params = {
@@ -52,10 +54,25 @@ class AllConvNet(nn.Module):
             "shuffle_pattern": self.args.shuffle_pattern,
             "shuffle_scale": self.args.shuffle_scale,
             "magnitude_type": self.args.magnitude_type,
+            "aggregation_type": self.args.aggregation_type,
+            "attention_dropout": self.args.attention_dropout
+        }
+
+        convnn_branching_params = {
+            "kernel_size": self.args.kernel_size,
+            "K": self.args.K,
+            "stride": self.args.K, # Stride is always K
+            "padding": self.args.padding,
+            "sampling_type": self.args.sampling_type,
+            "num_samples": self.args.num_samples,
+            "sample_padding": self.args.sample_padding,
+            "shuffle_pattern": self.args.shuffle_pattern,
+            "shuffle_scale": self.args.shuffle_scale,
+            "magnitude_type": self.args.magnitude_type,
             "similarity_type": self.args.similarity_type,
             "aggregation_type": self.args.aggregation_type, 
-            
-            "attention_dropout": self.args.attention_dropout
+            "lambda_param": self.args.lambda_param,
+            "branch_ratio": self.args.branch_ratio
         }
         
         for i in range(self.args.num_layers):
@@ -67,8 +84,7 @@ class AllConvNet(nn.Module):
                     out_channels=out_ch, 
                     kernel_size=self.args.kernel_size, 
                     stride=1, 
-                    padding='same', 
-                    bias=False
+                    padding='same'
                 )
             elif self.args.layer == "Conv2d_New":
                 conv2d_new_params.update({
@@ -90,6 +106,13 @@ class AllConvNet(nn.Module):
                     "out_channels": out_ch
                 })
                 layer = Conv2d_NN_Attn(**convnn_attn_params)
+            elif self.args.layer == "Branching":
+                convnn_branching_params.update({
+                    "in_channels": in_ch,
+                    "out_channels": out_ch
+                })
+                layer = Conv2d_Branching(**convnn_branching_params)
+                
             
 
             layers.append(nn.InstanceNorm2d(num_features=out_ch)) # Pre-layer normalization

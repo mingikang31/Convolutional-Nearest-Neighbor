@@ -116,8 +116,9 @@ class VGG(nn.Module):
                     layer = nn.Conv2d(in_channels, 
                                       v, 
                                       kernel_size=self.args.kernel_size, 
+                                      stride=1, 
                                       padding="same", 
-                                      bias=False if args.similarity_type == "Loc" else True)
+                                      )
                 elif args.layer == "Conv2d_New": 
                     conv2d_new_params.update({
                         "in_channels": in_channels,
