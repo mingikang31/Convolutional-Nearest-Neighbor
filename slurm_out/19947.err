@@ -1,0 +1,406 @@
+[W922 22:21:10.529898617 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:21:10.532206567 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:21:10.533285381 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:21:10.534289722 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:21:10.535410347 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:21:10.536482527 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:21:10.537599139 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:21:10.538630006 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:34:47.061448121 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:34:47.064096786 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:34:47.065529449 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:34:47.066900706 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:34:47.068346046 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:34:47.069883408 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:34:47.071341481 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:34:47.072733566 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/init.py:511: UserWarning: Initializing zero-element tensors is a no-op
+  warnings.warn("Initializing zero-element tensors is a no-op")
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 152, in <module>
+    main(args)
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 136, in main
+    train_eval_results = Train_Eval(args, 
+                         ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/train_eval.py", line 131, in Train_Eval
+    outputs = model(images)
+              ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/vgg.py", line 177, in forward
+    x = self.features(x)
+        ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/layers2d.py", line 734, in forward
+    out = self.pointwise_conv(x)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 554, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
+    return F.conv2d(
+           ^^^^^^^^^
+RuntimeError: Given groups=1, weight of size [64, 64, 1, 1], expected input[64, 56, 32, 32] to have 64 channels, but got 56 channels instead
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/init.py:511: UserWarning: Initializing zero-element tensors is a no-op
+  warnings.warn("Initializing zero-element tensors is a no-op")
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 152, in <module>
+    main(args)
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 136, in main
+    train_eval_results = Train_Eval(args, 
+                         ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/train_eval.py", line 131, in Train_Eval
+    outputs = model(images)
+              ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/vgg.py", line 177, in forward
+    x = self.features(x)
+        ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/layers2d.py", line 734, in forward
+    out = self.pointwise_conv(x)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 554, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
+    return F.conv2d(
+           ^^^^^^^^^
+RuntimeError: Given groups=1, weight of size [64, 64, 1, 1], expected input[64, 48, 32, 32] to have 64 channels, but got 48 channels instead
+[W922 22:49:46.472436345 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:49:46.476617270 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:49:46.481719611 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:49:46.486105264 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:49:46.490511462 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:49:46.495650470 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:49:46.500296844 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 22:49:46.505169138 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:12:57.752489391 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:12:57.756885735 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:12:57.762248784 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:12:57.766716626 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:12:57.771235264 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:12:57.776343812 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:12:57.781197585 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:12:57.786671772 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:37:26.966936190 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:37:26.971292372 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:37:26.976512961 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:37:26.981028629 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:37:26.985540261 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:37:26.990816068 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:37:26.995592624 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W922 23:37:26.000610172 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:27:27.405813088 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:27:27.408388816 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:27:27.409803058 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:27:27.411164151 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:27:27.412575622 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:27:27.414085591 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:27:27.415510570 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:27:27.416932871 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/init.py:511: UserWarning: Initializing zero-element tensors is a no-op
+  warnings.warn("Initializing zero-element tensors is a no-op")
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 152, in <module>
+    main(args)
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 136, in main
+    train_eval_results = Train_Eval(args, 
+                         ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/train_eval.py", line 131, in Train_Eval
+    outputs = model(images)
+              ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/vgg.py", line 177, in forward
+    x = self.features(x)
+        ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/layers2d.py", line 734, in forward
+    out = self.pointwise_conv(x)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 554, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
+    return F.conv2d(
+           ^^^^^^^^^
+RuntimeError: Given groups=1, weight of size [64, 64, 1, 1], expected input[64, 56, 32, 32] to have 64 channels, but got 56 channels instead
+/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/init.py:511: UserWarning: Initializing zero-element tensors is a no-op
+  warnings.warn("Initializing zero-element tensors is a no-op")
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 152, in <module>
+    main(args)
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 136, in main
+    train_eval_results = Train_Eval(args, 
+                         ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/train_eval.py", line 131, in Train_Eval
+    outputs = model(images)
+              ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/vgg.py", line 177, in forward
+    x = self.features(x)
+        ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/layers2d.py", line 734, in forward
+    out = self.pointwise_conv(x)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 554, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
+    return F.conv2d(
+           ^^^^^^^^^
+RuntimeError: Given groups=1, weight of size [64, 64, 1, 1], expected input[64, 48, 32, 32] to have 64 channels, but got 48 channels instead
+[W923 00:42:24.315150931 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:42:24.321499834 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:42:24.327283294 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:42:24.333368363 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:42:24.339043935 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:42:24.345758325 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:42:24.352158953 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 00:42:24.357986328 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:07:16.516126287 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:07:16.522560039 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:07:16.528391563 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:07:16.534511594 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:07:16.540248755 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:07:16.546980497 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:07:16.553402555 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:07:16.559241377 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:32:25.748812656 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:32:25.755347848 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:32:25.761253677 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:32:25.767675210 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:32:25.773603586 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:32:25.780471613 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:32:25.786881146 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 01:32:25.792781542 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:23:23.519551466 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:23:23.522331362 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:23:23.523897501 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:23:23.525393270 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:23:23.526922649 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:23:23.528581003 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:23:23.530140609 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:23:23.531643049 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 152, in <module>
+    main(args)
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 136, in main
+    train_eval_results = Train_Eval(args, 
+                         ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/train_eval.py", line 131, in Train_Eval
+    outputs = model(images)
+              ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/vgg.py", line 177, in forward
+    x = self.features(x)
+        ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/layers2d.py", line 734, in forward
+    out = self.pointwise_conv(x)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 554, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
+    return F.conv2d(
+           ^^^^^^^^^
+RuntimeError: Given groups=1, weight of size [64, 64, 1, 1], expected input[64, 56, 32, 32] to have 64 channels, but got 56 channels instead
+Traceback (most recent call last):
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 152, in <module>
+    main(args)
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/vgg_main.py", line 136, in main
+    train_eval_results = Train_Eval(args, 
+                         ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/train_eval.py", line 131, in Train_Eval
+    outputs = model(images)
+              ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/vgg.py", line 177, in forward
+    x = self.features(x)
+        ^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor/models/layers2d.py", line 734, in forward
+    out = self.pointwise_conv(x)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1736, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1747, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 554, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/research/j.farias/mkang2/miniconda3/envs/mingi/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
+    return F.conv2d(
+           ^^^^^^^^^
+RuntimeError: Given groups=1, weight of size [64, 64, 1, 1], expected input[64, 48, 32, 32] to have 64 channels, but got 48 channels instead
+[W923 02:38:19.103984108 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:38:19.110381430 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:38:19.116150390 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:38:19.121865020 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:38:19.128067173 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:38:19.134912766 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:38:19.141342351 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 02:38:19.147149412 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:02:54.410934011 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:02:54.417229651 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:02:54.422826561 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:02:54.428477074 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:02:54.434871027 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:02:54.440769027 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:02:54.447834496 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:02:54.453513704 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:28:13.909054622 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:28:13.915352238 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:28:13.921045264 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:28:13.926815483 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:28:13.933190637 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:28:13.939159099 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:28:13.946338074 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
+[W923 03:28:13.952239145 util.cpp:604] Warning: Failed to compute flops for op aten::conv2d because it requires padding, stride, and dilation values. (function computeFlops)
