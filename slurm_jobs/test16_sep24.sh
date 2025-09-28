@@ -100,3 +100,44 @@ python vgg_main.py --layer Branching --kernel_size 2 --K 11 --sampling_type all 
 
 # K = 12
 python vgg_main.py --layer Branching --kernel_size 2 --K 12 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS2_K12_r025_s42 --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+
+# # K Test with Kernel Size 1, Branch Ratio 0.25
+# K = 1
+python vgg_main.py --layer Branching --kernel_size 1 --K 1 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K1_r025_s42 --seed 42 --padding 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+# K = 2
+python vgg_main.py --layer Branching --kernel_size 1 --K 2 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K2_r025_s42 --seed 42 --padding 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+# K = 3 
+python vgg_main.py --layer Branching --kernel_size 1 --K 3 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K3_r025_s42 --seed 42 --padding 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+# K = 4 
+python vgg_main.py --layer Branching --kernel_size 1 --K 4 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K4_r025_s42 --seed 42 --padding 0 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+# K = 5
+python vgg_main.py --layer Branching --kernel_size 1 --K 5 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K5_r025_s42 --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+# K = 6 
+python vgg_main.py --layer Branching --kernel_size 1 --K 6 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K6_r025_s42 --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+# K = 7
+python vgg_main.py --layer Branching --kernel_size 1 --K 7 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K7_r025_s42 --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+# K = 8 
+python vgg_main.py --layer Branching --kernel_size 1 --K 8 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K8_r025_s42 --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+# K = 9
+python vgg_main.py --layer Branching --kernel_size 1 --K 9 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K9_r025_s42 --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+# K = 10
+python vgg_main.py --layer Branching --kernel_size 1 --K 10 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K10_r025_s42 --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+
+# K = 11
+python vgg_main.py --layer Branching --kernel_size 1 --K 11 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K11_r025_s42 --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
+
+# K = 12
+python vgg_main.py --layer Branching --kernel_size 1 --K 12 --sampling_type all --num_epochs 60 --output_dir ./Output/Sep_23_Branching_NoSplit/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch/ConvBranch_KS1_K12_r025_s42 --seed 42 --padding 1 --lr_step 2 --lr_gamma 0.95 --lr 1e-5 --similarity_type Loc_Col --aggregation_type Loc_Col --magnitude_type cosine --branch_ratio 0.25
+
