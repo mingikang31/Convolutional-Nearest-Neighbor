@@ -233,38 +233,48 @@ class Conv2d_NN(nn.Module):
             coord_feats = x_sim[:, -2:, :]  # Already in [-1,1]
             x_sim = torch.cat([self.lambda_param * color_norm, 
                             (1-self.lambda_param) * coord_feats], dim=1)
-        
+            
         # 6. Sampling + Similarity Calculation + Aggregation
         if self.sampling_type == "all":
             similarity_matrix = self._calculate_euclidean_matrix(x_sim) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix(x_sim)
             prime = self._prime(x, similarity_matrix, self.K, self.maximum)
-
         elif self.sampling_type == "random":
-            rand_idx = torch.randperm(x.shape[-1], device=x.device)[:self.num_samples]
-            x_sample = x_sim[:, :, rand_idx]
+            if self.num_samples > x.shape[-1]:
+                x_sample = x_sim
+                similarity_matrix = self._calculate_euclidean_matrix_N(x_sim, x_sample) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(x_sim, x_sample)
+                torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == "euclidean" else 1.1)
+                prime = self._prime(x, similarity_matrix, self.K, self.maximum)
 
-            similarity_matrix = self._calculate_euclidean_matrix_N(x_sim, x_sample) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(x_sim, x_sample)
-
-            range_idx = torch.arange(len(rand_idx), device=x.device)
-            similarity_matrix[:, rand_idx, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
-
-            prime = self._prime_N(x, similarity_matrix, self.K, rand_idx, self.maximum)
+            else:
+                rand_idx = torch.randperm(x.shape[-1], device=x.device)[:self.num_samples]
+                x_sample = x_sim[:, :, rand_idx]
+                similarity_matrix = self._calculate_euclidean_matrix_N(x_sim, x_sample) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(x_sim, x_sample)
+                range_idx = torch.arange(len(rand_idx), device=x.device)
+                similarity_matrix[:, rand_idx, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
+                prime = self._prime_N(x, similarity_matrix, self.K, rand_idx, self.maximum)
+            
 
         elif self.sampling_type == "spatial":
-            x_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-2] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
-            y_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-1] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
-            x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
-            x_idx_flat, y_idx_flat = x_grid.flatten(), y_grid.flatten()
-            width = self.og_shape[-2]
-            flat_indices = y_idx_flat * width + x_idx_flat
-            x_sample = x_sim[:, :, flat_indices]
+            if self.num_samples > self.og_shape[-2]:
+                x_sample = x_sim
+                similarity_matrix = self._calculate_euclidean_matrix_N(x_sim, x_sample) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(x_sim, x_sample)
+                torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == "euclidean" else 1.1)
+                prime = self._prime(x, similarity_matrix, self.K, self.maximum)
+            else:
+                x_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-2] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
+                y_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-1] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
+                x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+                x_idx_flat, y_idx_flat = x_grid.flatten(), y_grid.flatten()
+                width = self.og_shape[-2]
+                flat_indices = y_idx_flat * width + x_idx_flat
+                x_sample = x_sim[:, :, flat_indices]
 
-            similarity_matrix = self._calculate_euclidean_matrix_N(x_sim, x_sample) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(x_sim, x_sample)
+                similarity_matrix = self._calculate_euclidean_matrix_N(x_sim, x_sample) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(x_sim, x_sample)
 
-            range_idx = torch.arange(len(flat_indices), device=x.device)    
-            similarity_matrix[:, flat_indices, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
-            
-            prime = self._prime_N(x, similarity_matrix, self.K, flat_indices, self.maximum)
+                range_idx = torch.arange(len(flat_indices), device=x.device)    
+                similarity_matrix[:, flat_indices, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
+                
+                prime = self._prime_N(x, similarity_matrix, self.K, flat_indices, self.maximum)
         else:
             raise NotImplementedError("Sampling Type not Implemented")
         
