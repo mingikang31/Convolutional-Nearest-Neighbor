@@ -504,12 +504,14 @@ class Conv2d_NN_Attn(nn.Module):
         x = self.flatten(x) 
 
         # 5. K, V Projections
-        k = self.w_k(x)
+        # k = self.w_k(x)
+        k = x
         v = self.w_v(x)
 
         if self.sampling_type == "all":
             # Q Projection
-            q = self.w_q(x)
+            # q = self.w_q(x)
+            q = x
 
             similarity_matrix = self._calculate_euclidean_matrix(k, q) if self.magnitude_type == 'euclidean' else self._calculate_cosine_matrix(k, q)
             prime = self._prime(v, similarity_matrix, self.K, self.maximum)
@@ -517,7 +519,8 @@ class Conv2d_NN_Attn(nn.Module):
         elif self.sampling_type == "random":
             if self.num_samples > x.shape[-1]:
                 x_sample = x
-                q = self.w_q(x_sample)
+                # q = self.w_q(x_sample)
+                q = x_sample
                 similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == 'euclidean' else self._calculate_cosine_matrix_N(k, q)
                 torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == 'euclidean' else 1.1)
                 prime = self._prime(v, similarity_matrix, self.K, self.maximum)
@@ -527,7 +530,8 @@ class Conv2d_NN_Attn(nn.Module):
                 x_sample = x[:, :, rand_idx]
 
                 # Q Projection
-                q = self.w_q(x_sample)
+                # q = self.w_q(x_sample)
+                q = x_sample
 
                 similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == 'euclidean' else self._calculate_cosine_matrix_N(k, q)
                 
@@ -539,7 +543,8 @@ class Conv2d_NN_Attn(nn.Module):
         elif self.sampling_type == "spatial":
             if self.num_samples > self.og_shape[-2]:
                 x_sample = x
-                q = self.w_q(x_sample)
+                # q = self.w_q(x_sample)
+                q = x
                 similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(k, q)
                 torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == 'euclidean' else 1.1)
                 prime = self._prime(v, similarity_matrix, self.K, self.maximum)
@@ -554,7 +559,8 @@ class Conv2d_NN_Attn(nn.Module):
                 x_sample = x[:, :, flat_indices]
 
                 # Q Projection
-                q = self.w_q(x_sample)
+                # q = self.w_q(x_sample)
+                q = x_sample
 
                 similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(k, q)
 
