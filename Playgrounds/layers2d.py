@@ -107,7 +107,7 @@ import math
 #         """Calculate similarity matrix based on coordinate distance"""
 #         b, c, t = matrix.shape  # c should be 2 for (x, y) coordinates
 
-#         ### TODO CHANGE IF NOT USING DISTANCE ANYMORE
+#         ### CHANGE IF NOT USING DISTANCE ANYMORE
 #         # coord_matrix = matrix[:, -2:, :]
 #         coord_matrix = matrix
 
@@ -696,7 +696,7 @@ class Conv2d_NN_sanity_Dist(nn.Module):
         """Calculate similarity matrix based on coordinate distance"""
         b, c, t = matrix.shape  # c should be 2 for (x, y) coordinates
 
-        ### TODO CHANGE IF NOT USING DISTANCE ANYMORE
+        ### CHANGE IF NOT USING DISTANCE ANYMORE
         # coord_matrix = matrix[:, -2:, :]
         coord_matrix = matrix
 

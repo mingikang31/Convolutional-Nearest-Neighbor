@@ -238,6 +238,7 @@ class Conv2d_NN(nn.Module):
         if self.sampling_type == "all":
             similarity_matrix = self._calculate_euclidean_matrix(x_sim) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix(x_sim)
             prime = self._prime(x, similarity_matrix, self.K, self.maximum)
+            
         elif self.sampling_type == "random":
             if self.num_samples > x.shape[-1]:
                 x_sample = x_sim
@@ -514,37 +515,53 @@ class Conv2d_NN_Attn(nn.Module):
             prime = self._prime(v, similarity_matrix, self.K, self.maximum)
             
         elif self.sampling_type == "random":
-            rand_idx = torch.randperm(x.shape[-1], device=x.device)[:self.num_samples]
-            x_sample = x[:, :, rand_idx]
+            if self.num_samples > x.shape[-1]:
+                x_sample = x
+                q = self.w_q(x_sample)
+                similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == 'euclidean' else self._calculate_cosine_matrix_N(k, q)
+                torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == 'euclidean' else 1.1)
+                prime = self._prime(v, similarity_matrix, self.K, self.maximum)
 
-            # Q Projection
-            q = self.w_q(x_sample)
+            else: 
+                rand_idx = torch.randperm(x.shape[-1], device=x.device)[:self.num_samples]
+                x_sample = x[:, :, rand_idx]
 
-            similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == 'euclidean' else self._calculate_cosine_matrix_N(k, q)
-            
-            range_idx = torch.arange(len(rand_idx), device=x.device)
-            similarity_matrix[:, rand_idx, range_idx] = self.INF if self.magnitude_type == 'euclidean' else self.NEG_INF
-            
-            prime = self._prime_N(v, similarity_matrix, self.K, rand_idx, self.maximum)
+                # Q Projection
+                q = self.w_q(x_sample)
+
+                similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == 'euclidean' else self._calculate_cosine_matrix_N(k, q)
+                
+                range_idx = torch.arange(len(rand_idx), device=x.device)
+                similarity_matrix[:, rand_idx, range_idx] = self.INF if self.magnitude_type == 'euclidean' else self.NEG_INF
+                
+                prime = self._prime_N(v, similarity_matrix, self.K, rand_idx, self.maximum)
             
         elif self.sampling_type == "spatial":
-            x_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-2] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
-            y_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-1] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
-            x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
-            x_idx_flat, y_idx_flat = x_grid.flatten(), y_grid.flatten()
-            width = self.og_shape[-2]
-            flat_indices = y_idx_flat * width + x_idx_flat
-            x_sample = x[:, :, flat_indices]
+            if self.num_samples > self.og_shape[-2]:
+                x_sample = x
+                q = self.w_q(x_sample)
+                similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(k, q)
+                torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == 'euclidean' else 1.1)
+                prime = self._prime(v, similarity_matrix, self.K, self.maximum)
+            else:
+                    
+                x_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-2] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
+                y_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-1] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
+                x_grid, y_grid = torch.meshgrid(x_ind, y_ind, indexing='ij')
+                x_idx_flat, y_idx_flat = x_grid.flatten(), y_grid.flatten()
+                width = self.og_shape[-2]
+                flat_indices = y_idx_flat * width + x_idx_flat
+                x_sample = x[:, :, flat_indices]
 
-            # Q Projection
-            q = self.w_q(x_sample)
+                # Q Projection
+                q = self.w_q(x_sample)
 
-            similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(k, q)
+                similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(k, q)
 
-            range_idx = torch.arange(len(flat_indices), device=x.device)    
-            similarity_matrix[:, flat_indices, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
-            
-            prime = self._prime_N(x, similarity_matrix, self.K, flat_indices, self.maximum)
+                range_idx = torch.arange(len(flat_indices), device=x.device)    
+                similarity_matrix[:, flat_indices, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
+                
+                prime = self._prime_N(x, similarity_matrix, self.K, flat_indices, self.maximum)
         else:
             raise NotImplementedError("Sampling Type not Implemented")
 
@@ -613,11 +630,11 @@ class Conv2d_NN_Attn(nn.Module):
         v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
         prime = torch.gather(v_expanded, dim=2, index=topk_indices_exp)
         prime = prime * topk_values_exp
-        
+
         if self.padding > 0: 
-            prime = prime.view(b, c, self.padded_shape[-1], K)
-            prime = prime[:, :, self.padding:-self.padding, :]
-            prime = prime.reshape(b, c, K * self.og_shape[-1])
+            prime = prime.view(b, c, self.padded_shape[-2], self.padded_shape[-1], K)
+            prime = prime[:, :, self.padding:-self.padding, self.padding:-self.padding, :]
+            prime = prime.reshape(b, c, K * self.og_shape[-2] * self.og_shape[-1])
         else: 
             prime = prime.view(b, c, -1)
 
@@ -646,9 +663,9 @@ class Conv2d_NN_Attn(nn.Module):
         prime = prime * topk_values_exp
 
         if self.padding > 0:
-            prime = prime.view(b, c, self.padded_shape[-1], K)
-            prime = prime[:, :, self.padding:-self.padding, :]
-            prime = prime.reshape(b, c, K * self.og_shape[-1])
+            prime = prime.view(b, c, self.padded_shape[-2], self.padded_shape[-1], K)
+            prime = prime[:, :, self.padding:-self.padding, self.padding:-self.padding, :]
+            prime = prime.reshape(b, c, K * self.og_shape[-2] * self.og_shape[-1])
         else:
             prime = prime.view(b, c, -1)
         return prime
@@ -718,6 +735,92 @@ class Conv2d_Branching(nn.Module):
                 similarity_type=similarity_type,
                 aggregation_type=aggregation_type,
                 lambda_param=lambda_param
+            )
+        if self.branch_ratio != 1:
+            self.branch2 = nn.Conv2d(
+                in_channels=self.in_channels,
+                out_channels=self.out_channels_2,
+                kernel_size=kernel_size,
+                stride=1,
+                padding="same"
+            )
+
+            
+        self.pointwise_conv = nn.Conv2d(
+            in_channels=out_channels,
+            out_channels=out_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0
+        )
+        
+        # self.channel_shuffle = nn.ChannelShuffle(groups=2) # Optional Channel Shuffle - not in use
+
+    def forward(self, x):
+        if self.branch_ratio == 0:
+            x = self.branch2(x)
+            out = self.pointwise_conv(x)
+            return out
+        if self.branch_ratio == 1:
+            x = self.branch1(x)
+            out = self.pointwise_conv(x)
+            return out
+        
+        x1 = self.branch1(x)
+        x2 = self.branch2(x)
+
+        # x1 = self.branch(x[:, :self.in_channels_1, :, :]
+        # x2 = self.conv2d(x[:, self.in_channels_2:, :, :])
+        out = torch.cat((x1, x2), dim=1)
+        out = self.pointwise_conv(out)
+        # print("Out Shape:", out.shape)
+        return out
+
+
+class Conv2d_Attn_Branching(nn.Module):
+    def __init__(self, 
+                 in_channels, 
+                 out_channels, 
+                 kernel_size, 
+                 K, 
+                 stride, 
+                 padding, 
+                 sampling_type, 
+                 num_samples, 
+                 sample_padding, 
+                 shuffle_pattern, 
+                 shuffle_scale, 
+                 magnitude_type, 
+                 aggregation_type, 
+                 attention_dropout,
+                 branch_ratio=0.5
+                 ):
+        super(Conv2d_Attn_Branching, self).__init__()
+
+        assert 0 <= branch_ratio <= 1, "Branch ratio must be between 0 and 1"
+
+        self.branch_ratio = branch_ratio
+        self.in_channels = in_channels
+        # self.in_channels_1 = int(in_channels * branch_ratio)
+        # self.in_channels_2 = in_channels - self.in_channels_1
+        self.out_channels_1 = int(out_channels * branch_ratio)
+        self.out_channels_2 = out_channels - self.out_channels_1
+
+        if self.branch_ratio != 0:
+            self.branch1 = Conv2d_NN_Attn(
+                in_channels=self.in_channels,
+                out_channels=self.out_channels_1,
+                K=K,
+                stride=K,
+                padding=padding,
+                sampling_type=sampling_type,
+                num_samples=num_samples,
+                sample_padding=sample_padding,
+                shuffle_pattern=shuffle_pattern,
+                shuffle_scale=shuffle_scale,
+                magnitude_type=magnitude_type,
+                aggregation_type=aggregation_type,
+                attention_dropout=attention_dropout
             )
         if self.branch_ratio != 1:
             self.branch2 = nn.Conv2d(

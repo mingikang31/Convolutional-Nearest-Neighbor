@@ -22,7 +22,7 @@ def args_parser():
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", add_help=False) 
     
     # Model Arguments
-    parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "Conv2d_New", "ConvNN", "ConvNN_Attn", "Branching"], help="Type of Convolution or Attention layer to use")
+    parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "Conv2d_New", "ConvNN", "ConvNN_Attn", "Branching", "Branching_Attn"], help="Type of Convolution or Attention layer to use")
     
     # Additional Layer Arguments
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN")

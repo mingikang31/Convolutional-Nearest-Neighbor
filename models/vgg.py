@@ -16,7 +16,8 @@ from models.layers2d import (
     Conv2d_New, 
     Conv2d_NN, 
     Conv2d_NN_Attn, 
-    Conv2d_Branching
+    Conv2d_Branching, 
+    Conv2d_Attn_Branching
 )
 
 
@@ -107,6 +108,22 @@ class VGG(nn.Module):
             "branch_ratio": self.args.branch_ratio
         }
 
+        convnn_attn_branching_params = {
+            "kernel_size": self.args.kernel_size,
+            "K": self.args.K,
+            "stride": self.args.K, # Stride is always K
+            "padding": self.args.padding,
+            "sampling_type": self.args.sampling_type,
+            "num_samples": self.args.num_samples,
+            "sample_padding": self.args.sample_padding,
+            "shuffle_pattern": self.args.shuffle_pattern,
+            "shuffle_scale": self.args.shuffle_scale,
+            "magnitude_type": self.args.magnitude_type,
+            "aggregation_type": self.args.aggregation_type,
+            "attention_dropout": self.args.attention_dropout,
+            "branch_ratio": self.args.branch_ratio
+        }
+
             
         for v in cfg[features_config]:
             if v == "M":
@@ -145,6 +162,13 @@ class VGG(nn.Module):
                         "out_channels": v,
                     })
                     layer = Conv2d_Branching(**convnn_branching_params)
+
+                elif self.args.layer == "Branching_Attn":
+                    convnn_attn_branching_params.update({
+                        "in_channels": in_channels,
+                        "out_channels": v,
+                    })
+                    layer = Conv2d_Attn_Branching(**convnn_attn_branching_params)
 
                 ## Changed to Instance Norm to go first then conv (different from VGG paper) 
                 """
