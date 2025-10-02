@@ -484,7 +484,15 @@ class Conv2d_NN_Attn(nn.Module):
         # Query, Key, Value, Output Projections
         self.w_q = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, kernel_size=1, stride=1, bias=False)
         self.w_k = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, kernel_size=1, stride=1, bias=False)
-        self.w_v = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, kernel_size=1, stride=1, bias=False)
+        # self.w_v = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, kernel_size=1, stride=1, bias=False)
+
+        ## TODO Try with sequential layer for projections for ConvNN Attention 
+        self.w_v = nn.Sequential(
+            nn.Conv1d(in_channels=self.in_channels_1d, out_channels=8, kernel_size=1, stride=1, bias=False),
+            nn.ReLU(),
+            nn.Conv1d(in_channels=8, out_channels=self.in_channels_1d, kernel_size=1, stride=1, bias=False),
+        )
+        
         self.w_o = nn.Conv1d(self.out_channels_1d, self.out_channels_1d, kernel_size=1, stride=1, bias=False)
 
     def forward(self, x): 

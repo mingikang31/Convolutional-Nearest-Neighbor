@@ -28,8 +28,21 @@ def Train_Eval(args,
     elif args.criterion == 'MSE':
         criterion = nn.MSELoss()
 
+    # TODO New criterion for ConvNNAttention (CrossEntropy + Identity Loss)
+    # If ConvNNAttention, then use a combination of CrossEntropy + Identity Loss
     
-    # Optimizer 
+    # Another criterion with input, output, and model 
+    # In the model, go through the model weights and get the projections (w_q), and compute identity loss 
+    # ||w_v - Identity ||
+    # torch.eye -> to create identity matrix
+    # criterion = torch.nn.MSELoss() + identity loss on w_v
+
+    # torch.nn.functional.cross_entropy + normalize w_v identity loss 
+
+    ## TOTAL_LOSS = cross_entropy(output_model, target) + sum(identity_loss(w_v, identity))
+    
+
+    # Optimizer
     if args.optimizer == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     elif args.optimizer == 'sgd':
