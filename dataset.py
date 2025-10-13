@@ -3,7 +3,6 @@ import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt 
-from Data.mnist1d import MNIST1D_Dataset
 from PIL import Image
 
 class AddGaussianNoise(object):
@@ -46,36 +45,13 @@ class ImageNet(datasets.ImageNet):
         plt.imshow(img)
         plt.show()
 
-class TinyImageNet(datasets.ImageNet):
-    def __init__(self, args):
-        # Define transforms
-        transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-        
-        self.train_data = datasets.TinyImageNet(root=args.data_path, split='train', download=True, transform=transform)
-        self.test_data = datasets.TinyImageNet(root=args.data_path, split='val', download=False, transform=transform)
-        
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
+# TinyImageNet is not available in torchvision.datasets by default.
+# You need to implement a custom TinyImageNet dataset class or use an external implementation.
+# The following is a placeholder for TinyImageNet, which raises NotImplementedError if used.
 
-        self.num_classes = 1000
-        self.img_size = (3, 224, 224)
-    
-    def shape(self):
-        return self.train_data[0][0].shape
-    
-    def visual(self):
-        # Get normalized tensor
-        img = self.test_data[0][0]
-        # Denormalize for visualization
-        img = img * torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1) + torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
-        img = img.permute(1, 2, 0).clamp(0, 1)
-        plt.figure(figsize=(6, 3))
-        plt.imshow(img)
-        plt.show()
+class TinyImageNet:
+    def __init__(self, args):
+        raise NotImplementedError("TinyImageNet dataset is not available in torchvision.datasets. Please implement a custom loader or use an external implementation.")
         
 class CIFAR100(datasets.CIFAR100): 
     def __init__(self, args): 
@@ -196,49 +172,3 @@ class CIFAR10(datasets.CIFAR10):
         plt.figure(figsize=(6, 3)) 
         plt.imshow(img)
         plt.show()      
-
-class MNIST(datasets.MNIST): 
-    def __init__(self, args):
-        # Define transforms
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.1307], std=[0.3081])
-        ])
-        
-        self.train_data = datasets.MNIST(root=args.data_path, train=True, download=True, transform=transform)
-        self.test_data = datasets.MNIST(root=args.data_path, train=False, download=False, transform=transform)
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
-
-        self.num_classes = 10
-        self.img_size = (1, 28, 28)
-        
-    def shape(self):
-        return self.train_data[0][0].shape
-    
-    def visual(self):
-        # Get normalized tensor
-        img = self.test_data[0][0]
-        # Denormalize for visualization
-        img = img * torch.tensor([0.3081]).view(1, 1, 1) + torch.tensor([0.1307]).view(1, 1, 1)
-        img = img.permute(1, 2, 0).squeeze().clamp(0, 1)
-        plt.figure(figsize=(6, 3))
-        plt.imshow(img, cmap='gray')
-        plt.show()
-
-
-class MNIST1D():
-    def __init__(self, args):
-
-        self.train_data = MNIST1D_Dataset(train=True)
-        self.test_data = MNIST1D_Dataset(train=False)
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
-
-        self.num_classes = 10 
-        self.img_size = (1, 40)
-
-    def shape(self):
-        return self.train_data[0][0].shape 
-
-    

@@ -175,62 +175,66 @@ ggsave(
 
 ## Random + Spatial Sampling Plot 
 # "Convolutional-Nearest-Neighbor/Output/Sep_27_Branching_NTest/vgg_1e-5_cos/CIFAR10/LocCol_LocCol_Branch"
-
-setwd("/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/plots")
-df = read.csv("csv/N_Samples_Comparison.csv")
-
-
+# Make sure the necessary library is loaded
 library(tidyverse)
 
-# --- Step 2: Reshape the Data for Plotting ---
-# We'll pivot the data to a 'long' format, which is ideal for ggplot.
-# This creates a 'Type' column (Rand, Spat) and separate value columns (GFlops, Top1).
+# --- Step 1: Load Data (Your code) ---
+setwd("/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/plots")
+df = read.csv("csv/N_Samples_Comparison-oct6.csv")
+
+# --- Step 2: Reshape the Data for Plotting (Your code) ---
 df_long <- df %>%
-  # First, select only the columns we need
   select(N, Rand_GFlops, Rand_Top1, Spat_GFlops, Spat_Top1, All_GFlops, All_Top1, Conv_GFlops, Conv_Top1) %>%
-  # Now, pivot them into a long format
   pivot_longer(
-    cols = -N, # Select all columns except N
-    names_to = c("Type", ".value"), # Split column names into 'Type' and the metric name
-    names_sep = "_" # The character used to split the column names
+    cols = -N,
+    names_to = c("Type", ".value"),
+    names_sep = "_"
   )
 
-# --- Step 3: Create the GFlops Plot ---
-gflops_plot <- ggplot(df_long, aes(x = N, y = GFlops, color = Type)) +
+# --- NEW: Define an offset value and apply it to the data ---
+# This creates a new data frame with a new column for the offset GFlops values.
+offset_value <- 0.001
+df_long_offset <- df_long %>%
+  mutate(GFlops_offset = GFlops + if_else(Type == "Rand", offset_value, 0.0))
+
+# --- Step 3: Create the GFlops Plot with the offset data ---
+gflops_plot <- ggplot(df_long_offset, aes(x = N, y = GFlops_offset, color = Type, linetype = Type)) + # Use the offset Y-value and add linetype
   geom_line(linewidth = 1) +
-    # --- NEW: Use the same manual color scale ---
+  
+  # --- Color scale (Your code) ---
   scale_color_manual(
-    name = "Sampling Method", # Legend title
-    labels = c(
-      Rand = "Random (N^2)", 
-      Spat = "Spatial (N)", 
-      All = "All Features", 
-      Conv = "Conv2d (baseline)"
-    ),
-    values = c(
-      Rand = "#377EB8",  # Blue
-      Spat = "#E41A1C",  # Red
-      All = "black",     # Black
-      Conv = "#4DAF4A"   # Green
-    )
-  )+
+    name = "Sampling Method",
+    labels = c(Rand = "Random (N^2)", Spat = "Spatial (N)", All = "All Features", Conv = "Conv2d (baseline)"),
+    values = c(Rand = "#377EB8", Spat = "#E41A1C", All = "black", Conv = "#4DAF4A")
+  ) +
+  
+  # --- NEW: Add a manual linetype scale to make the "Random" line dashed ---
+  scale_linetype_manual(
+    name = "Sampling Method",
+    labels = c(Rand = "Random (N^2)", Spat = "Spatial (N)", All = "All Features", Conv = "Conv2d (baseline)"),
+    values = c(Rand = "dashed", Spat = "solid", All = "solid", Conv = "solid")
+  ) +
   
   # --- Customize Axes and Labels ---
-  scale_x_continuous(breaks = seq(4, 28, 4)) + # Ensure integer ticks for N
-  scale_y_continuous(breaks = seq(0.27, 0.47, 0.05)) + # Ensure integer ticks for K
+  scale_x_continuous(breaks = seq(4, 28, 4)) +
+  scale_y_continuous(breaks = seq(0.27, 0.34, 0.01)) +
   
+  # --- NEW: Update labs to remove the redundant color title and add a caption ---
   labs(
     title = "Computational Cost (GFlops) vs. N",
     subtitle = "Comparison of Random and Spatial Sampling Methods",
     x = "N (Number of Sampled Pixels)",
     y = "GFlops",
-    color = "Sampling Method"
+    caption = "Note: The Random (blue dashed) line is slightly offset vertically for visibility."
   ) +
   theme_bw(base_size = 10) +
-  theme(legend.position = "right", 
-        plot.title = element_text(face = "bold", size = 23), 
-        plot.subtitle = element_text(size = 18)
-        )
+  theme(
+    legend.position = "right",
+    plot.title = element_text(face = "bold", size = 23),
+    plot.subtitle = element_text(size = 18)
+  )
+
+# --- Display the final plot ---
 
 # --- Step 4: Create the Top-1 Accuracy Plot ---
 top1_plot <- ggplot(df_long, aes(x = N, y = Top1, color = Type)) +
@@ -276,8 +280,8 @@ print(gflops_plot)
 print(top1_plot)
 
 # --- Step 6: (Optional) Save the Plots to Files ---
-ggsave("csv/N_Gflops.png", plot = gflops_plot, width = 8, height = 5, dpi = 300, bg = "white")
-ggsave("csv/N_Accuracy.png", plot = top1_plot, width = 8, height = 5, dpi = 300, bg = "white")
+ggsave("csv/N_Gflops_New.png", plot = gflops_plot, width = 8, height = 5, dpi = 300, bg = "white")
+ggsave("csv/N_Accuracy_New.png", plot = top1_plot, width = 8, height = 5, dpi = 300, bg = "white")
 
 
 ```

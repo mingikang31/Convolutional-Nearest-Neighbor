@@ -26,7 +26,7 @@ class VGG(nn.Module):
         self, 
         args,
         # in_channels=3, 
-        features_config="A", 
+        # features_config="A", 
         # num_classes=1000,
         dropout=0.5    
     ):
@@ -43,7 +43,7 @@ class VGG(nn.Module):
         in_channels = self.args.img_size[0] 
         num_classes = self.args.num_classes
 
-        self.name = f"VGG {features_config} {args.layer}"
+        self.name = f"{args.model} - {args.layer}"
 
         cfg = {
             "A": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
@@ -51,6 +51,17 @@ class VGG(nn.Module):
             "D": [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512, "M"],
             "E": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, 512, "M", 512, 512, 512, 512, "M"],
         }
+
+        
+        features_config = None 
+        if "11" in args.model:
+            features_config = "A"
+        elif "13" in args.model:
+            features_config = "B"
+        elif "16" in args.model:
+            features_config = "D"
+        elif "19" in args.model:
+            features_config = "E"
 
         layers = [] 
 

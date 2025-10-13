@@ -3,54 +3,61 @@
 import argparse 
 from pathlib import Path
 import os 
-
+import torch 
 # Datasets 
 from dataset import ImageNet, CIFAR10, CIFAR100
 from train_eval import Train_Eval
 
 # Models 
-from models.allconvnet import AllConvNet 
 from models.vgg import VGG 
-from models.resnet_NIU import resnet18, resnet34
+from models.resnet import ResNet
 
 # Utilities 
 from utils import write_to_file, set_seed
 
 """
-Only doing Conv2d, Conv2d_New, Conv2d_New_1d, ConvNN, and ConvNN_Attn
+Only doing Conv2d, Conv2d_New, ConvNN, ConvNN_Attn, Branching for now
 """
+
 def args_parser():
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", add_help=False) 
     
     # Model Arguments
-    parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "Conv2d_New", "Conv2d_New_1d", "ConvNN", "ConvNN_Attn"], help="Type of Convolution or Attention layer to use")
+    parser.add_argument("--model", type=str, default="vgg11", choices=["vgg11", "vgg13", "vgg16", "vgg19", "resnet18", "resnet34", "allconvnet"], help="Model architecture to use") 
+
+    parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "Conv2d_New", "ConvNN", "ConvNN_Attn", "Branching", "Branching_Attn"], help="Type of Convolution or Attention layer to use")
     
     # Additional Layer Arguments
     parser.add_argument("--K", type=int, default=9, help="K-nearest neighbor for ConvNN")
     parser.add_argument("--kernel_size", type=int, default=3, help="Kernel Size for Conv2d")        
+    parser.add_argument("--padding", type=int, default=1, help="Padding for ConvNN")
     parser.add_argument("--sampling_type", type=str, default='all', choices=["all", "random", "spatial"], help="Sampling method for ConvNN Models")
     parser.add_argument("--num_samples", type=int, default=-1, help="Number of samples for ConvNN Models")
     parser.add_argument("--sample_padding", type=int, default=0, help="Padding for spatial sampling in ConvNN Models")
-    
+
+    # ConvNN Attention specific arguments
     parser.add_argument("--attention_dropout", type=float, default=0.1, help="Dropout rate for the model")    
 
-    parser.add_argument("--shuffle_pattern", type=str, default="BA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")
-    parser.add_argument("--shuffle_scale", type=int, default=2, help="Shuffle scale for ConvNN Models")
-    parser.add_argument("--magnitude_type", type=str, default="similarity", choices=["similarity", "distance"], help="Magnitude type for ConvNN Models")
-    parser.add_argument("--coordinate_encoding", action="store_true", help="Use coordinate encoding in ConvNN Models")
-    parser.set_defaults(coordinate_encoding=False)
+    # ConvNN specific arguments
+    parser.add_argument("--shuffle_pattern", type=str, default="NA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")
+    parser.add_argument("--shuffle_scale", type=int, default=0, help="Shuffle scale for ConvNN Models")
+    parser.add_argument("--magnitude_type", type=str, default="euclidean", choices=["cosine", "euclidean"], help="Magnitude type for ConvNN Models")
+    parser.add_argument("--similarity_type", type=str, default="Loc", choices=["Loc", "Col", "Loc_Col"], help="Similarity type for ConvNN Models")
+    parser.add_argument("--aggregation_type", type=str, default="Col", choices=["Col", "Loc_Col"], help="Aggregation type for ConvNN Models")
+    parser.add_argument("--lambda_param", type=float, default=0.5, help="Lambda parameter for Loc_Col aggregation in ConvNN Models")
+    parser.add_argument("--branch_ratio", type=float, default=0.5, help="Branch ratio for Branching layer (between 0 and 1), ex. 0.25 means 25% of in_channels and out_channels go to ConvNN branch, rest to Conv2d branch")
 
-    # Arguments for Data 
+    # Data Arguments
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", 'imagenet'], help="Dataset to use for training and evaluation")
+    parser.add_argument("--noise", type=float, default=0.0, help="Standard deviation of Gaussian noise to add to the data")
     parser.add_argument("--data_path", type=str, default="./Data", help="Path to the dataset")
-        
+
     # Training Arguments
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size for training and evaluation")
     parser.add_argument("--num_epochs", type=int, default=100, help="Number of epochs for training")
     parser.add_argument("--use_amp", action="store_true", help="Use mixed precision training")
     parser.set_defaults(use_amp=False)
     parser.add_argument("--clip_grad_norm", type=float, default=None, help="Gradient clipping value")
-    
     
     # Loss Function Arguments
     parser.add_argument("--criterion", type=str, default="CrossEntropy", choices=["CrossEntropy", "MSE"], help="Loss function to use for training")
@@ -71,37 +78,25 @@ def args_parser():
     parser.add_argument('--seed', default=0, type=int)
     
     # Output Arguments 
-    parser.add_argument("--output_dir", type=str, default="./Output/ResNet/ConvNN", help="Directory to save the output files")
+    parser.add_argument("--output_dir", type=str, default="./Output/VGG/ConvNN", help="Directory to save the output files")
+
+    # Test Arguments
+    parser.add_argument("--test_only", action="store_true", help="Only test the model")
+    parser.set_defaults(test_only=False)
     
     return parser
-
-def check_args(args):
-    # Check the arguments based on the model 
-    print("Checking arguments based on the model...")    
-    
-    assert args.layer in ["Conv2d", "Conv2d_New", "Conv2d_New_1d", "ConvNN", "ConvNN_Attn"], f"Model {args.layer} not supported"
-    assert args.dataset in ["cifar10", "cifar100", 'imagenet'], f"Dataset {args.dataset} not supported"
-    assert args.criterion in ["CrossEntropy", "MSE"], f"Criterion {args.criterion} not supported"
-    assert args.optimizer in ['adam', 'sgd', 'adamw'], f"Optimizer {args.optimizer} not supported"
-    assert args.scheduler in ['step', 'cosine', 'plateau'], f"Scheduler {args.scheduler} not supported"
-            
-    if args.sampling_type == "all": # only for Conv2d_NN, Conv2d_NN_Attn
-        args.num_samples = -1
-    if args.num_samples == -1:
-        args.sampling_type = "all"
-
-    args.resize = False
-    return args
     
     
 def main(args):
 
-    args = check_args(args)
     
     # Check if the output directory exists, if not create it
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
 
+    # Make image 64x64
+    args.resize = False
+    
     # Dataset 
     if args.dataset == "cifar10":
         dataset = CIFAR10(args)
@@ -117,9 +112,16 @@ def main(args):
         args.img_size = dataset.img_size
     else:
         raise ValueError("Dataset not supported")
+    
 
-    # Model
-    model = resnet18(args)
+    if "vgg" in args.model:
+        model = VGG(args).to(args.device)
+    elif "resnet" in args.model:
+        model = ResNet(args).to(args.device)
+    else:
+        raise ValueError("Model not supported") 
+        # Will add AllConvNet later
+
 
     print(f"Model: {model.name}")
 
@@ -129,22 +131,28 @@ def main(args):
     print(f"Trainable Parameters: {trainable_params}")
     args.total_params = total_params
     args.trainable_params = trainable_params
-    
-    # Set the seed for reproducibility
-    set_seed(args.seed)
-    
-    
-    # Training Modules 
-    train_eval_results = Train_Eval(args, 
-                                model, 
-                                dataset.train_loader, 
-                                dataset.test_loader
-                                )
-    
-    # Storing Results in output directory 
-    write_to_file(os.path.join(args.output_dir, "args.txt"), args)
-    write_to_file(os.path.join(args.output_dir, "model.txt"), model)
-    write_to_file(os.path.join(args.output_dir, "train_eval_results.txt"), train_eval_results)
+
+    if args.test_only:
+        ex = torch.Tensor(3, 3, 32, 32).to(args.device)
+        out = model(ex)
+        print(f"Output shape: {out.shape}")
+        print("Testing Complete")
+    else:
+        # Set the seed for reproducibility
+        set_seed(args.seed)
+        
+        # Training Modules 
+        train_eval_results = Train_Eval(args, 
+                                    model, 
+                                    dataset.train_loader, 
+                                    dataset.test_loader
+                                    )
+        
+        # Storing Results in output directory 
+        write_to_file(os.path.join(args.output_dir, "args.txt"), args)
+        write_to_file(os.path.join(args.output_dir, "model.txt"), model)
+        write_to_file(os.path.join(args.output_dir, "train_eval_results.txt"), train_eval_results)
+
 
 if __name__ == '__main__': 
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", parents=[args_parser()])
