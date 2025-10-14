@@ -41,8 +41,8 @@ def args_parser():
     # ConvNN specific arguments
     parser.add_argument("--shuffle_pattern", type=str, default="NA", choices=["BA", "NA"], help="Shuffle pattern: BA (Before & After) or NA (No Shuffle)")
     parser.add_argument("--shuffle_scale", type=int, default=0, help="Shuffle scale for ConvNN Models")
-    parser.add_argument("--magnitude_type", type=str, default="euclidean", choices=["cosine", "euclidean"], help="Magnitude type for ConvNN Models")
-    parser.add_argument("--similarity_type", type=str, default="Loc", choices=["Loc", "Col", "Loc_Col"], help="Similarity type for ConvNN Models")
+    parser.add_argument("--magnitude_type", type=str, default="cosine", choices=["cosine", "euclidean"], help="Magnitude type for ConvNN Models")
+    parser.add_argument("--similarity_type", type=str, default="Col", choices=["Loc", "Col", "Loc_Col"], help="Similarity type for ConvNN Models")
     parser.add_argument("--aggregation_type", type=str, default="Col", choices=["Col", "Loc_Col"], help="Aggregation type for ConvNN Models")
     parser.add_argument("--lambda_param", type=float, default=0.5, help="Lambda parameter for Loc_Col aggregation in ConvNN Models")
     parser.add_argument("--branch_ratio", type=float, default=0.5, help="Branch ratio for Branching layer (between 0 and 1), ex. 0.25 means 25% of in_channels and out_channels go to ConvNN branch, rest to Conv2d branch")
