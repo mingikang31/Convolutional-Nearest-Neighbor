@@ -13,7 +13,7 @@ from models.layers2d import (
 
 
 class ResNet(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args, dropout=0.5):
         super(ResNet, self).__init__()
         self.args = args 
         self.num_classes = args.num_classes
@@ -54,9 +54,10 @@ class ResNet(nn.Module):
 
 
         self.classifier = nn.Sequential(
-            nn.AdaptiveAvgPool2d((7, 7)),
+            nn.AdaptiveAvgPool2d((1, 1)),
             nn.Flatten(start_dim=1),
-            nn.Linear(512 * 7 * 7, self.num_classes)
+            nn.Dropout(dropout),
+            nn.Linear(512, self.num_classes)
         )
 
         
@@ -148,15 +149,12 @@ class ResBlock(nn.Module):
             self.conv2 = Conv2d_Branching(out_channels, out_channels, **convnn_branching_params)
 
 
-        self.layer1 = nn.Sequential(
+        self.conv_layer = nn.Sequential(
             self.conv1,
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-        self.layer2 = nn.Sequential(
+            nn.ReLU(inplace=True),
             self.conv2,
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.BatchNorm2d(out_channels)
         )
         
         # Identity mapping
@@ -165,15 +163,14 @@ class ResBlock(nn.Module):
         else:
             self.identity = nn.Identity()
 
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU(inplace=False)
 
     def forward(self, x):
         identity = self.identity(x)
 
-        out = self.layer1(x)
-        out = self.layer2(out)
+        out = self.conv_layer(x)
 
-        out += identity
+        out = out + identity
         out = self.relu(out)
 
         return out
