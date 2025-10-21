@@ -17,15 +17,10 @@ cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 
 # Create and activate conda environment with specific CUDA version
 module purge
-module load anaconda3/2023.3
+module load cuda/12.3  # Load the CUDA module explicitly
 
-# Either create a new environment
-conda create -n pytorch_env python=3.9 pytorch torchvision cudatoolkit=11.7 -c pytorch -c conda-forge
-# Or use an existing one
-# conda activate your_existing_env
+source activate torch-rtx5090
 
-# Run your commands
-python main.py --model vgg11 [other parameters]
 
 ## VGG11 + VGG13 
 ## I. CIFAR10 
