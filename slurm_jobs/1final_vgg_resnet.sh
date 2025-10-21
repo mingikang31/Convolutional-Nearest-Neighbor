@@ -12,15 +12,6 @@
 
 cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 
-#!/bin/bash
-#SBATCH [your current SLURM parameters]
-
-# Create and activate conda environment with specific CUDA version
-module purge
-module load cuda/12.3  # Load the CUDA module explicitly
-
-source activate torch-rtx5090
-
 
 ## VGG11 + VGG13 
 ## I. CIFAR10 
