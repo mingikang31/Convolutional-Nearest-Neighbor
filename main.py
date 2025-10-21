@@ -71,7 +71,7 @@ def args_parser():
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
     parser.add_argument('--lr_step', type=int, default=20, help='Step size for learning rate scheduler')
     parser.add_argument('--lr_gamma', type=float, default=0.1, help='Gamma for learning rate scheduler')
-    parser.add_argument('--scheduler', type=str, default='step', choices=['step', 'cosine', 'plateau'], help='Learning rate scheduler')
+    parser.add_argument('--scheduler', type=str, default='none', choices=['step', 'cosine', 'plateau', 'none'], help='Learning rate scheduler')
     
     # Device Arguments
     parser.add_argument("--device", type=str, default="cuda", choices=["cpu", "cuda", "mps"], help="Device to use for training and evaluation")

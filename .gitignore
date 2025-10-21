@@ -17,7 +17,8 @@ Data/cifar-100-batches-py
 Data/cifar-100-python.tar.gz
 Data/cifar-100-python/*
 .env
-
+        # Data/BSD68/cifar-10-batches-py/
+        # Data/BSD68/cifar-10-python.tar.gz
 .DS_Store
 
 .editorconfig
