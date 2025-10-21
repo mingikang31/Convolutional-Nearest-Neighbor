@@ -52,7 +52,27 @@ class ImageNet(datasets.ImageNet):
 class TinyImageNet:
     def __init__(self, args):
         raise NotImplementedError("TinyImageNet dataset is not available in torchvision.datasets. Please implement a custom loader or use an external implementation.")
-        
+
+### TODO : Data Augmentation for CIFAR100 and CIFAR10
+# import torchvision.transforms as T
+
+# # These are the standard mean and std values for CIFAR-100
+# CIFAR100_MEAN = (0.5071, 0.4867, 0.4408)
+# CIFAR100_STD = (0.2675, 0.2565, 0.2761)
+
+# transform_train = T.Compose([
+#     # 1. Augmentation: Create variations of the image
+#     T.RandomCrop(32, padding=4),
+#     T.RandomHorizontalFlip(p=0.5),
+    
+#     # 2. Conversion: Turn the image into a PyTorch tensor
+#     T.ToTensor(),
+    
+#     # 3. Standardization: Normalize the data
+#     T.Normalize(CIFAR100_MEAN, CIFAR100_STD)
+# ])
+
+
 class CIFAR100(datasets.CIFAR100): 
     def __init__(self, args): 
 
