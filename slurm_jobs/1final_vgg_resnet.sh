@@ -1,7 +1,7 @@
 #! /bin/bash 
 #SBATCH --nodes=1 
 #SBATCH --mem=64G
-#SBATCH -p gpu --gres=gpu:a100:1
+#SBATCH -p gpu --gres=gpu:rtx5090:1
 #SBATCH --cpus-per-task=4
 #SBATCH --job-name=CVPR1
 #SBATCH --time=500:00:00
@@ -12,7 +12,8 @@
 
 cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 
-source activate mingi
+source activate torch-rtx5090
+
 
 ## VGG11 + VGG13 
 ## I. CIFAR10 
