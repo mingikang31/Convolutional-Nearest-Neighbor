@@ -759,6 +759,7 @@ class Conv2d_Branching(nn.Module):
                 padding="same"
             )
 
+        self.relu = nn.ReLU()
             
         self.pointwise_conv = nn.Conv2d(
             in_channels=out_channels,
@@ -786,6 +787,8 @@ class Conv2d_Branching(nn.Module):
         # x1 = self.branch(x[:, :self.in_channels_1, :, :]
         # x2 = self.conv2d(x[:, self.in_channels_2:, :, :])
         out = torch.cat((x1, x2), dim=1)
+
+        out = self.relu(out)
         out = self.pointwise_conv(out)
         # print("Out Shape:", out.shape)
         return out
