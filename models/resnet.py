@@ -26,11 +26,10 @@ class ResNet(nn.Module):
         self.name = f"{args.model} - {args.layer}"
 
         self.first_conv = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False),
+            nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False),
             nn.BatchNorm2d(64), 
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        )
+            nn.ReLU(inplace=True)
+            )
 
         # Resnet 18 - [64, 128, 256, 512] * [2, 2, 2, 2]
         # Resnet 34 - [64, 128, 256, 512] * [3, 4, 6, 3]
