@@ -450,7 +450,6 @@ class Conv1d_NN_Attn(nn.Module):
                  shuffle_scale, 
                  magnitude_type, 
                  coordinate_encoding, 
-                 num_tokens, 
                  attention_dropout
                  ):
         
@@ -504,8 +503,10 @@ class Conv1d_NN_Attn(nn.Module):
             kernel_size=self.K, 
             stride=self.stride, 
             padding=0, 
-            #   bias=False # Make ConvNN exactly same as Conv1d
+            groups=self.in_channels,  # Depthwise Convolution
             )
+
+        self.conv1d_layer.weight.data.fill_(1.0)
 
         # Shapes 
         self.og_shape = None 
@@ -516,16 +517,15 @@ class Conv1d_NN_Attn(nn.Module):
         self.NEG_INF = -1e5
 
         # Attention Parameters 
-        self.num_tokens = num_tokens // self.shuffle_scale if self.shuffle_pattern in ["BA", "A"] else num_tokens
-        self.num_tokens_padded = self.num_tokens + padding*2 if self.padding > 0 else self.num_tokens
         self.attention_dropout = attention_dropout
         self.dropout = nn.Dropout(p=self.attention_dropout)
 
         # Attention Linear Projections
-        self.w_q = nn.Linear(self.num_tokens_padded, self.num_tokens_padded, bias=False) if self.sampling_type == "all" else nn.Linear(self.num_samples, self.num_samples, bias=False)
-        self.w_k = nn.Linear(self.num_tokens_padded, self.num_tokens_padded, bias=False)
-        self.w_v = nn.Linear(self.num_tokens_padded, self.num_tokens_padded, bias=False)
-        self.w_o = nn.Linear(self.num_tokens, self.num_tokens, bias=False)
+
+        self.w_q = nn.Conv1d(self.in_channels, self.in_channels, kernel_size=1, bias=False)
+        self.w_k = nn.Conv1d(self.in_channels, self.in_channels, kernel_size=1, bias=False)
+        self.w_v = nn.Conv1d(self.in_channels, self.in_channels, kernel_size=1, bias=False)
+        self.w_o = nn.Conv1d(self.out_channels, self.out_channels, kernel_size=1, bias=False)
 
     def forward(self, x):
         # 1. Pixel Unshuffle 
@@ -584,6 +584,8 @@ class Conv1d_NN_Attn(nn.Module):
 
         x = self.conv1d_layer(prime)
 
+        x = self.w_o(x) 
+
         # 7. Pixel Shuffle
         x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
         return x
@@ -629,6 +631,8 @@ class Conv1d_NN_Attn(nn.Module):
     def _prime(self, v, qk, K, maximum):
         b, c, t = v.shape
         topk_values, topk_indices = torch.topk(qk, k=K, dim=2, largest=maximum)
+        topk_values = torch.softmax(topk_values, dim=-1)
+
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
         topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K)
 
@@ -661,6 +665,8 @@ class Conv1d_NN_Attn(nn.Module):
         topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K - 1)
         ones = torch.ones((b, c, t, 1), device=v.device)
         topk_values_exp = torch.cat([ones, topk_values_exp], dim=-1)
+        
+        topk_values_exp = torch.softmax(topk_values_exp, dim=-2)
 
         # Gather matrix values and apply similarity weighting
         v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()

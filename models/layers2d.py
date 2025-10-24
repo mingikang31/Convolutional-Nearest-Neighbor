@@ -463,6 +463,7 @@ class Conv2d_NN_Attn(nn.Module):
             kernel_size = self.K, 
             stride = self.stride, 
             padding = 0, 
+            groups = self.in_channels_1d  # Depthwise Convolution
         )
 
         # Flatten * Unflatten layers
@@ -484,14 +485,7 @@ class Conv2d_NN_Attn(nn.Module):
         # Query, Key, Value, Output Projections
         self.w_q = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, kernel_size=1, stride=1, bias=False)
         self.w_k = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, kernel_size=1, stride=1, bias=False)
-        # self.w_v = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, kernel_size=1, stride=1, bias=False)
-
-        ## TODO Try with sequential layer for projections for ConvNN Attention 
-        self.w_v = nn.Sequential(
-            nn.Conv1d(in_channels=self.in_channels_1d, out_channels=8, kernel_size=1, stride=1, bias=False),
-            nn.ReLU(),
-            nn.Conv1d(in_channels=8, out_channels=self.in_channels_1d, kernel_size=1, stride=1, bias=False),
-        )
+        self.w_v = nn.Conv1d(self.in_channels_1d, self.in_channels_1d, kernel_size=1, stride=1, bias=False)
         
         self.w_o = nn.Conv1d(self.out_channels_1d, self.out_channels_1d, kernel_size=1, stride=1, bias=False)
 
@@ -512,14 +506,12 @@ class Conv2d_NN_Attn(nn.Module):
         x = self.flatten(x) 
 
         # 5. K, V Projections
-        # k = self.w_k(x)
-        k = x
+        k = self.w_k(x)
         v = self.w_v(x)
 
         if self.sampling_type == "all":
             # Q Projection
-            # q = self.w_q(x)
-            q = x
+            q = self.w_q(x)
 
             similarity_matrix = self._calculate_euclidean_matrix(k, q) if self.magnitude_type == 'euclidean' else self._calculate_cosine_matrix(k, q)
             prime = self._prime(v, similarity_matrix, self.K, self.maximum)
@@ -527,8 +519,7 @@ class Conv2d_NN_Attn(nn.Module):
         elif self.sampling_type == "random":
             if self.num_samples > x.shape[-1]:
                 x_sample = x
-                # q = self.w_q(x_sample)
-                q = x_sample
+                q = self.w_q(x_sample)
                 similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == 'euclidean' else self._calculate_cosine_matrix_N(k, q)
                 torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == 'euclidean' else 1.1)
                 prime = self._prime(v, similarity_matrix, self.K, self.maximum)
@@ -538,9 +529,7 @@ class Conv2d_NN_Attn(nn.Module):
                 x_sample = x[:, :, rand_idx]
 
                 # Q Projection
-                # q = self.w_q(x_sample)
-                q = x_sample
-
+                q = self.w_q(x_sample)
                 similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == 'euclidean' else self._calculate_cosine_matrix_N(k, q)
                 
                 range_idx = torch.arange(len(rand_idx), device=x.device)
@@ -551,8 +540,7 @@ class Conv2d_NN_Attn(nn.Module):
         elif self.sampling_type == "spatial":
             if self.num_samples > self.og_shape[-2]:
                 x_sample = x
-                # q = self.w_q(x_sample)
-                q = x
+                q = self.w_q(x_sample)
                 similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(k, q)
                 torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == 'euclidean' else 1.1)
                 prime = self._prime(v, similarity_matrix, self.K, self.maximum)
@@ -567,14 +555,11 @@ class Conv2d_NN_Attn(nn.Module):
                 x_sample = x[:, :, flat_indices]
 
                 # Q Projection
-                # q = self.w_q(x_sample)
-                q = x_sample
+                q = self.w_q(x_sample)
 
                 similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(k, q)
-
                 range_idx = torch.arange(len(flat_indices), device=x.device)    
                 similarity_matrix[:, flat_indices, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
-                
                 prime = self._prime_N(x, similarity_matrix, self.K, flat_indices, self.maximum)
         else:
             raise NotImplementedError("Sampling Type not Implemented")
@@ -593,6 +578,14 @@ class Conv2d_NN_Attn(nn.Module):
         # 10. Pixel Shuffle Layer
         x = self.shuffle_layer(x) if self.shuffle_pattern in ["A", "BA"] else x
         return x
+
+    def _calculate_attention_matrix(self, K, Q):
+        attn_score = torch.matmul(K.transpose(1, 2), Q) / self.in_channels_1d**0.5
+        return attn_score
+
+    def _calculate_attention_matrix_N(self, K, Q):
+        attn_score = torch.matmul(K.transpose(1, 2), Q) / self.in_channels_1d**0.5
+        return attn_score
 
     
     def _calculate_euclidean_matrix(self, K, Q, sqrt=False):
@@ -638,6 +631,8 @@ class Conv2d_NN_Attn(nn.Module):
     def _prime(self, v, qk, K, maximum):
         b, c, t = v.shape
         topk_values, topk_indices = torch.topk(qk, k=K, dim=2, largest=maximum)
+        topk_values = torch.softmax(topk_values, dim=-1)
+        
         topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
         topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K)
 
@@ -670,6 +665,7 @@ class Conv2d_NN_Attn(nn.Module):
         topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K - 1)
         ones = torch.ones((b, c, t, 1), device=v.device)
         topk_values_exp = torch.cat([ones, topk_values_exp], dim=-1)
+        topk_values_exp = torch.softmax(topk_values_exp, dim=-2)
 
         # Gather matrix values and apply similarity weighting
         v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
@@ -758,8 +754,6 @@ class Conv2d_Branching(nn.Module):
                 stride=1,
                 padding="same"
             )
-
-        self.relu = nn.ReLU()
             
         self.pointwise_conv = nn.Conv2d(
             in_channels=out_channels,
@@ -788,7 +782,6 @@ class Conv2d_Branching(nn.Module):
         # x2 = self.conv2d(x[:, self.in_channels_2:, :, :])
         out = torch.cat((x1, x2), dim=1)
 
-        out = self.relu(out)
         out = self.pointwise_conv(out)
         # print("Out Shape:", out.shape)
         return out
