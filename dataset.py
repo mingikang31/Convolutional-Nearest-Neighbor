@@ -77,25 +77,32 @@ class CIFAR100(datasets.CIFAR100):
     def __init__(self, args): 
 
         # Define transforms
-        transform = transforms.Compose([
+        train_transform = transforms.Compose([
+            transforms.RandomCrop(32, padding=4), 
+            transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5071, 0.4867, 0.4408], std=[0.2675, 0.2565, 0.2761]),
+            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616]),
             AddGaussianNoise(mean=0., std=args.noise)
         ])
+
+        test_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
+        ])
         
-        if args.resize: 
+        if args.resize:
             self.upscale_transform = transforms.Compose([
                 transforms.Resize((224, 224)),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=[0.5071, 0.4867, 0.4408], std=[0.2675, 0.2565, 0.2761])
+                transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
             ])
             self.img_size = (3, 224, 224)
         else:
             self.upscale_transform = None 
             self.img_size = (3, 32, 32)
         
-        self.train_data = datasets.CIFAR100(root=args.data_path, train=True, download=True, transform=transform)
-        self.test_data = datasets.CIFAR100(root=args.data_path, train=False, download=False, transform=transform)
+        self.train_data = datasets.CIFAR100(root=args.data_path, train=True, download=True, transform=train_transform)
+        self.test_data = datasets.CIFAR100(root=args.data_path, train=False, download=False, transform=test_transform)
         
         self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
@@ -137,10 +144,17 @@ class CIFAR10(datasets.CIFAR10):
     def __init__(self, args):
         
         # Define transforms
-        transform = transforms.Compose([
+        train_transform = transforms.Compose([
+            transforms.RandomCrop(32, padding=4), 
+            transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616]),
             AddGaussianNoise(mean=0., std=args.noise)
+        ])
+
+        test_transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
         ])
         
         if args.resize:
@@ -156,8 +170,8 @@ class CIFAR10(datasets.CIFAR10):
       
       
         
-        self.train_data = datasets.CIFAR10(root=args.data_path, train=True, download=True, transform=transform)
-        self.test_data = datasets.CIFAR10(root=args.data_path, train=False, download=False, transform=transform)
+        self.train_data = datasets.CIFAR10(root=args.data_path, train=True, download=True, transform=train_transform)
+        self.test_data = datasets.CIFAR10(root=args.data_path, train=False, download=False, transform=test_transform)
         self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
         self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
 

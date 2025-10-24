@@ -459,11 +459,19 @@ class Conv2d_NN_Attn(nn.Module):
         # Conv1d Layer 
         self.conv1d_layer = nn.Conv1d(
             in_channels = self.in_channels_1d,
-            out_channels = self.out_channels_1d,
+            out_channels = self.in_channels_1d,
             kernel_size = self.K, 
             stride = self.stride, 
             padding = 0, 
             groups = self.in_channels_1d  # Depthwise Convolution
+        )
+
+        self.pointwise_conv = nn.Conv1d(
+            in_channels = self.in_channels_1d, 
+            out_channels = self.out_channels_1d, 
+            kernel_size = 1, 
+            stride = 1, 
+            padding = 0
         )
 
         # Flatten * Unflatten layers
@@ -566,6 +574,7 @@ class Conv2d_NN_Attn(nn.Module):
 
         # 7. Conv1d Layer
         x = self.conv1d_layer(prime)
+        x = self.pointwise_conv(x)
 
         # 8. Output Projection
         x = self.w_o(x)
