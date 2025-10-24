@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 from PIL import Image
 
 class AddGaussianNoise(object):
-            def __init__(self, mean=0., std=0.1):
-                self.mean = mean
-                self.std = std
-                
-            def __call__(self, tensor):
-                return tensor + torch.randn(tensor.size()) * self.std + self.mean
+    def __init__(self, mean=0., std=0.1):
+        self.mean = mean
+        self.std = std
+        
+    def __call__(self, tensor):
+        return tensor + torch.randn(tensor.size()) * self.std + self.mean
 
 
 class ImageNet(datasets.ImageNet):
@@ -53,156 +53,124 @@ class TinyImageNet:
     def __init__(self, args):
         raise NotImplementedError("TinyImageNet dataset is not available in torchvision.datasets. Please implement a custom loader or use an external implementation.")
 
-### TODO : Data Augmentation for CIFAR100 and CIFAR10
-# import torchvision.transforms as T
-
-# # These are the standard mean and std values for CIFAR-100
-# CIFAR100_MEAN = (0.5071, 0.4867, 0.4408)
-# CIFAR100_STD = (0.2675, 0.2565, 0.2761)
-
-# transform_train = T.Compose([
-#     # 1. Augmentation: Create variations of the image
-#     T.RandomCrop(32, padding=4),
-#     T.RandomHorizontalFlip(p=0.5),
-    
-#     # 2. Conversion: Turn the image into a PyTorch tensor
-#     T.ToTensor(),
-    
-#     # 3. Standardization: Normalize the data
-#     T.Normalize(CIFAR100_MEAN, CIFAR100_STD)
-# ])
-
 
 class CIFAR100(datasets.CIFAR100): 
     def __init__(self, args): 
 
+        self.CIFAR100_MEAN = (0.5071, 0.4867, 0.4408)
+        self.CIFAR100_STD = (0.2675, 0.2565, 0.2761)
+
+        # Train Transformations
+        self.train_transform_list = []
+        if args.resize: 
+            self.train_transform_list += [transforms.Resize((args.resize, args.resize))]
+        if args.augment:
+            self.train_transform_list += [
+                transforms.RandomCrop(args.resize if args.resize else 32, padding=4),
+                transforms.RandomHorizontalFlip(),
+            ]
+        self.train_transform_list += [
+            transforms.ToTensor(),
+            transforms.Normalize(mean=self.CIFAR100_MEAN, std=self.CIFAR100_STD),
+            ]
+        if args.noise > 0.0:
+            self.train_transform_list += [AddGaussianNoise(mean=0., std=args.noise)]
+
+        # Test Transformations
+        self.test_transform_list = []
+        if args.resize: 
+            self.test_transform_list += [transforms.Resize((args.resize, args.resize))]
+        self.test_transform_list += [
+            transforms.ToTensor(),
+            transforms.Normalize(mean=self.CIFAR100_MEAN, std=self.CIFAR100_STD)
+        ]
+        
         # Define transforms
-        train_transform = transforms.Compose([
-            transforms.RandomCrop(32, padding=4), 
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616]),
-            AddGaussianNoise(mean=0., std=args.noise)
-        ])
+        train_transform = transforms.Compose(self.train_transform_list)
+        test_transform = transforms.Compose(self.test_transform_list)
 
-        test_transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
-        ])
-        
-        if args.resize:
-            self.upscale_transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
-            ])
-            self.img_size = (3, 224, 224)
-        else:
-            self.upscale_transform = None 
-            self.img_size = (3, 32, 32)
-        
+        # Load Datasets
         self.train_data = datasets.CIFAR100(root=args.data_path, train=True, download=True, transform=train_transform)
-        self.test_data = datasets.CIFAR100(root=args.data_path, train=False, download=False, transform=test_transform)
-        
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
-        
-        self.num_classes = 100
-        self.upscale_dataset()
+        self.test_data = datasets.CIFAR100(root=args.data_path, train=False, download=True, transform=test_transform)
 
-    
-    def upscale_dataset(self):  
-        if self.upscale_transform:
-            upscaled_train = datasets.CIFAR100(root=self.train_data.root, train=True, download=True, transform=self.upscale_transform)
-            upscaled_test = datasets.CIFAR100(root=self.test_data.root, train=False, download=False, transform=self.upscale_transform)
-            
-            # update the train and test data
-            self.train_data = upscaled_train
-            self.test_data = upscaled_test
-            
-            # update the train and test loaders
-            self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.train_loader.batch_size, shuffle=True, num_workers=4)
-            self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.test_loader.batch_size, shuffle=False, num_workers=4)
-        else:
-            print("Upscale transform not defined. Skipping dataset upscale.")
-    
-    
+        # Data Loaders
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True)
+
+        # Set image size and number of classes
+        self.img_size = (3, args.resize, args.resize) if args.resize else (3, 32, 32)
+        self.num_classes = 100
+
     def shape(self):
         return self.train_data[0][0].shape
     
-    def visual(self):
-        # Get normalized tensor
+    def visual(self): 
         img = self.test_data[0][0]
-        # Denormalize for visualization
-        img = img * torch.tensor([0.2675, 0.2565, 0.2761]).view(3, 1, 1) + torch.tensor([0.5071, 0.4867, 0.4408]).view(3, 1, 1)
+        # Use self.CIFAR100_STD and self.CIFAR100_MEAN instead of hardcoded values
+        img = img * torch.tensor(self.CIFAR100_STD).view(3, 1, 1) + torch.tensor(self.CIFAR100_MEAN).view(3, 1, 1)
         img = img.permute(1, 2, 0).clamp(0, 1)
-        plt.figure(figsize=(6, 3))
+        plt.figure(figsize=(6, 3)) 
         plt.imshow(img)
+        plt.axis('off')  # Optional: cleaner look
         plt.show()
         
 class CIFAR10(datasets.CIFAR10): 
     def __init__(self, args):
+
+        self.CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
+        self.CIFAR10_STD = (0.2470, 0.2435, 0.2616)
+
+        # Transformations
+        # Train Transformations
+        self.train_transform_list = []
+        if args.resize: 
+            self.train_transform_list += [transforms.Resize((args.resize, args.resize))]
+        if args.augment:
+            self.train_transform_list += [
+                transforms.RandomCrop(args.resize if args.resize else 32, padding=4),
+                transforms.RandomHorizontalFlip(),
+            ]
+        self.train_transform_list += [
+            transforms.ToTensor(),
+            transforms.Normalize(mean=self.CIFAR10_MEAN, std=self.CIFAR10_STD),
+            ]
+        if args.noise > 0.0:
+            self.train_transform_list += [AddGaussianNoise(mean=0., std=args.noise)]
+
+        # Test Transformations
+        self.test_transform_list = []
+        if args.resize: 
+            self.test_transform_list += [transforms.Resize((args.resize, args.resize))]
+        self.test_transform_list += [
+            transforms.ToTensor(),
+            transforms.Normalize(mean=self.CIFAR10_MEAN, std=self.CIFAR10_STD)
+        ]
         
         # Define transforms
-        train_transform = transforms.Compose([
-            transforms.RandomCrop(32, padding=4), 
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616]),
-            AddGaussianNoise(mean=0., std=args.noise)
-        ])
+        train_transform = transforms.Compose(self.train_transform_list)
+        test_transform = transforms.Compose(self.test_transform_list)
 
-        test_transform = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
-        ])
-        
-        if args.resize:
-            self.upscale_transform = transforms.Compose([
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
-            ])
-            self.img_size = (3, 224, 224)
-        else:
-            self.upscale_transform = None 
-            self.img_size = (3, 32, 32)
-      
-      
-        
+        # Load Datasets
         self.train_data = datasets.CIFAR10(root=args.data_path, train=True, download=True, transform=train_transform)
-        self.test_data = datasets.CIFAR10(root=args.data_path, train=False, download=False, transform=test_transform)
-        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4)
-        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4)
+        self.test_data = datasets.CIFAR10(root=args.data_path, train=False, download=True, transform=test_transform)
 
+        # Data Loaders
+        self.train_loader = DataLoader(dataset=self.train_data, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
+        self.test_loader = DataLoader(dataset=self.test_data, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True)
+
+        # Set image size and number of classes
+        self.img_size = (3, args.resize, args.resize) if args.resize else (3, 32, 32)
         self.num_classes = 10
 
-        self.upscale_dataset()
-      
-    def upscale_dataset(self):
-        if self.upscale_transform:
-            upscaled_train = datasets.CIFAR10(root=self.train_data.root, train=True, download=False, transform=self.upscale_transform)
-            upscaled_test = datasets.CIFAR10(root=self.test_data.root, train=False, download=False, transform=self.upscale_transform)
-            
-            # update the train and test data
-            self.train_data = upscaled_train
-            self.test_data = upscaled_test
-            
-            # update the train and test loaders
-            self.train_loader = DataLoader(dataset=self.train_data, batch_size=self.train_loader.batch_size, shuffle=True, num_workers=4)
-            self.test_loader = DataLoader(dataset=self.test_data, batch_size=self.test_loader.batch_size, shuffle=False, num_workers=4)
-        else:
-            print("Upscale transform not defined. Skipping dataset upscale.")
-      
     def shape(self): 
         return self.train_data[0][0].shape
     
     def visual(self): 
-        # Get normalized tensor
         img = self.test_data[0][0]
-        # Denormalize for visualization
-        img = img * torch.tensor([0.2470, 0.2435, 0.2616]).view(3, 1, 1) + torch.tensor([0.4914, 0.4822, 0.4465]).view(3, 1, 1)
+        # Use self.CIFAR10_STD and self.CIFAR10_MEAN instead of hardcoded values
+        img = img * torch.tensor(self.CIFAR10_STD).view(3, 1, 1) + torch.tensor(self.CIFAR10_MEAN).view(3, 1, 1)
         img = img.permute(1, 2, 0).clamp(0, 1)
         plt.figure(figsize=(6, 3)) 
         plt.imshow(img)
-        plt.show()      
+        plt.axis('off')  # Optional: cleaner look
+        plt.show()

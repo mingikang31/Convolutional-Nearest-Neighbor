@@ -49,6 +49,9 @@ def args_parser():
 
     # Data Arguments
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", 'imagenet'], help="Dataset to use for training and evaluation")
+    parser.add_argument("--resize", type=int, default=None, help="Resize images to 64x64")
+    parser.add_argument("--augment", action="store_true", help="Use data augmentation")
+    parser.set_defaults(augment=False)
     parser.add_argument("--noise", type=float, default=0.0, help="Standard deviation of Gaussian noise to add to the data")
     parser.add_argument("--data_path", type=str, default="./Data", help="Path to the dataset")
 
