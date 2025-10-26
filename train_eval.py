@@ -25,20 +25,6 @@ def Train_Eval(args,
     elif args.criterion == 'MSE':
         criterion = nn.MSELoss()
 
-    # TODO New criterion for ConvNNAttention (CrossEntropy + Identity Loss)
-    # If ConvNNAttention, then use a combination of CrossEntropy + Identity Loss
-    
-    # Another criterion with input, output, and model 
-    # In the model, go through the model weights and get the projections (w_q), and compute identity loss 
-    # ||w_v - Identity ||
-    # torch.eye -> to create identity matrix
-    # criterion = torch.nn.MSELoss() + identity loss on w_v
-
-    # torch.nn.functional.cross_entropy + normalize w_v identity loss 
-
-    ## TOTAL_LOSS = cross_entropy(output_model, target) + sum(identity_loss(w_v, identity))
-    
-
     # Optimizer
     if args.optimizer == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -64,9 +50,30 @@ def Train_Eval(args,
     criterion.to(device)
     
     if args.use_amp:
-        scaler = torch.amp.GradScaler("cuda")
+        scaler = torch.amp.GradScaler(device)
         
     epoch_results = [] 
+
+    # ==================== COMPILE MODEL =====================
+    if args.use_compiled:
+        print(f"Compiling the model with mode: {args.compile_mode} ...")
+        model = torch.compile(
+            model, 
+            mode=args.compile_mode, 
+            fullgraph=False, 
+            dynamic=False
+            )
+        print(f"Model compiled successfully with {args.compile_mode} mode.")
+
+        # Warm-up run to ensure compilation
+        try: 
+            input_tensor, _ = next(iter(train_loader))
+            input_tensor = input_tensor.to(device)
+            with torch.no_grad():
+                _ = model(input_tensor[0:1])
+            print("Warm-up run successful.")
+        except Exception as e:
+            print(f"Warm-up run failed: {e}")
 
     # ==================== ROBUST GFLOPs Calculation with PyTorch Profiler ====================
     try:

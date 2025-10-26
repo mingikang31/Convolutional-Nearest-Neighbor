@@ -56,6 +56,11 @@ def args_parser():
     parser.add_argument("--data_path", type=str, default="./Data", help="Path to the dataset")
 
     # Training Arguments
+    parser.add_argument("--use_compiled", action="store_true", help="Use compiled model for training and evaluation")
+    parser.set_defaults(use_compiled=False)
+    parser.add_argument("--compile_mode", type=str, default="default", choices=["default", "reduce-overhead", "reduce-memory", "reduce-overhead", "max-autotune"], help="Compilation mode for torch.compile")
+
+    
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size for training and evaluation")
     parser.add_argument("--num_epochs", type=int, default=100, help="Number of epochs for training")
     parser.add_argument("--use_amp", action="store_true", help="Use mixed precision training")
@@ -96,9 +101,6 @@ def main(args):
     # Check if the output directory exists, if not create it
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
-
-    # Make image 64x64
-    args.resize = False
     
     # Dataset 
     if args.dataset == "cifar10":
