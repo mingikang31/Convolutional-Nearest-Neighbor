@@ -465,6 +465,8 @@ class Conv2d_NN_Attn(nn.Module):
             padding = 0, 
             groups = self.in_channels_1d  # Depthwise Convolution
         )
+        self.conv1d_layer.weight.data.fill_(1.0)
+
 
         self.pointwise_conv = nn.Conv1d(
             in_channels = self.in_channels_1d, 
