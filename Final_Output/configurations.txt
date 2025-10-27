@@ -1,0 +1,13 @@
+CVPR Paper Results
+
+1. Lr test, K test, N test
+--lr 1e-3 --scheduler none --optimizer adamw --weight_decay 0.01 --num_epoch 200 --clip_grad_norm 1.0
+--lr 5e-4 --scheduler none --optimizer adamw --weight_decay 0.01 --num_epoch 200 --clip_grad_norm 1.0
+--lr 1e-4 --scheduler none --optimizer adamw --weight_decay 0.01 --num_epoch 200 --clip_grad_norm 1.0
+--lr 5e-5 --scheduler none --optimizer adamw --weight_decay 0.01 --num_epoch 200 --clip_grad_norm 1.0
+--lr 1e-5 --scheduler none --optimizer adamw --weight_decay 0.01 --num_epoch 200 --clip_grad_norm 1.0
+
+
+2. Most Optimal Training Config
+--lr 7e-2 --scheduler cosine --optimizer sgd --weight_decay 5e-4 --momentum 0.9 --num_epochs 200 --clip_grad_norm 1.0
+
