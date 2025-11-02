@@ -20,7 +20,7 @@ DATASETS=("cifar10" "cifar100")
 BRANCH_RATIOS=("0.000" "0.500" "1.000")
 KERNEL_SIZES=("1" "2" "3")                          
 K_VALUES=("1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12")  
-LR="1e-4"                                         
+LR="1e-3"                                         
 
 # Counter for progress
 TOTAL=$((${#DATASETS[@]} * ${#BRANCH_RATIOS[@]} * ${#KERNEL_SIZES[@]} * ${#K_VALUES[@]}))

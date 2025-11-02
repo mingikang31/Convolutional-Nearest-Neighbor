@@ -17,7 +17,7 @@ source activate mingi
 
 # Configuration
 DATASETS=("cifar10" "cifar100")
-BRANCH_RATIOS=("0.000" "0.500" "1.000")
+BRANCH_RATIOS=("0.500" "1.000")
 NS=("2" "4" "6" "8" "10" "12" "14" "16" "18" "20" "22" "24" "26" "28" "30" "32")
 SAMPLING_TYPES=("random" "spatial")  # Fixed: renamed from SAMPLING_TYPE
 LR="1e-4"
