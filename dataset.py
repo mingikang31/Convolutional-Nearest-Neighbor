@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt 
 from PIL import Image
 
+
 class AddGaussianNoise(object):
     def __init__(self, mean=0., std=0.1):
         self.mean = mean

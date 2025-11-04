@@ -6,3 +6,5 @@ matplotlib
 tqdm
 Pillow
 thop
+einops
+torchsummary

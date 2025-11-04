@@ -12,4 +12,31 @@
 
 cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 
-source activate mingi
+source ~/.bashrc
+
+conda activate mingi 
+
+
+
+
+
+cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
+
+# ============ CONDA SETUP ============
+# Auto-detect architecture and use appropriate conda
+ARCH=$(uname -m)
+if [ "$ARCH" = "aarch64" ]; then
+    # Grace Hopper (ARM)
+    source /mnt/research/j.farias/mkang2/miniconda3_arm/etc/profile.d/conda.sh
+    echo "🔵 Using ARM conda (Grace Hopper)"
+else
+    # Bowdoin A100 (x86-64)
+    source /mnt/research/j.farias/mkang2/miniconda3/etc/profile.d/conda.sh
+    echo "🟢 Using x86-64 conda (Bowdoin A100)"
+fi
+
+conda activate mingi
+
+echo "Architecture: $ARCH"
+echo "Python: $(python --version)"
+echo ""
