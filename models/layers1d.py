@@ -718,8 +718,6 @@ class Conv1d_Branching(nn.Module):
 
         self.branch_ratio = branch_ratio
         self.in_channels = in_channels
-        # self.in_channels_1 = int(in_channels * branch_ratio)
-        # self.in_channels_2 = in_channels - self.in_channels_1
         self.out_channels_1 = int(out_channels * branch_ratio)
         self.out_channels_2 = out_channels - self.out_channels_1
 
@@ -757,7 +755,6 @@ class Conv1d_Branching(nn.Module):
             stride=1, 
             padding=0
         )
-        # self.channel_shuffle = ChannelShuffle1D(groups=2) # Optional Channel Shuffle - not in use 
 
     def forward(self, x):
         if self.branch_ratio == 0:
@@ -774,8 +771,6 @@ class Conv1d_Branching(nn.Module):
         x1 = self.branch1(x)
         x2 = self.branch2(x)
 
-        # x1 = self.branch1(x[:, :self.in_channels_1, :])
-        # x2 = self.branch2(x[:, self.in_channels_2:, :])
         out = torch.cat([x1, x2], dim=1)
         out = self.pointwise_conv(out)
         return out
