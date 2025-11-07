@@ -5,24 +5,16 @@ __pycache__/*
 Layers/__pycache__
 Testing/data/*
 
-__pycache__
-
-.DS_Store
-
 models/new architectures/*
 
 Playground/data/*
-Data/cifar-10-batches-py
-Data/cifar-10-python.tar.gz
 
-Data/cifar-100-batches-py
-Data/cifar-100-python.tar.gz
-Data/cifar-100-python/*
+# Data folder - ignore everything except placeholder.txt
+Data/*
+!Data/placeholder.txt
+
 .env
-        # Data/BSD68/cifar-10-batches-py/
-        # Data/BSD68/cifar-10-python.tar.gz
-.DS_Store
-
+.venv
 .editorconfig
 *.editorconfig
 
@@ -30,7 +22,6 @@ tempCodeRunnerFile.python
 *tempCodeRunnerFile.py
 */tempCodeRunnerFile.python
 
-.gitignore
 
 # Big Notebooks 
 Testing/W9_Image_Shape_Test Denoising.ipynb

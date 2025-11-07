@@ -393,7 +393,7 @@ class Conv2d_NN(nn.Module):
         x_with_coords = torch.cat((x, expanded_grid), dim=1)
         return x_with_coords ### Last two channels are coordinate channels 
 
-"""(2) Conv2d_NN_Attn (All, Random, Spatial Sampling)""" ## TODO Need to work on this layer 
+"""(2) Conv2d_NN_Attn (All, Random, Spatial Sampling)""" 
 class Conv2d_NN_Attn(nn.Module): 
     def __init__(self, 
                  in_channels, 
