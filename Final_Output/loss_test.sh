@@ -1,22 +1,13 @@
 #!/bin/bash 
-#SBATCH --nodes=1 
-#SBATCH --mem=64G
-#SBATCH -p gpu --gres=gpu:a100:1
-#SBATCH --cpus-per-task=4
-#SBATCH --job-name=CVPR-L
-#SBATCH --time=500:00:00
-#SBATCH --output=slurm_out/%j.out
-#SBATCH --error=slurm_out/%j.err
-#SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_80
-#SBATCH --mail-user=mkang2@bowdoin.edu
 
-cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
-source activate mingi
+### Conv-Test for CVPR paper 
+
+cd /home/exouser/Convolutional-Nearest-Neighbor/
 
 # Configuration
 DATASETS=("cifar10" "cifar100")
 LEARNING_RATES=("1e-3" "5e-4" "1e-4" "5e-5" "1e-5")
-BRANCH_RATIOS=("0.000" "0.500" "1.000")
+BRANCH_RATIOS=("0.500" "1.000")
 
 # Counter for progress
 TOTAL=$((${#DATASETS[@]} * ${#LEARNING_RATES[@]} * ${#BRANCH_RATIOS[@]}))
@@ -34,7 +25,7 @@ for dataset in "${DATASETS[@]}"; do
             br_fmt=$(printf "%04d" $br_int)
             
             # Create output directory
-            output_dir="./Final_Output/loss_test/VGG11-$(echo $dataset | awk '{print toupper($0)}')/lr_${lr}/BranchingConvNN_K9_col_col_br${br_fmt}_s42"
+            output_dir="./Final_Output/loss_test_eucl/VGG11-$(echo $dataset | awk '{print toupper($0)}')/lr_${lr}/BranchingConvNN_K9_col_col_br${br_fmt}_s42"
             
             echo ""
             echo "========== Experiment $COUNT/$TOTAL =========="
@@ -48,6 +39,7 @@ for dataset in "${DATASETS[@]}"; do
                 --kernel_size 3 \
                 --K 9 \
                 --padding 1 \
+                --magnitude_type euclidean \
                 --similarity_type Col \
                 --aggregation_type Col \
                 --branch_ratio $br \
