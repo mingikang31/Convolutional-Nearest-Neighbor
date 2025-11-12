@@ -25,7 +25,7 @@ for dataset in "${DATASETS[@]}"; do
             br_fmt=$(printf "%04d" $br_int)
             
             # Create output directory
-            output_dir="./Final_Output/loss_test_cos/VGG11-$(echo $dataset | awk '{print toupper($0)}')/lr_${lr}/BranchingConvNNAttn_K9_col_col_br${br_fmt}_s42"
+            output_dir="./Final_Output/loss_test_attn_eucl/VGG11-$(echo $dataset | awk '{print toupper($0)}')/lr_${lr}/BranchingConvNNAttn_K9_col_col_br${br_fmt}_s42"
             
             echo ""
             echo "========== Experiment $COUNT/$TOTAL =========="
@@ -39,7 +39,7 @@ for dataset in "${DATASETS[@]}"; do
                 --kernel_size 3 \
                 --K 9 \
                 --padding 1 \
-                --magnitude_type cosine \
+                --magnitude_type euclidean \
                 --similarity_type Col \
                 --aggregation_type Col \
                 --branch_ratio $br \

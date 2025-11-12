@@ -1,5 +1,20 @@
-#!/bin/bash 
-cd /home/exouser/Convolutional-Nearest-Neighbor/
+#! /bin/bash 
+#SBATCH --nodes=1 
+#SBATCH --mem=64G
+#SBATCH -p gpu --gres=gpu:a100:1
+#SBATCH --cpus-per-task=4
+#SBATCH --job-name=a100
+#SBATCH --time=500:00:00
+#SBATCH --output=slurm_out/%j.out
+#SBATCH --error=slurm_out/%j.err
+#SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_80
+#SBATCH --mail-user=mkang2@bowdoin.edu
+
+source ~/.bashrc
+conda activate mingi
+
+cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
+
 
 # Configuration
 DATASETS=("cifar10" "cifar100")
