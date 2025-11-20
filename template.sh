@@ -17,6 +17,8 @@
 
 source ~/.bashrc
 conda activate mingi
+cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor-Attention
+
 
 ## 2. HPC Cluster Job RTX 5090 GPU
 #! /bin/bash 
@@ -33,6 +35,7 @@ conda activate mingi
 
 source ~/.bashrc
 conda activate torch-rtx5090
+cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 
 
 ## 3. HPC Cluster Job ARM GPU
@@ -50,6 +53,8 @@ conda activate torch-rtx5090
 
 source ~/.bashrc
 conda activate mingi-arm
+cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
+
 
 ## 4. Jetstream2 Cluster A100 GPU 
 #!/bin/bash 
@@ -100,3 +105,7 @@ git config --global user.email "mkang2@bowdoin.edu"
 ## SSH into Jetstream2 Instance
 # ssh exouser@ip-address 
 # password: Passphrase in Jetstream2 Instance page
+
+
+## To shutdown instance 
+sudo shutdown -h 1 # shuts down in 1 minute

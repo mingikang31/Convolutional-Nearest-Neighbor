@@ -50,8 +50,8 @@ k_plot <- ggplot(df_processed, aes(x = K, y = Value, color = Kernel_Size, linety
   #scale_y_continuous(breaks = seq(50, 82.25, 2.5)) + # Ensure integer ticks for K
   
   labs(
-    title = "Model Accuracy by Kernel Size and Type",
-    subtitle = "Comparison of Conv2d and Branching ConvNN",
+    # title = "Model Accuracy by Kernel Size and Type",
+    # subtitle = "Comparison of Conv2d and Branching ConvNN",
     x = "K (Number of Neighbors)",
     y = "Top-1 Accuracy (%)"
   ) +
@@ -68,13 +68,16 @@ k_plot <- ggplot(df_processed, aes(x = K, y = Value, color = Kernel_Size, linety
 # Step 3: Display the plot
 print(k_plot)
 
-# Step 4: Save the plot to a file
-ggsave(
-  "/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/Final_Output/K_test/plots/CIFAR100-ks_comparison_plot.png",
-  plot = k_plot,
-  width = 10,
-  height = 6,
-  units = "in",
-  dpi = 300,
-  bg = "white"
-)
+
+save_path = "/Users/mingikang/Developer/Convolutional-Nearest-Neighbor/"
+
+# # Step 4: Save the plot to a file
+# ggsave(
+#   save_path,
+#   plot = k_plot,
+#   width = 10,
+#   height = 6,
+#   units = "in",
+#   dpi = 300,
+#   bg = "white"
+# )
