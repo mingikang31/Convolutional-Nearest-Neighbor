@@ -1,3 +1,5 @@
+"""VGG Model Implementation with Convolutional Nearest Neighbor Variants"""
+
 r"""
 @software{torchvision2016,
     title        = {TorchVision: PyTorch's Computer Vision library},
@@ -12,14 +14,12 @@ r"""
 import torch 
 import torch.nn as nn 
 
-from models.layers2d import (
-    Conv2d_New, 
+from models.vgg_layers import (
     Conv2d_NN, 
     Conv2d_NN_Attn, 
     Conv2d_Branching, 
     Conv2d_Attn_Branching
 )
-
 
 class VGG(nn.Module):
     def __init__(
@@ -147,13 +147,6 @@ class VGG(nn.Module):
                                       stride=1, 
                                       padding="same", 
                                       )
-                elif args.layer == "Conv2d_New": 
-                    conv2d_new_params.update({
-                        "in_channels": in_channels,
-                        "out_channels": v
-                    })
-                    layer = Conv2d_New(**conv2d_new_params)
-
                 elif self.args.layer == "ConvNN":
                     convnn_params.update({
                         "in_channels": in_channels,
@@ -180,14 +173,6 @@ class VGG(nn.Module):
                         "out_channels": v,
                     })
                     layer = Conv2d_Attn_Branching(**convnn_attn_branching_params)
-
-                ## Changed to Instance Norm to go first then conv (different from VGG paper) 
-                """
-                original:
-                layers += [layer]
-                layers += [nn.BatchNorm2d(v)]
-                layers += [nn.ReLU(inplace=True)]
-                """
                 
                 layers += [layer]
                 layers += [nn.BatchNorm2d(v)]
@@ -207,7 +192,6 @@ class VGG(nn.Module):
             nn.Linear(4096, num_classes)
         )
 
-
     def forward(self, x):
         x = self.features(x)
         x = self.avgpool(x)
@@ -220,7 +204,3 @@ class VGG(nn.Module):
         trainable_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
         return total_params, trainable_params
 
-
-
-if __name__ == "__main__":
-    pass
