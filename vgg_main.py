@@ -5,7 +5,7 @@ from pathlib import Path
 import os 
 import torch 
 # Datasets 
-from dataset import ImageNet, CIFAR10, CIFAR100
+from dataset import CIFAR10, CIFAR100
 from train_eval import Train_Eval
 
 # Models 

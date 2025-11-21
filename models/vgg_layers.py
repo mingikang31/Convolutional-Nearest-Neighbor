@@ -149,14 +149,14 @@ class Conv2d_NN(nn.Module):
         # 6. Sampling + Similarity Calculation + Aggregation
         if self.sampling_type == "all":
             similarity_matrix = self._calculate_euclidean_matrix(x_sim) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix(x_sim)
-            prime = self._prime(x, similarity_matrix, self.K, self.maximum)
+            x_nn = self._prime(x, similarity_matrix, self.K, self.maximum)
             
         elif self.sampling_type == "random":
             if self.num_samples > x.shape[-1]:
                 x_sample = x_sim
                 similarity_matrix = self._calculate_euclidean_matrix_N(x_sim, x_sample) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(x_sim, x_sample)
                 torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == "euclidean" else 1.1)
-                prime = self._prime(x, similarity_matrix, self.K, self.maximum)
+                x_nn = self._prime(x, similarity_matrix, self.K, self.maximum)
 
             else:
                 rand_idx = torch.randperm(x.shape[-1], device=x.device)[:self.num_samples]
@@ -164,7 +164,7 @@ class Conv2d_NN(nn.Module):
                 similarity_matrix = self._calculate_euclidean_matrix_N(x_sim, x_sample) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(x_sim, x_sample)
                 range_idx = torch.arange(len(rand_idx), device=x.device)
                 similarity_matrix[:, rand_idx, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
-                prime = self._prime_N(x, similarity_matrix, self.K, rand_idx, self.maximum)
+                x_nn = self._prime_N(x, similarity_matrix, self.K, rand_idx, self.maximum)
             
 
         elif self.sampling_type == "spatial":
@@ -172,7 +172,7 @@ class Conv2d_NN(nn.Module):
                 x_sample = x_sim
                 similarity_matrix = self._calculate_euclidean_matrix_N(x_sim, x_sample) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(x_sim, x_sample)
                 torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == "euclidean" else 1.1)
-                prime = self._prime(x, similarity_matrix, self.K, self.maximum)
+                x_nn = self._prime(x, similarity_matrix, self.K, self.maximum)
             else:
                 x_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-2] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
                 y_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-1] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
@@ -187,12 +187,12 @@ class Conv2d_NN(nn.Module):
                 range_idx = torch.arange(len(flat_indices), device=x.device)    
                 similarity_matrix[:, flat_indices, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
                 
-                prime = self._prime_N(x, similarity_matrix, self.K, flat_indices, self.maximum)
+                x_nn = self._prime_N(x, similarity_matrix, self.K, flat_indices, self.maximum)
         else:
             raise NotImplementedError("Sampling Type not Implemented")
         
         # 7. Conv1d Layer
-        x = self.conv1d_layer(prime)
+        x = self.conv1d_layer(x_nn)
 
         # 8. Unflatten Layer
         if not self.unflatten: 
@@ -241,15 +241,14 @@ class Conv2d_NN(nn.Module):
         b, c, t = matrix.shape
 
         if self.similarity_type == "Loc":
-            topk_values, topk_indices = torch.sort(magnitude_matrix, dim=2, descending=maximum, stable=True)
-            topk_indices = topk_indices[:, :, :K]
-            topk_indices, _ = torch.sort(topk_indices, dim=-1)
+            kmax, kargmax = torch.sort(magnitude_matrix, dim=2, descending=maximum, stable=True)
+            kargmax = kargmax[:, :, :K]
+            kargmax, _ = torch.sort(kargmax, dim=-1)
         else:
-            topk_values, topk_indices = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
-
-        topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
+            kmax, kargmax = torch.topk(magnitude_matrix, k=K, dim=2, largest=maximum)
+        kargmax_expanded = kargmax.unsqueeze(1).expand(b, c, t, K)    
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
-        prime = torch.gather(matrix_expanded, dim=2, index=topk_indices_exp)
+        prime = torch.gather(matrix_expanded, dim=2, index=kargmax_expanded)
 
         if self.padding > 0: 
             prime = prime.view(b, c, self.padded_shape[-2], self.padded_shape[-1], K)
@@ -263,22 +262,21 @@ class Conv2d_NN(nn.Module):
     def _prime_N(self, matrix, magnitude_matrix, K, rand_idx, maximum):
         b, c, t = matrix.shape
         
-        topk_values, topk_indices = torch.topk(magnitude_matrix, k=K-1, dim=2, largest=maximum)
-        tk = topk_indices.shape[-1]
+        kmax, kargmax = torch.topk(magnitude_matrix, k=K-1, dim=2, largest=maximum)
+        tk = kargmax.shape[-1]
         assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
 
         # Map sample indices back to original matrix positions
-        mapped_tensor = rand_idx[topk_indices]
+        mapped_tensor = rand_idx[kargmax]
         token_indices = torch.arange(t, device=matrix.device).view(1, t, 1).expand(b, t, 1)
         final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
         if self.similarity_type == "Loc":
             final_indices, _ = torch.sort(final_indices, dim=-1)
-        indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
+        kargmax_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
 
         # Gather matrix values and apply similarity weighting
         matrix_expanded = matrix.unsqueeze(-1).expand(b, c, t, K).contiguous()
-        prime = torch.gather(matrix_expanded, dim=2, index=indices_expanded)  
-
+        prime = torch.gather(matrix_expanded, dim=2, index=kargmax_expanded)  
         if self.padding > 0:
             prime = prime.view(b, c, self.padded_shape[-2], self.padded_shape[-1], K)
             prime = prime[:, :, self.padding:-self.padding, self.padding:-self.padding, :]
@@ -436,7 +434,7 @@ class Conv2d_NN_Attn(nn.Module):
             q = self.w_q(x)
 
             similarity_matrix = self._calculate_euclidean_matrix(k, q) if self.magnitude_type == 'euclidean' else self._calculate_cosine_matrix(k, q)
-            prime = self._prime(v, similarity_matrix, self.K, self.maximum)
+            x_nn = self._prime(v, similarity_matrix, self.K, self.maximum)
             
         elif self.sampling_type == "random":
             if self.num_samples > x.shape[-1]:
@@ -444,7 +442,7 @@ class Conv2d_NN_Attn(nn.Module):
                 q = self.w_q(x_sample)
                 similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == 'euclidean' else self._calculate_cosine_matrix_N(k, q)
                 torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == 'euclidean' else 1.1)
-                prime = self._prime(v, similarity_matrix, self.K, self.maximum)
+                x_nn = self._prime(v, similarity_matrix, self.K, self.maximum)
 
             else: 
                 rand_idx = torch.randperm(x.shape[-1], device=x.device)[:self.num_samples]
@@ -457,7 +455,7 @@ class Conv2d_NN_Attn(nn.Module):
                 range_idx = torch.arange(len(rand_idx), device=x.device)
                 similarity_matrix[:, rand_idx, range_idx] = self.INF if self.magnitude_type == 'euclidean' else self.NEG_INF
                 
-                prime = self._prime_N(v, similarity_matrix, self.K, rand_idx, self.maximum)
+                x_nn = self._prime_N(v, similarity_matrix, self.K, rand_idx, self.maximum)
             
         elif self.sampling_type == "spatial":
             if self.num_samples > self.og_shape[-2]:
@@ -465,7 +463,7 @@ class Conv2d_NN_Attn(nn.Module):
                 q = self.w_q(x_sample)
                 similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(k, q)
                 torch.diagonal(similarity_matrix, dim1=1, dim2=2).fill_(-0.1 if self.magnitude_type == 'euclidean' else 1.1)
-                prime = self._prime(v, similarity_matrix, self.K, self.maximum)
+                x_nn = self._prime(v, similarity_matrix, self.K, self.maximum)
             else:
                     
                 x_ind = torch.linspace(0 + self.sample_padding, self.og_shape[-2] - self.sample_padding - 1, self.num_samples, device=x.device).to(torch.long)
@@ -482,12 +480,12 @@ class Conv2d_NN_Attn(nn.Module):
                 similarity_matrix = self._calculate_euclidean_matrix_N(k, q) if self.magnitude_type == "euclidean" else self._calculate_cosine_matrix_N(k, q)
                 range_idx = torch.arange(len(flat_indices), device=x.device)    
                 similarity_matrix[:, flat_indices, range_idx] = self.INF if self.magnitude_type == "euclidean" else self.NEG_INF
-                prime = self._prime_N(x, similarity_matrix, self.K, flat_indices, self.maximum)
+                x_nn = self._prime_N(x, similarity_matrix, self.K, flat_indices, self.maximum)
         else:
             raise NotImplementedError("Sampling Type not Implemented")
 
         # 7. Conv1d Layer
-        x = self.conv1d_layer(prime)
+        x = self.conv1d_layer(x_nn)
         x = self.pointwise_conv(x)
 
         # 8. Output Projection
@@ -553,16 +551,15 @@ class Conv2d_NN_Attn(nn.Module):
     
     def _prime(self, v, qk, K, maximum):
         b, c, t = v.shape
-        topk_values, topk_indices = torch.topk(qk, k=K, dim=2, largest=maximum)
-        topk_values = torch.softmax(topk_values, dim=-1)
+        kmax, kargmax = torch.topk(qk, k=K, dim=2, largest=maximum)
+        kmax = torch.softmax(kmax, dim=-1)
         
-        topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)    
-        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K)
+        kargmax_expanded = kargmax.unsqueeze(1).expand(b, c, t, K)    
+        kmax_expanded = kmax.unsqueeze(1).expand(b, c, t, K)
 
         v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
-        prime = torch.gather(v_expanded, dim=2, index=topk_indices_exp)
-        prime = prime * topk_values_exp
-
+        prime = torch.gather(v_expanded, dim=2, index=kargmax_expanded)
+        prime = prime * kmax_expanded
         if self.padding > 0: 
             prime = prime.view(b, c, self.padded_shape[-2], self.padded_shape[-1], K)
             prime = prime[:, :, self.padding:-self.padding, self.padding:-self.padding, :]
@@ -575,25 +572,25 @@ class Conv2d_NN_Attn(nn.Module):
     def _prime_N(self, v, qk, K, rand_idx, maximum):
         b, c, t = v.shape
 
-        topk_values, topk_indices = torch.topk(qk, k=K - 1, dim=2, largest=maximum)
-        tk = topk_indices.shape[-1]
+        kmax, kargmax = torch.topk(qk, k=K - 1, dim=2, largest=maximum)
+        tk = kargmax.shape[-1]
         assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
         
         # Map sample indices back to original matrix positions
-        mapped_tensor = rand_idx[topk_indices]
+        mapped_tensor = rand_idx[kargmax]
         token_indices = torch.arange(t, device=v.device).view(1, t, 1).expand(b, t, 1)
         final_indices = torch.cat([token_indices, mapped_tensor], dim=2)
-        indices_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
+        kargmax_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
 
-        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K - 1)
+        kmax_expanded = kmax.unsqueeze(1).expand(b, c, t, K - 1)
         ones = torch.ones((b, c, t, 1), device=v.device)
-        topk_values_exp = torch.cat([ones, topk_values_exp], dim=-1)
-        topk_values_exp = torch.softmax(topk_values_exp, dim=-2)
+        kmax_expanded = torch.cat([ones, kmax_expanded], dim=-1)
+        kmax_expanded = torch.softmax(kmax_expanded, dim=-2)
 
         # Gather matrix values and apply similarity weighting
         v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
-        prime = torch.gather(v_expanded, dim=2, index=indices_expanded)
-        prime = prime * topk_values_exp
+        prime = torch.gather(v_expanded, dim=2, index=kargmax_expanded)
+        prime = prime * kmax_expanded
 
         if self.padding > 0:
             prime = prime.view(b, c, self.padded_shape[-2], self.padded_shape[-1], K)

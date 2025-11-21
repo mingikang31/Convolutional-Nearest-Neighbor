@@ -11,7 +11,7 @@ from models.utils import default, LocalAttention, l2norm, exists, rearrange, app
 Multi-Head Layers for Vision Transformers:
 
 (1) MultiheadAttention 
-(2) MultiHeadConvNNAttention
+(2) MultiHeadConvNNAttention 
 (3) MultiHeadKvtAttention
 (4) MultiHeadLocalAttention
 (5) MultiHeadSparseAttention - Supports attention patterns "all", "local", "strided"
@@ -209,7 +209,7 @@ class MultiHeadConvNNAttention(nn.Module):
             similarity_matrix = self._calculate_matmul_matrix(k, q) if self.magnitude_type == 'matmul' else self._calculate_cosine_matrix(k, q) if self.magnitude_type == 'cosine' else self._calculate_euclidean_matrix(k, q, sqrt=True)
 
             
-            prime = self._prime(v, similarity_matrix, self.K, self.maximum) if not self.softmax_topk_val else self._prime_softmax(v, similarity_matrix, self.K, self.maximum)
+            x_nn = self._prime(v, similarity_matrix, self.K, self.maximum) if not self.softmax_topk_val else self._prime_softmax(v, similarity_matrix, self.K, self.maximum)
 
         elif self.sampling_type == 'random': # Random Samples
             rand_idx = torch.randperm(x.shape[1], device=x.device)[:self.num_samples]
@@ -222,7 +222,7 @@ class MultiHeadConvNNAttention(nn.Module):
             range_idx = torch.arange(len(rand_idx), device=q.device)
             similarity_matrix[:, rand_idx, range_idx] = self.INF if self.magnitude_type == 'euclidean' else self.NEG_INF
 
-            prime = self._prime_N(v, similarity_matrix, self.K, rand_idx, self.maximum) if not self.softmax_topk_val else self._prime_softmax_N(v, similarity_matrix, self.K, rand_idx, self.maximum)
+            x_nn = self._prime_N(v, similarity_matrix, self.K, rand_idx, self.maximum) if not self.softmax_topk_val else self._prime_softmax_N(v, similarity_matrix, self.K, rand_idx, self.maximum)
 
         elif self.sampling_type == 'spatial': # Spatial Samples
             spat_idx = torch.linspace(0 + self.sample_padding, x.shape[1] - self.sample_padding - 1, self.num_samples, device=x.device).long()
@@ -235,13 +235,13 @@ class MultiHeadConvNNAttention(nn.Module):
             range_idx = torch.arange(len(spat_idx), device=q.device)
             similarity_matrix[:, spat_idx, range_idx] = self.INF if self.magnitude_type == 'euclidean' else self.NEG_INF
 
-            prime = self._prime_N(v, similarity_matrix, self.K, spat_idx, self.maximum) if not self.softmax_topk_val else self._prime_softmax_N(v, similarity_matrix, self.K, spat_idx, self.maximum)
+            x_nn = self._prime_N(v, similarity_matrix, self.K, spat_idx, self.maximum) if not self.softmax_topk_val else self._prime_softmax_N(v, similarity_matrix, self.K, spat_idx, self.maximum)
             
         else: 
             raise ValueError("Invalid sampling_type. Must be one of ['all', 'random', 'spatial']")
 
         # 4. Conv1d Layer
-        x = self.conv(prime)  
+        x = self.conv(x_nn)  
 
         # 5. Dropout + Reshape (B, seq_length, d_hidden)
         x = self.dropout(x)
@@ -272,18 +272,17 @@ class MultiHeadConvNNAttention(nn.Module):
 
     def _prime(self, v, qk, K, maximum):
         b, c, t = v.shape
-        topk_values, topk_indices = torch.topk(qk, k=K, dim=2, largest=maximum)
-        topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)
-        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K)
+        kmax, kargmax = torch.topk(qk, k=K, dim=2, largest=maximum)
+        kargmax_expanded = kargmax.unsqueeze(1).expand(b, c, t, K)
+        kmax_expanded = kmax.unsqueeze(1).expand(b, c, t, K)
 
         v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
-        prime = torch.gather(v_expanded, dim=2, index=topk_indices_exp)
-
+        prime = torch.gather(v_expanded, dim=2, index=kargmax_expanded)
         # Normalize by K for distance metrics 
         if not maximum: 
-            prime = prime / (topk_values_exp + 1e-8)
+            prime = prime / (kmax_expanded + 1e-8)
         else:
-            prime = topk_values_exp * prime 
+            prime = kmax_expanded * prime 
 
         prime = prime.view(b, c, -1)
 
@@ -291,78 +290,78 @@ class MultiHeadConvNNAttention(nn.Module):
 
     def _prime_N(self, v, qk, K, rand_idx, maximum):
         b, c, t = v.shape
-        topk_values, topk_indices = torch.topk(qk, k=K-1, dim=2, largest=maximum)
-        tk = topk_indices.shape[-1]
+        kmax, kargmax = torch.topk(qk, k=K-1, dim=2, largest=maximum)
+        tk = kargmax.shape[-1]
         assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
 
         # Map sample indicies back to original matrix positions 
-        mapped_tensor = rand_idx[topk_indices]
+        mapped_tensor = rand_idx[kargmax]
         token_indices = torch.arange(t, device=v.device).view(1, t, 1).expand(b, t, 1)
         final_indices = torch.cat([token_indices, mapped_tensor], dim=-1)
-        topk_indices_exp = final_indices.unsqueeze(1).expand(b, c, t, K)
+        kargmax_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
 
         # Expand topk values to match the shape of indices
-        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K-1)
+        kmax_expanded = kmax.unsqueeze(1).expand(b, c, t, K-1)
         ones = torch.ones((b, c, t, 1), device=v.device)
-        topk_values_exp = torch.cat((ones, topk_values_exp), dim=-1)
+        kmax_expanded = torch.cat((ones, kmax_expanded), dim=-1)
 
         # Gather matrix values and apply similarity weighting 
         v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()    
-        prime = torch.gather(v_expanded, dim=2, index=topk_indices_exp)
+        prime = torch.gather(v_expanded, dim=2, index=kargmax_expanded)
         
         if not maximum:  # euclidean distance
-            prime = prime / (topk_values_exp + 1e-8)
+            prime = prime / (kmax_expanded + 1e-8)
         else:
-            prime = topk_values_exp * prime
+            prime = kmax_expanded * prime
         prime = prime.view(b, c, -1)
         return prime
 
     def _prime_softmax(self, v, qk, K, maximum):
         b, c, t = v.shape
-        topk_values, topk_indices = torch.topk(qk, k=K, dim=2, largest=maximum)
+        kmax, kargmax = torch.topk(qk, k=K, dim=2, largest=maximum)
         
         # Apply softmax
         if maximum:  # cosine/matmul (maximize)
-            topk_values = torch.softmax(topk_values, dim=-1)
+            kmax = torch.softmax(kmax, dim=-1)
         else:  # euclidean (minimize) - negate before softmax
-            topk_values = torch.softmax(-topk_values, dim=-1)
+            kmax = torch.softmax(-kmax, dim=-1)
 
-        topk_indices_exp = topk_indices.unsqueeze(1).expand(b, c, t, K)
-        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K)
+        kargmax_expanded = kargmax.unsqueeze(1).expand(b, c, t, K)
+        kmax_expanded = kmax.unsqueeze(1).expand(b, c, t, K)
 
         v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()
-        prime = torch.gather(v_expanded, dim=2, index=topk_indices_exp)
-        prime = topk_values_exp * prime
+        prime = torch.gather(v_expanded, dim=2, index=kargmax_expanded)
+        prime = kmax_expanded * prime
         prime = prime.view(b, c, -1)
         return prime
 
     def _prime_softmax_N(self, v, qk, K, rand_idx, maximum):
         b, c, t = v.shape
-        topk_values, topk_indices = torch.topk(qk, k=K-1, dim=2, largest=maximum)
-        tk = topk_indices.shape[-1]
+        kmax, kargmax = torch.topk(qk, k=K-1, dim=2, largest=maximum)
+        tk = kargmax.shape[-1]
         assert K == tk + 1, "Error: K must be same as tk + 1. K == tk + 1."
 
         # Map sample indices back to original matrix positions 
-        mapped_tensor = rand_idx[topk_indices]
+        mapped_tensor = rand_idx[kargmax]
         token_indices = torch.arange(t, device=v.device).view(1, t, 1).expand(b, t, 1)
         final_indices = torch.cat([token_indices, mapped_tensor], dim=-1)
-        topk_indices_exp = final_indices.unsqueeze(1).expand(b, c, t, K)
+        kargmax_expanded = final_indices.unsqueeze(1).expand(b, c, t, K)
 
         # Expand topk values to match the shape of indices
-        topk_values_exp = topk_values.unsqueeze(1).expand(b, c, t, K-1)
+        kmax_expanded = kmax.unsqueeze(1).expand(b, c, t, K-1)
         ones = torch.ones((b, c, t, 1), device=v.device)
-        topk_values_exp = torch.cat((ones, topk_values_exp), dim=-1)
+        kmax_expanded = torch.cat((ones, kmax_expanded), dim=-1)
         
         # Apply softmax
         if maximum:
-            topk_values_exp = torch.softmax(topk_values_exp, dim=-1)
+            kmax_expanded = torch.softmax(kmax_expanded, dim=-1)
         else:
-            topk_values_exp = torch.softmax(-topk_values_exp, dim=-1)
+            kmax_expanded = torch.softmax(-kmax_expanded, dim=-1)
                 
         # Gather matrix values and apply similarity weighting 
         v_expanded = v.unsqueeze(-1).expand(b, c, t, K).contiguous()    
-        prime = torch.gather(v_expanded, dim=2, index=topk_indices_exp)
-        prime = topk_values_exp * prime
+        prime = torch.gather(v_expanded, dim=2, index=kargmax_expanded)
+        prime = kmax_expanded * prime
 
         prime = prime.view(b, c, -1)
         return prime
