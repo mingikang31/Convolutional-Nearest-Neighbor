@@ -3,7 +3,7 @@
 #SBATCH --mem=64G
 #SBATCH -p gpu --gres=gpu:a100:1
 #SBATCH --cpus-per-task=4
-#SBATCH --job-name=CVPR-BR-Test
+#SBATCH --job-name=BR-Test
 #SBATCH --time=500:00:00
 #SBATCH --output=slurm_out/%j.out
 #SBATCH --error=slurm_out/%j.err
@@ -13,7 +13,7 @@
 cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 source activate mingi
 
-### Branch Ratio Test for CVPR paper
+### Branch Ratio Test for
 
 # Configuration
 DATASETS=("cifar10" "cifar100")

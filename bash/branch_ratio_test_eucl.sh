@@ -1,9 +1,9 @@
 #!/bin/bash 
 
-### Conv-Test for CVPR paper 
+### Conv-Test 
 
 cd /home/exouser/Convolutional-Nearest-Neighbor/
-### Branch Ratio Test for CVPR paper
+### Branch Ratio Test for 
 
 # Configuration
 DATASETS=("cifar10" "cifar100")

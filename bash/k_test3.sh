@@ -3,7 +3,7 @@
 #SBATCH --mem=64G
 #SBATCH -p gpu --gres=gpu:
 #SBATCH --cpus-per-task=4
-#SBATCH --job-name=CVPR-BR-Test
+#SBATCH --job-name=BR-Test
 #SBATCH --time=500:00:00
 #SBATCH --output=slurm_out/%j.out
 #SBATCH --error=slurm_out/%j.err
@@ -15,7 +15,7 @@ conda activate torch-rtx5090
 
 
 
-### K-Test for CVPR paper 
+### K-Test for paper 
 
 # Configuration
 DATASETS=("cifar10" "cifar100")

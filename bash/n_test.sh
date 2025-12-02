@@ -1,7 +1,7 @@
 #!/bin/bash 
 cd /home/exouser/Convolutional-Nearest-Neighbor/
 
-### N-Test for CVPR paper 
+### N-Test for paper 
 # Configuration
 DATASETS=("cifar10" "cifar100")
 BRANCH_RATIOS=("0.500" "1.000")

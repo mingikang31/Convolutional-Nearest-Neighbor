@@ -18,7 +18,7 @@ conda activate mingi-arm
 
 
 
-### K-Test for CVPR paper 
+### K-Test for
 
 # Configuration
 DATASETS=("cifar10" "cifar100")
