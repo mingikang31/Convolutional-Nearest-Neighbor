@@ -50,6 +50,29 @@ def parse_training_results(file_path):
     return df
 
 
+def n_last_average_stats(df, last_n_epochs=5):
+    """Calculate average stats over the last N epochs"""
+    if len(df) < last_n_epochs:
+        last_n_epochs = len(df)
+    
+    return {
+        "ave_train_loss": df['train_loss'].tail(last_n_epochs).mean(),
+        "ave_test_loss": df['test_loss'].tail(last_n_epochs).mean(),
+        "ave_train_accuracy_top1": df['train_accuracy_top1'].tail(last_n_epochs).mean(),
+        "ave_train_accuracy_top5": df['train_accuracy_top5'].tail(last_n_epochs).mean(),
+        "ave_test_accuracy_top1": df['test_accuracy_top1'].tail(last_n_epochs).mean(),
+        "ave_test_accuracy_top5": df['test_accuracy_top5'].tail(last_n_epochs).mean()
+    }
+
+def best_stats(df):
+    """Calculate best accuracy achieved during training"""
+    return {
+        "best_train_accuracy_top1": df['train_accuracy_top1'].max(),
+        "best_train_accuracy_top5": df['train_accuracy_top5'].max(),
+        "best_test_accuracy_top1": df['test_accuracy_top1'].max(),
+        "best_test_accuracy_top5": df['test_accuracy_top5'].max()
+    }
+
 def parse_params_gflops(file_dir):
     """Parse training results from text file into a pandas DataFrame"""
 
@@ -73,6 +96,14 @@ def parse_params_gflops(file_dir):
         "trainable_params": int(trainable_params),
         "gflops": float(gflops)
     }
+
+
+
+
+
+
+
+
 
 
 

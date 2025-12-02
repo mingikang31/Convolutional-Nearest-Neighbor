@@ -23,7 +23,7 @@ def args_parser():
     parser = argparse.ArgumentParser(description="Convolutional Nearest Neighbor training and evaluation", add_help=False) 
     
     # Model Arguments
-    parser.add_argument("--model", type=str, default="vgg11", choices=["vgg11", "vgg13", "vgg16", "vgg19", "resnet18", "resnet34", "allconvnet"], help="Model architecture to use") 
+    parser.add_argument("--model", type=str, default="vgg11", choices=["vgg11", "vgg13", "vgg16", "vgg19", "resnet18", "resnet34"], help="Model architecture to use") 
 
     parser.add_argument("--layer", type=str, default="ConvNN", choices=["Conv2d", "Conv2d_New", "ConvNN", "ConvNN_Attn", "Branching", "Branching_Attn"], help="Type of Convolution or Attention layer to use")
     
@@ -49,15 +49,22 @@ def args_parser():
 
     # Data Arguments
     parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10", "cifar100", 'imagenet'], help="Dataset to use for training and evaluation")
+    parser.add_argument("--resize", type=int, default=None, help="Resize images to 64x64")
+    parser.add_argument("--augment", action="store_true", help="Use data augmentation")
+    parser.set_defaults(augment=False)
     parser.add_argument("--noise", type=float, default=0.0, help="Standard deviation of Gaussian noise to add to the data")
     parser.add_argument("--data_path", type=str, default="./Data", help="Path to the dataset")
 
     # Training Arguments
-    parser.add_argument("--batch_size", type=int, default=64, help="Batch size for training and evaluation")
-    parser.add_argument("--num_epochs", type=int, default=100, help="Number of epochs for training")
+    parser.add_argument("--use_compiled", action="store_true", help="Use compiled model for training and evaluation")
+    parser.set_defaults(use_compiled=False)
+    parser.add_argument("--compile_mode", type=str, default="default", choices=["default", "reduce-overhead", "reduce-memory", "reduce-overhead", "max-autotune"], help="Compilation mode for torch.compile")
+
+    parser.add_argument("--batch_size", type=int, default=256, help="Batch size for training and evaluation")
+    parser.add_argument("--num_epochs", type=int, default=150, help="Number of epochs for training")
     parser.add_argument("--use_amp", action="store_true", help="Use mixed precision training")
     parser.set_defaults(use_amp=False)
-    parser.add_argument("--clip_grad_norm", type=float, default=None, help="Gradient clipping value")
+    parser.add_argument("--clip_grad_norm", type=float, default=1.0, help="Gradient clipping value")
     
     # Loss Function Arguments
     parser.add_argument("--criterion", type=str, default="CrossEntropy", choices=["CrossEntropy", "MSE"], help="Loss function to use for training")
@@ -93,9 +100,6 @@ def main(args):
     # Check if the output directory exists, if not create it
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
-
-    # Make image 64x64
-    args.resize = False
     
     # Dataset 
     if args.dataset == "cifar10":
