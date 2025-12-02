@@ -4,7 +4,7 @@
 
 ## Paper 
 - **Attention Via Convolutional Nearest Neighbors**, Mingi Kang, Jeova Farias, [[arXiv](https://arxiv.org/abs/2511.14137)] 
-- This repository is complemented by the Convolutional Nearest Neighbor Attention(ConvNN-Attention) repository: [https://github.com/mingikang31/Convolutional-Nearest-Neighbor-Attention](https://github.com/mingikang31/Convolutional-Nearest-Neighbor-Attention)
+- This repository is complemented by the Convolutional Nearest Neighbor Attention (ConvNN-Attention) repository: [https://github.com/mingikang31/Convolutional-Nearest-Neighbor-Attention](https://github.com/mingikang31/Convolutional-Nearest-Neighbor-Attention)
 
 ## Grants & Funding
 - **Fall Research Grant**, Bowdoin College
