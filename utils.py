@@ -1,8 +1,30 @@
 """Utility Functions for the Project"""
 import torch.nn as nn
 import os 
-
 from typing import Optional
+
+def print_cuda_info():
+    """
+    Print information about the available CUDA GPU(s).
+
+    Especially useful for debugging on HPC, Google Colab, and other environments. 
+    """
+    import torch 
+
+    # Check if CUDA is available
+    print(f"CUDA available: {torch.cuda.is_available()}")
+    
+    # Get number of GPUs
+    print(f"Number of GPUs: {torch.cuda.device_count()}")
+
+    # Get current GPU name
+    if torch.cuda.is_available():
+        print(f"GPU Name: {torch.cuda.get_device_name(0)}")
+        
+        # Get memory info (in bytes)
+        print(f"Total memory: {torch.cuda.get_device_properties(0).total_memory / 1e9:.2f} GB")
+        print(f"Allocated memory: {torch.cuda.memory_allocated(0) / 1e9:.2f} GB")
+        print(f"Cached memory: {torch.cuda.memory_reserved(0) / 1e9:.2f} GB")
 
 def write_to_file(file_path, data):
     """
@@ -49,7 +71,17 @@ def set_seed(seed):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-"""# Local Attention Module"""
+def argsSimpleNameSpace():
+    from types import SimpleNamespace
+        
+    args = SimpleNamespace(
+        a = 1, 
+        b = 2, 
+        c = 3
+    )
+    
+
+""" Local Attention Module """
 import torch
 from torch import nn, einsum
 from torch.amp import autocast

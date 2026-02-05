@@ -56,7 +56,7 @@ Run `python main.py --help` to see all available options.
 
 | Flag | Default | Choices | Description |
 |------|---------|---------|-------------|
-| `--model` | `vgg11` | `vgg11`, `vgg13`, `vgg16`, `vgg19`, `resnet18`, `resnet34` | Model architecture to use |
+| `--model` | `vgg11` | `vgg11`, `vgg13`, `vgg16`, `vgg19`, `resnet18`, `resnet34`, `resnet50`| Model architecture to use |
 | `--layer` | `ConvNN` | `Conv2d`, `Conv2d_New`, `ConvNN`, `ConvNN_Attn`, `Branching`, `Branching_Attn` | Type of convolution or attention layer to use |
 | `--kernel_size` | `3` | *integer* | Kernel size for Conv2d layers |
 | `--padding` | `1` | *integer* | Padding for convolution layers |

@@ -1,8 +1,41 @@
 ### Example shell script for Convolutional Nearest Neighbor
 
 
+## 1. HPC Cluster Job Pro6000 GPU with Mixed GPU/CPU
 
-## 1. HPC Cluster Job A100 GPU 
+#! /bin/bash 
+#SBATCH --nodes=1 
+#SBATCH --mem=64G
+#SBATCH -p mixed --gres=gpu:pro6000:1
+#SBATCH --cpus-per-gpu=16
+#SBATCH --job-name=resnet_exp
+#SBATCH --time=500:00:00
+#SBATCH --output=slurm_out/%j.out
+#SBATCH --error=slurm_out/%j.err
+#SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_80
+#SBATCH --mail-user=mkang2@bowdoin.edu
+
+source ~/.bashrc
+conda activate torch-pro6000
+
+## 2. HPC Cluster Job Pro6000 GPU with Mixed GPU
+
+#! /bin/bash 
+#SBATCH --nodes=1 
+#SBATCH --mem=64G
+#SBATCH -p gpu --gres=gpu:pro6000:1
+#SBATCH --cpus-per-gpu=16
+#SBATCH --job-name=resnet_exp
+#SBATCH --time=500:00:00
+#SBATCH --output=slurm_out/%j.out
+#SBATCH --error=slurm_out/%j.err
+#SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_80
+#SBATCH --mail-user=mkang2@bowdoin.edu
+
+source ~/.bashrc
+conda activate torch-pro6000
+
+## 3. HPC Cluster Job A100 GPU 
 #! /bin/bash 
 #SBATCH --nodes=1 
 #SBATCH --mem=64G
@@ -109,3 +142,19 @@ git config --global user.email "mkang2@bowdoin.edu"
 
 ## To shutdown instance 
 sudo shutdown -h 1 # shuts down in 1 minute
+
+## Libraries 
+datasets
+transformers
+tokenizers
+fsspec==2025.10.0
+filelock
+tiktoken
+numpy
+matplotlib
+tqdm
+torch
+torchsummary
+torchvision
+pytorch-ignite
+pytorch-lightning
