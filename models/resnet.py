@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torchsummary import summary 
 import numpy as np
 
-from layers2d import (
+from models.layers2d import (
     Conv2d_NN, 
     Conv2d_NN_Attn,
     Conv2d_Branching, 
@@ -65,6 +65,8 @@ class ResNet(nn.Module):
             nn.Flatten(start_dim=1), 
             nn.Linear(512 * self.expansion, self.num_classes)
         )
+
+        self.name = "ResNet"
 
     def _make_layer(self, block, out_channels, blocks, stride=1):
         layers = [] 

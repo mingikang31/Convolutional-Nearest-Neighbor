@@ -15,7 +15,7 @@ from train_eval import Train_Eval, Train_Eval_ImageNet, setup_distributed, clean
 
 # Models 
 from models.vgg import VGG 
-from models.resnet_old import ResNet
+from models.resnet import ResNet
 
 # Utilities 
 from utils import write_to_file, set_seed

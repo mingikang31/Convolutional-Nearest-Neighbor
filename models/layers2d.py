@@ -174,7 +174,7 @@ class Conv2d_NN(nn.Module):
             kernel_size = self.K, 
             stride = self.stride, 
             padding = 0, 
-            # bias = False # Only if similarity_type is "Loc" (make ConvNN exactly same as Conv2d)
+            bias = False # Only if similarity_type is "Loc" (make ConvNN exactly same as Conv2d)
         )
 
         # Flatten * Unflatten layers 
