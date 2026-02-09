@@ -21,8 +21,8 @@ python main.py \
     --K 9 \
     --kernel_size 3 \
     --padding 1 \
-    --sampling_type random \
-    --num_samples 32 \
+    --sampling_type all \
+    --num_samples -1 \
     --dataset imagenet1k \
     --compile \
     --use_amp \
@@ -30,4 +30,4 @@ python main.py \
     --pin_memory \
     --batch_size 1024 \
     --data_path /mnt/research/j.farias/mkang2/Datasets \
-    --output_dir ./ImageNet-Output/ResNet-50/Branching_Rand_K9_Ks3_N32
+    --output_dir ./ImageNet-Output/ResNet-50/Branching_All_K9_Ks3
