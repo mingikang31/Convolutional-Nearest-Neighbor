@@ -28,6 +28,6 @@ python main.py \
     --use_amp \
     --num_workers 12 \
     --pin_memory \
-    --batch_size 1024 \
+    --batch_size 512 \
     --data_path /mnt/research/j.farias/mkang2/Datasets \
     --output_dir ./ImageNet-Output/ResNet-50/Branching_All_K9_Ks3

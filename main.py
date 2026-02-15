@@ -133,7 +133,7 @@ def main(args):
         args.num_classes = dataset.num_classes 
         args.img_size = dataset.img_size 
     elif args.dataset == "imagenet1k":
-        args.batch_size = 1024 # Standard Batch Size for ImageNet-1K
+        # args.batch_size = 1024 # Standard Batch Size for ImageNet-1K
         args.augment = True
         dataset = ImageNet1K(args)
         args.num_classes = dataset.num_classes 
