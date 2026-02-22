@@ -17,7 +17,7 @@ cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 
 python main.py \
     --model resnet50 \
-    --layer Branching \
+    --layer ConvNN \
     --K 9 \
     --kernel_size 3 \
     --padding 1 \
@@ -30,4 +30,4 @@ python main.py \
     --pin_memory \
     --batch_size 512 \
     --data_path /mnt/research/j.farias/mkang2/Datasets \
-    --output_dir ./ImageNet-Output/ResNet-50/Branching_All_K9_Ks3
+    --output_dir ./ImageNet-Output/ResNet-50/ConvNN_All_K9
