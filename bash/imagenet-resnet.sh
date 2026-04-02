@@ -15,22 +15,22 @@ conda activate torch-pro6000
 
 cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor 
 
-python main.py \
-    --model resnet50 \
-    --layer Branching \
-    --K 6 \
-    --kernel_size 3 \
-    --padding 1 \
-    --sampling_type all \
-    --num_samples -1 \
-    --dataset imagenet1k \
-    --compile \
-    --use_amp \
-    --num_workers 12 \
-    --pin_memory \
-    --batch_size 512 \
-    --data_path /mnt/research/j.farias/mkang2/Datasets \
-    --output_dir ./ImageNet-Output/ResNet-50/Branching_All_K6_Ks3/
+# python main.py \
+#     --model resnet50 \
+#     --layer Branching \
+#     --K 6 \
+#     --kernel_size 3 \
+#     --padding 1 \
+#     --sampling_type all \
+#     --num_samples -1 \
+#     --dataset imagenet1k \
+#     --compile \
+#     --use_amp \
+#     --num_workers 12 \
+#     --pin_memory \
+#     --batch_size 512 \
+#     --data_path /mnt/research/j.farias/mkang2/Datasets \
+#     --output_dir ./ImageNet-Output/ResNet-50/Branching_All_K6_Ks3/
 
 python main.py \
     --model resnet50 \
@@ -39,7 +39,7 @@ python main.py \
     --kernel_size 3 \
     --padding 1 \
     --sampling_type random \
-    --num_samples 32 \
+    --num_samples 48 \
     --dataset imagenet1k \
     --compile \
     --use_amp \
@@ -47,4 +47,22 @@ python main.py \
     --pin_memory \
     --batch_size 512 \
     --data_path /mnt/research/j.farias/mkang2/Datasets \
-    --output_dir ./ImageNet-Output/ResNet-50/Branching_Rand_K6_Ks3_N32/
+    --output_dir ./ImageNet-Output/ResNet-50/Branching_Rand_K6_Ks3_N48/
+
+
+python main.py \
+    --model resnet50 \
+    --layer Branching \
+    --K 6 \
+    --kernel_size 3 \
+    --padding 1 \
+    --sampling_type random \
+    --num_samples 64 \
+    --dataset imagenet1k \
+    --compile \
+    --use_amp \
+    --num_workers 12 \
+    --pin_memory \
+    --batch_size 512 \
+    --data_path /mnt/research/j.farias/mkang2/Datasets \
+    --output_dir ./ImageNet-Output/ResNet-50/Branching_Rand_K6_Ks3_N64/
