@@ -18,7 +18,7 @@ cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 # python main.py \
 #     --model resnet50 \
 #     --layer Branching \
-#     --K 6 \
+#     --K 4 \
 #     --kernel_size 3 \
 #     --padding 1 \
 #     --sampling_type all \
@@ -35,7 +35,7 @@ cd /mnt/research/j.farias/mkang2/Convolutional-Nearest-Neighbor
 python main.py \
     --model resnet50 \
     --layer Branching \
-    --K 6 \
+    --K 4 \
     --kernel_size 3 \
     --padding 1 \
     --sampling_type random \
@@ -47,13 +47,13 @@ python main.py \
     --pin_memory \
     --batch_size 512 \
     --data_path /mnt/research/j.farias/mkang2/Datasets \
-    --output_dir ./ImageNet-Output/ResNet-50/Branching_Rand_K6_Ks3_N48/
+    --output_dir ./ImageNet-Output/ResNet-50/Branching_Rand_K4_Ks3_N48/
 
 
 python main.py \
     --model resnet50 \
     --layer Branching \
-    --K 6 \
+    --K 4 \
     --kernel_size 3 \
     --padding 1 \
     --sampling_type random \
@@ -65,4 +65,4 @@ python main.py \
     --pin_memory \
     --batch_size 512 \
     --data_path /mnt/research/j.farias/mkang2/Datasets \
-    --output_dir ./ImageNet-Output/ResNet-50/Branching_Rand_K6_Ks3_N64/
+    --output_dir ./ImageNet-Output/ResNet-50/Branching_Rand_K4_Ks3_N64/
