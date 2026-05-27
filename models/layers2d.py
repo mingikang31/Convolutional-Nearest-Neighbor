@@ -1,18 +1,7 @@
-"""Convolutional Nearest Neighbor Layers 2D"""
-
-"""
-Layers 2D: 
-(1) Conv2d_New (Baseline Nearest Neighbor Layer w/ Pixel Shuffle and Coordinate Encoding)
-(2) Conv2d_NN (Convolutional Nearest Neighbor Layer w/ Pixel Shuffle, Coordinate Encoding, Similarity and Aggregation Types, and 3 Sampling Types) 
-(3) Conv2d_NN_Attn (Convolutional Nearest Neighbor Attention Layer w/ Pixel Shuffle, Coordinate Encoding, Similarity and Aggregation Types, and 3 Sampling Types) 
-(4) Conv2d_Branching (Convolutional Nearest Neighbor Layer with Branching)
-
-"""
-
+# Torch
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
-import math
 
 class Conv2d_New(nn.Module): 
     """Convolution 2D Nearest Neighbor Layer"""
@@ -174,7 +163,7 @@ class Conv2d_NN(nn.Module):
             kernel_size = self.K, 
             stride = self.stride, 
             padding = 0, 
-            # bias = False # Only if similarity_type is "Loc" (make ConvNN exactly same as Conv2d)
+            bias = False # Only if similarity_type is "Loc" (make ConvNN exactly same as Conv2d)
         )
 
         # Flatten * Unflatten layers 
@@ -869,5 +858,3 @@ class Conv2d_Attn_Branching(nn.Module):
         
         out = self.pointwise_conv(out)
         return out
-
-

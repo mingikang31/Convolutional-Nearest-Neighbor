@@ -1,17 +1,4 @@
-"""Convolutional Nearest Neighbor Layers 1D"""
-
-"""
-Layers 1D: 
-
-(*) PixelShuffle1D
-(*) PixelUnshuffle1D
-
-(1) Conv1d_New (Baseline Convolutional Layer with PixelShuffle1D and Coordinate Encoding options)
-(2) Conv1d_NN (All, Random, Spatial Sampling) 
-(3) Conv1d_NN_Attn (All, Random, Spatial Sampling) 
-(4) Conv1d_Branching (Conv1d_NN + Conv1d Hybrid Layer)
-"""
-
+# Torch
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
