@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torchsummary import summary 
 import numpy as np
 
-from models.layers2d import (
+from layers2d import (
     Conv2d_NN, 
     Conv2d_NN_Attn,
     Conv2d_Branching, 
@@ -178,21 +178,21 @@ class ResBlock(nn.Module):
         # Check Convolutional Arguments for layer 1
         if stride == 1:
             if self.args.layer == "Conv2d":
-                conv1 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+                conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=args.kernel_size, stride=1, padding='same', bias=False)
             elif args.layer == "ConvNN":
-                conv1 = Conv2d_NN(out_channels, out_channels, **convnn_params)
+                conv1 = Conv2d_NN(in_channels, out_channels, **convnn_params)
             elif args.layer == "ConvNN_Attn":
-                conv1 = Conv2d_NN_Attn(out_channels, out_channels, **convnn_attn_params)
+                conv1 = Conv2d_NN_Attn(in_channels, out_channels, **convnn_attn_params)
             elif args.layer == "Branching":
-                conv1 = Conv2d_Branching(out_channels, out_channels, **convnn_branching_params)
+                conv1 = Conv2d_Branching(in_channels, out_channels, **convnn_branching_params)
             elif args.layer == "Branching_Attn":
-                conv1 = Conv2d_Attn_Branching(out_channels, out_channels, **convnn_attn_branching_params)
+                conv1 = Conv2d_Attn_Branching(in_channels, out_channels, **convnn_attn_branching_params)
         else: 
-            conv1 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+            conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
 
         # Layer 2 Convolution
         if self.args.layer == "Conv2d":
-            conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+            conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=args.kernel_size, stride=1, padding='same', bias=False)
         elif args.layer == "ConvNN":
             conv2 = Conv2d_NN(out_channels, out_channels, **convnn_params)
         elif args.layer == "ConvNN_Attn":
@@ -249,6 +249,7 @@ class ResBlock(nn.Module):
         out = self.relu(out)
         return out
 
+
 class BottleNeck(nn.Module):
     expansion = 4
 
@@ -263,7 +264,7 @@ class BottleNeck(nn.Module):
         self.out_channels = out_channels
         self.stride = stride
         convnn_params = {
-            "K": self.args.K, 
+            "K": args.K, 
             "stride": self.args.K, # Stride is always K
             "padding": self.args.padding,
             "sampling_type": self.args.sampling_type,
@@ -334,7 +335,7 @@ class BottleNeck(nn.Module):
         # Check Convolutional Arguments for layer 1
         if stride == 1:
             if self.args.layer == "Conv2d":
-                main_conv = nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+                main_conv = nn.Conv2d(out_channels, out_channels, kernel_size=args.kernel_size, stride=stride, padding='same', bias=False)
             elif args.layer == "ConvNN":
                 main_conv = Conv2d_NN(out_channels, out_channels, **convnn_params)
             elif args.layer == "ConvNN_Attn":
@@ -394,10 +395,10 @@ if __name__ == "__main__":
     from argparse import Namespace
 
     args = Namespace(
-        model="resnet50",
-        layer="Branching_Attn",
+        model="resnet34",
+        layer="Conv2d",
         K=9,
-        kernel_size=3,
+        kernel_size=5, 
         padding=1,
         sampling_type="all",
         num_samples=-1,
