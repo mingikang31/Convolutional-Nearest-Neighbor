@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torchsummary import summary 
 import numpy as np
 
-from layers2d import (
+from models.layers2d import (
     Conv2d_NN, 
     Conv2d_NN_Attn,
     Conv2d_Branching, 

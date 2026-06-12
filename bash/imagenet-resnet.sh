@@ -139,3 +139,56 @@ python main.py \
 #     --batch_size 512 \
 #     --data_path /mnt/research/j.farias/mkang2/Datasets \
 #     --output_dir ./ImageNet-Output/ResNet-50/Branching_Rand_K16_Ks3_N64/
+
+
+python main.py \
+    --model resnet50 \
+    --layer Branching \
+    --K 4 \
+    --kernel_size 2 \
+    --padding 1 \
+    --sampling_type all \
+    --num_samples -1 \
+    --dataset imagenet1k \
+    --compile \
+    --use_amp \
+    --num_workers 12 \
+    --pin_memory \
+    --batch_size 512 \
+    --data_path /mnt/research/j.farias/mkang2/Datasets \
+    --output_dir ./ImageNet-Output/ResNet-50/Branching_All_K4_Ks2/
+
+
+python main.py \
+    --model resnet50 \
+    --layer Branching \
+    --K 16 \
+    --kernel_size 4 \
+    --padding 1 \
+    --sampling_type all \
+    --num_samples -1 \
+    --dataset imagenet1k \
+    --compile \
+    --use_amp \
+    --num_workers 12 \
+    --pin_memory \
+    --batch_size 512 \
+    --data_path /mnt/research/j.farias/mkang2/Datasets \
+    --output_dir ./ImageNet-Output/ResNet-50/Branching_All_K16_Ks4/
+
+python main.py \
+    --model resnet50 \
+    --layer Branching \
+    --K 25 \
+    --kernel_size 5 \
+    --padding 1 \
+    --sampling_type all \
+    --num_samples -1 \
+    --dataset imagenet1k \
+    --compile \
+    --use_amp \
+    --num_workers 12 \
+    --pin_memory \
+    --batch_size 512 \
+    --data_path /mnt/research/j.farias/mkang2/Datasets \
+    --output_dir ./ImageNet-Output/ResNet-50/Branching_All_K25_Ks5/

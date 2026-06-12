@@ -27,7 +27,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(64, 64, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -48,7 +48,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(64, 64, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -66,7 +66,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(64, 64, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -106,7 +106,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(128, 128, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -124,7 +124,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(128, 128, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -142,7 +142,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(128, 128, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -182,7 +182,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(256, 256, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -200,7 +200,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(256, 256, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -218,7 +218,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(256, 256, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -236,7 +236,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(256, 256, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -254,7 +254,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(256, 256, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -294,7 +294,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(512, 512, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -312,7 +312,7 @@ _modules: {'first_conv': Sequential(
       (2): ReLU(inplace=True)
     )
     (conv2): Sequential(
-      (0): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=same, bias=False)
+      (0): Conv2d(512, 512, kernel_size=(5, 5), stride=(1, 1), padding=same, bias=False)
       (1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
       (2): ReLU(inplace=True)
     )
@@ -328,7 +328,7 @@ _modules: {'first_conv': Sequential(
   (1): Flatten(start_dim=1, end_dim=-1)
   (2): Linear(in_features=2048, out_features=1000, bias=True)
 )}
-args: Namespace(model='resnet50', layer='Conv2d', K=9, kernel_size=3, padding=1, sampling_type='all', num_samples=-1, sample_padding=0, attention_dropout=0.1, shuffle_pattern='NA', shuffle_scale=0, magnitude_type='cosine', similarity_type='Col', aggregation_type='Col', lambda_param=0.5, branch_ratio=0.5, dataset='imagenet1k', resize=None, augment=True, noise=0.0, data_path='/mnt/research/j.farias/mkang2/Datasets', compile=True, compile_mode='default', batch_size=512, num_epochs=300, use_amp=True, clip_grad_norm=5.0, num_workers=12, persistent_workers=False, prefetch_factor=None, pin_memory=True, criterion='CrossEntropy', optimizer='adamw', momentum=0.9, weight_decay=0.01, lr=0.001, lr_step=20, lr_gamma=0.1, scheduler='none', device='cuda', seed=0, output_dir='./ImageNet-Output/ResNet-50/Convolution_Ks3/', test_only=False, ddp=False, ddp_batch_size=128, num_classes=1000, img_size=(3, 224, 224), total_params=25557032, trainable_params=25557032)
+args: Namespace(model='resnet50', layer='Conv2d', K=9, kernel_size=5, padding=1, sampling_type='all', num_samples=-1, sample_padding=0, attention_dropout=0.1, shuffle_pattern='NA', shuffle_scale=0, magnitude_type='cosine', similarity_type='Col', aggregation_type='Col', lambda_param=0.5, branch_ratio=0.5, dataset='imagenet1k', resize=None, augment=True, noise=0.0, data_path='/mnt/research/j.farias/mkang2/Datasets', compile=True, compile_mode='default', batch_size=512, num_epochs=300, use_amp=True, clip_grad_norm=5.0, num_workers=12, persistent_workers=False, prefetch_factor=None, pin_memory=True, criterion='CrossEntropy', optimizer='adamw', momentum=0.9, weight_decay=0.01, lr=0.001, lr_step=20, lr_gamma=0.1, scheduler='none', device='cuda', seed=0, output_dir='./ImageNet-Output/ResNet-50/Convolution_Ks5/', test_only=False, ddp=False, ddp_batch_size=128, num_classes=1000, img_size=(3, 224, 224), total_params=40171560, trainable_params=40171560)
 num_classes: 1000
 expansion: 4
 in_channels: 2048
