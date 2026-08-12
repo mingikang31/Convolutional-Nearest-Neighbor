@@ -27,4 +27,4 @@ git clone git@github.com:mingikang31/Convolutional-Nearest-Neighbor.git
 git clone git@github.com:mingikang31/Convolutional-Nearest-Neighbor-Attention.git
 
 git config --global user.name "mingikang31"
-git config --global user.email "mkang2@bowdoin.edu"
+git config --global user.email "mingikang31@gmail.com"
